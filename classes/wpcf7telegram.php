@@ -2,7 +2,7 @@
 class wpcf7_Telegram{
 	
 	private
-	$cmd = 'cf7tg_start', /* readme */
+	$cmd = 'cf7tg_start',	
 	$bot_token;
 	
 	static
@@ -12,6 +12,7 @@ class wpcf7_Telegram{
 	$domain = 'cf7-telegram',
 	$api_url = 'https://api.telegram.org/bot%s/',
 	$chats = array(),
+	$addons = array(),
 	$markdown_tags = array(
 		'bold' => array(
 			'<h1>','</h1>', '<h2>','</h2>', '<h3>','</h3>', '<h4>','</h4>', '<h5>','</h5>', '<h6>','</h6>',
@@ -40,6 +41,10 @@ class wpcf7_Telegram{
 	}
 	
 	private function init(){
+		$this->addons = array(
+			'wpcf7tg_mediafiles' => __( 'File Sending', WPCF7TG_DOMAIN ),
+		);
+		
 		$this->load_bot_token();
 		$this->load_chats();
 		
@@ -153,7 +158,9 @@ class wpcf7_Telegram{
 				<p><?php echo __( 'Just use the shortcode <code>[telegram]</code> in the form for activate notification through Telegram.', WPCF7TG_DOMAIN ); ?></p>
 				<?php submit_button(); ?>	
 			</form>	
-		
+			<?php
+				$this->view_addonds();
+			?>
 		</div> 
 	<?php			
 	}
@@ -536,5 +543,14 @@ class wpcf7_Telegram{
 		$new_status = '';
 		echo json_encode( array( 'result' => $me->$action( $chat_id, $new_status ), 'chat' => $chat_id, 'new_status' => $new_status ) );
 		wp_die();
+	}
+	
+	function view_addonds(){
+		
+		foreach ( $this->addons as $slug => $name ) :
+			echo class_exists( $slug ) ?
+				'<p>' . __( 'Uses addon:', WPCF7TG_DOMAIN ) . ' ' . $name . '</p>' :
+				'<p><a href="https://nebster.net/product/contact-form-7-telegram-attachments/" target="_blank" >' . __( 'File sending add-on is available', WPCF7TG_DOMAIN ) . '</a>. ' .  __( 'Sale 75% until Dec, 31, 2020', WPCF7TG_DOMAIN ) . '</p>';
+		endforeach;
 	}
 }
