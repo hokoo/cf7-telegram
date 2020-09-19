@@ -1,0 +1,115 @@
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Contact Form 7 Telegram\n"
+"POT-Creation-Date: 2020-02-09 13:07+0300\n"
+"PO-Revision-Date: 2020-02-08 19:05+0300\n"
+"Last-Translator: \n"
+"Language-Team: iTRON <public@itron.pro>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 2.3\n"
+"X-Poedit-Basepath: ..\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Language: en_GB\n"
+"X-Poedit-KeywordsList: __;_e;sprintf\n"
+"X-Poedit-SearchPath-0: .\n"
+
+#: inc/class-wpcf7telegram.php:39
+msgid "Prevent duplicate object creation"
+msgstr ""
+
+#: inc/class-wpcf7telegram.php:84
+msgid "Do you really want to approve?"
+msgstr ""
+
+#: inc/class-wpcf7telegram.php:85
+msgid "Do you really want to refuse?"
+msgstr ""
+
+#: inc/class-wpcf7telegram.php:86
+msgid "Successfully approved"
+msgstr ""
+
+#: inc/class-wpcf7telegram.php:87
+msgid "Request refused"
+msgstr ""
+
+#: inc/class-wpcf7telegram.php:96
+msgid "Bot-settings"
+msgstr ""
+
+#: inc/class-wpcf7telegram.php:103
+msgid "Bot Token<br/><small>You need to create your own Telegram-Bot.<br/><a target=\"_blanc\" href=\"https://core.telegram.org/bots#3-how-do-i-create-a-bot\">How to create</a></small>"
+msgstr ""
+
+#: inc/class-wpcf7telegram.php:112
+msgid "Defined by WPFC7TG_BOT_TOKEN constant"
+msgstr ""
+
+#: inc/class-wpcf7telegram.php:112
+msgid "or define by WPFC7TG_BOT_TOKEN constant"
+msgstr ""
+
+#: inc/class-wpcf7telegram.php:140
+msgid "Telegram notificator settings"
+msgstr ""
+
+#: inc/class-wpcf7telegram.php:150
+msgid "Just use the shortcode <code>[telegram]</code> in the form for activate notification through Telegram."
+msgstr ""
+
+#: inc/class-wpcf7telegram.php:286
+msgid "Error has occured. See php error log."
+msgstr ""
+
+#: inc/class-wpcf7telegram.php:297
+msgid "Bot username"
+msgstr ""
+
+#: inc/class-wpcf7telegram.php:301
+msgid "Bot is online"
+msgstr ""
+
+#: inc/class-wpcf7telegram.php:302
+msgid "Bot is broken"
+msgstr ""
+
+#: inc/class-wpcf7telegram.php:302
+msgid "unknown"
+msgstr ""
+
+#: inc/class-wpcf7telegram.php:306
+msgid "Subscribers list"
+msgstr ""
+
+#: inc/class-wpcf7telegram.php:311
+msgid "List is empty"
+msgstr ""
+
+#: inc/class-wpcf7telegram.php:313
+#, php-format
+msgid "Add user: send the <code>%s</code> comand to your bot"
+msgstr ""
+
+#: inc/class-wpcf7telegram.php:314
+#, php-format
+msgid "Add group: add your bot to the group and send the <code>%s</code> comand to your group"
+msgstr ""
+
+#: inc/class-wpcf7telegram.php:408
+msgid "Subscribed for Contact Form 7 notifications from"
+msgstr ""
+
+#: inc/class-wpcf7telegram.php:505
+msgid "Approve"
+msgstr ""
+
+#: inc/class-wpcf7telegram.php:506
+msgid "Pause"
+msgstr ""
+
+#: inc/class-wpcf7telegram.php:507
+msgid "Delete"
+msgstr ""

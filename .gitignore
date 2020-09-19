@@ -1,0 +1,13 @@
+/wp-admin/
+/wp-includes/
+
+!/wp-content
+/wp-content/*
+!/wp-content/plugins
+/wp-content/plugins/*
+!/wp-content/plugins/cf7-telegram
+
+/*.php
+/*.html
+/*.txt
+/.idea/
