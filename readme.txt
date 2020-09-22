@@ -16,13 +16,13 @@ This plugin allows to post CF7-messages to you through Telegram-bot. Just use sh
 This plugin allows to send Contact Form 7 messages to your Telegram-chat. For this you need to make several simple steps.
 
 1. Create the Telegram-Bot and save the Bot-Token parameter on the settings page Contact Form 7 - CF7 Telegram or to <code>WPFC7TG_BOT_TOKEN</code> constant.
-2. Paste the shortcode <code>[telegram]</code> in your contact form template for activate sending to Telegaram.
+2. Paste the shortcode <code>[telegram]</code> in your contact form template for activate sending to Telegram.
 
 Now you can to add users or group to subscriber list. 
-To add a user send the <code>/cf7tg_start</code> comand to your bot.
-To add a group add your bot to the group and send the <code>/cf7tg_start</code> comand to your group.
+To add a user send the <code>/cf7tg_start</code> command to your bot.
+To add a group add your bot to the group and send the <code>/cf7tg_start</code> command to your group.
 
-After this, you will see the requests on the Contact Form 7 - CF7 Telegram settings page.
+After this, you will see the requests on the Contact Form 7 - CF7 Telegram settings page. Approve or decline them.
 
 = Hooks and constants =
 
@@ -33,7 +33,7 @@ Filter <code>wpcf7tg_markdown</code>.
 Use for customizing markdown tag set.
 
 Constant <code>WPFC7TG_BOT_TOKEN</code>.
-Use for define the bot token value in the programm files.
+Use for define the bot token value in the program files.
 
 This plugin uses [API Telegram](https://core.telegram.org/api "Telegram docs") and makes remote HTTP-requests to Telegram servers for sending your notifications.
 
@@ -66,7 +66,7 @@ You can see your Chat ID by typing anything to Telegram-Bot <code>@wpcf7Bot</cod
 * New interface recipient management
 * Groups are supported
 * WPCF7_ContactForm::prop( 'mail' ) instead WPCF7_ContactForm::$mail
-* FIXED Depence parce_mode by use_html property
+* FIXED Dependence parse_mode by use_html property
 
 = 0.6.2 =
 * Trim for CHAT_ID field elements added
