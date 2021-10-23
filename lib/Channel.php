@@ -49,10 +49,10 @@ class Channel implements wpPostAble{
 	protected function load(){}
 
 	function getChats(): ConnectionCollection {
-		return $this->chats ?? $this->chats = wpConnectionsClient::getChat2GroupRelation()->findConnections();
+		return $this->chats ?? $this->chats = wpConnectionsClient::getChat2ChannelRelation()->findConnections();
 	}
 
 	function getForms(): ConnectionCollection {
-		return $this->forms ?? $this->forms = wpConnectionsClient::getForm2GroupRelation()->findConnections();
+		return $this->forms ?? $this->forms = wpConnectionsClient::getForm2ChannelRelation()->findConnections();
 	}
 }

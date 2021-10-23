@@ -69,15 +69,15 @@ class wpConnectionsClient {
 		return self::$client;
 	}
 
-	public static function getBot2GroupRelation(): \iTRON\wpConnections\Relation {
+	public static function getBot2ChannelRelation(): \iTRON\wpConnections\Relation {
 		return self::getInstance()->getRelation( self::BOT2CHANNEL );
 	}
 
-	public static function getChat2GroupRelation(): \iTRON\wpConnections\Relation {
+	public static function getChat2ChannelRelation(): \iTRON\wpConnections\Relation {
 		return self::getInstance()->getRelation( self::CHAT2CHANNEL );
 	}
 
-	public static function getForm2GroupRelation(): \iTRON\wpConnections\Relation {
+	public static function getForm2ChannelRelation(): \iTRON\wpConnections\Relation {
 		return self::getInstance()->getRelation( self::FORM2CHANNEL );
 	}
 }
