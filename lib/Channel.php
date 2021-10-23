@@ -4,6 +4,8 @@ namespace iTRON\cf7Telegram;
 
 use iTRON\CF7TG\wpConnectionsClient;
 use iTRON\wpConnections\ConnectionCollection;
+use iTRON\wpConnections\Exceptions\ConnectionWrongData;
+use iTRON\wpConnections\Exceptions\MissingParameters;
 use iTRON\wpConnections\Query;
 use iTRON\wpPostAble\wpPostAble;
 use iTRON\wpPostAble\wpPostAbleTrait;
@@ -85,5 +87,14 @@ class Channel implements wpPostAble{
 		}
 
 		return $this->bot;
+	}
+
+	/**
+	 * @throws MissingParameters
+	 * @throws ConnectionWrongData
+	 */
+	public function addChat( Chat $chat ): Channel {
+		wpConnectionsClient::getChat2ChannelRelation()->createConnection( new Query\Connection( $chat->post->ID, $this->post->ID ) );
+		return $this;
 	}
 }
