@@ -97,4 +97,13 @@ class Channel implements wpPostAble{
 		wpConnectionsClient::getChat2ChannelRelation()->createConnection( new Query\Connection( $chat->post->ID, $this->post->ID ) );
 		return $this;
 	}
+
+	/**
+	 * @throws MissingParameters
+	 * @throws ConnectionWrongData
+	 */
+	public function addForm( Form $form ): Channel {
+		wpConnectionsClient::getForm2ChannelRelation()->createConnection( new Query\Connection( $form->post->ID, $this->post->ID ) );
+		return $this;
+	}
 }
