@@ -4,6 +4,7 @@ namespace iTRON\cf7Telegram\Groups;
 
 use iTRON\CF7TG\wpConnectionsClient;
 use iTRON\wpConnections\ConnectionCollection;
+use iTRON\wpConnections\Query;
 use iTRON\wpPostAble\wpPostAble;
 use iTRON\wpPostAble\wpPostAbleTrait;
 use iTRON\wpPostAble\Exceptions\wppaCreatePostException;
@@ -49,10 +50,10 @@ class Channel implements wpPostAble{
 	protected function load(){}
 
 	function getChats(): ConnectionCollection {
-		return $this->chats ?? $this->chats = wpConnectionsClient::getChat2ChannelRelation()->findConnections();
+		return $this->chats ?? $this->chats = wpConnectionsClient::getChat2ChannelRelation()->findConnections( new Query\Connection( null, $this->post->ID ) );
 	}
 
 	function getForms(): ConnectionCollection {
-		return $this->forms ?? $this->forms = wpConnectionsClient::getForm2ChannelRelation()->findConnections();
+		return $this->forms ?? $this->forms = wpConnectionsClient::getForm2ChannelRelation()->findConnections( new Query\Connection( null, $this->post->ID ) );
 	}
 }
