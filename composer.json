@@ -1,0 +1,34 @@
+{
+  "name": "hokoo/wpcf7_telegram",
+  "description": "This plugin allows to post CF7-messages to you through Telegram-bot.",
+  "type": "wordpress-plugin",
+  "minimum-stability": "dev",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Igor Tron",
+      "email": "public@itron.pro"
+    }
+  ],
+  "repositories": [
+    {
+      "type": "vcs",
+      "url": "https://github.com/hokoo/wpPostAble.git"
+    },
+    {
+      "type": "vcs",
+      "url": "https://github.com/hokoo/wpConnections.git"
+    }
+  ],
+  "require": {
+    "ramsey/collection": "*",
+    "longman/telegram-bot": "*",
+    "hokoo/wppostable": "^0.3",
+    "hokoo/wpconnections": "dev-master"
+  },
+  "autoload": {
+    "psr-4": {
+      "iTRON\\cf7Telegram\\": "lib"
+    }
+  }
+}
