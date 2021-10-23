@@ -1,6 +1,6 @@
 <?php
 
-namespace iTRON\cf7Telegram\Groups;
+namespace iTRON\cf7Telegram;
 
 use iTRON\CF7TG\wpConnectionsClient;
 use iTRON\wpConnections\ConnectionCollection;
@@ -9,23 +9,24 @@ use iTRON\wpPostAble\wpPostAble;
 use iTRON\wpPostAble\wpPostAbleTrait;
 use iTRON\wpPostAble\Exceptions\wppaCreatePostException;
 use iTRON\wpPostAble\Exceptions\wppaLoadPostException;
+use OutOfBoundsException;
 
 class Channel implements wpPostAble{
 	use wpPostAbleTrait;
 
 	/**
-	 * @var ConnectionCollection
+	 * @var ChatCollection
 	 */
 	public $chats;
 
 	/**
-	 * @var ConnectionCollection
+	 * @var FormCollection
 	 */
 	public $forms;
 
 	/**
-	 * Bot token
-	 * @var string
+	 * Telegram Bot
+	 * @var Bot
 	 */
 	public $bot;
 
@@ -49,11 +50,40 @@ class Channel implements wpPostAble{
 	 */
 	protected function load(){}
 
-	function getChats(): ConnectionCollection {
-		return $this->chats ?? $this->chats = wpConnectionsClient::getChat2ChannelRelation()->findConnections( new Query\Connection( null, $this->post->ID ) );
+	public function getChats(): ChatCollection {
+		if ( isset( $this->chats ) ) {
+			return $this->chats;
+		}
+
+		$wpConnections = wpConnectionsClient::getChat2ChannelRelation()->findConnections( new Query\Connection( null, $this->post->ID ) );
+		$this->chats = new ChatCollection();
+		return $this->chats->fromConnections( $wpConnections );
 	}
 
-	function getForms(): ConnectionCollection {
-		return $this->forms ?? $this->forms = wpConnectionsClient::getForm2ChannelRelation()->findConnections( new Query\Connection( null, $this->post->ID ) );
+	public function getForms(): FormCollection {
+		if ( isset( $this->forms ) ) {
+			return $this->forms;
+		}
+
+		$wpConnections = wpConnectionsClient::getForm2ChannelRelation()->findConnections( new Query\Connection( null, $this->post->ID ) );
+		$this->forms = new FormCollection();
+		return $this->forms->fromConnections( $wpConnections );
+	}
+
+	public function getBot() {
+		if ( isset( $this->bot ) ) {
+			return $this->bot;
+		}
+
+		$wpConnections = wpConnectionsClient::getBot2ChannelRelation()->findConnections( new Query\Connection( null, $this->post->ID ) );
+		$bot = new FormCollection();
+
+		try {
+			$this->bot = $bot->fromConnections( $wpConnections )->first();
+		} catch ( OutOfBoundsException $e ) {
+			$this->bot = null;
+		}
+
+		return $this->bot;
 	}
 }
