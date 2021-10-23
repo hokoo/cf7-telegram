@@ -106,4 +106,27 @@ class Channel implements wpPostAble{
 		wpConnectionsClient::getForm2ChannelRelation()->createConnection( new Query\Connection( $form->post->ID, $this->post->ID ) );
 		return $this;
 	}
+
+	/**
+	 * @throws MissingParameters
+	 * @throws ConnectionWrongData
+	 */
+	public function setBot( Bot $bot ): Channel {
+		$this->unsetBot();
+
+		wpConnectionsClient::getBot2ChannelRelation()->createConnection( new Query\Connection( $bot->post->ID, $this->post->ID ) );
+
+		return $this;
+	}
+
+	public function unsetBot(): Channel {
+		if ( $this->getBot() ) {
+			$query = new Query\Connection();
+			$query->set( 'from', $this->getBot()->post->ID );
+			$query->set( 'to', $this->post->ID );
+			wpConnectionsClient::getBot2ChannelRelation()->detachConnections( $query );
+		}
+
+		return $this;
+	}
 }
