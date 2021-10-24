@@ -23,8 +23,9 @@
   "require": {
     "ramsey/collection": "*",
     "longman/telegram-bot": "*",
-    "hokoo/wppostable": "^0.3",
-    "hokoo/wpconnections": "dev-master"
+    "hokoo/wppostable": ">=0.3",
+    "hokoo/wpconnections": "dev-master",
+    "ext-json": "*"
   },
   "autoload": {
     "psr-4": {

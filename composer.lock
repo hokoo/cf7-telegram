@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "3266db8197dca6d8e35904714ea92c6d",
+    "content-hash": "9c957315c801d7062d89e9eb72845225",
     "packages": [
         {
             "name": "guzzlehttp/guzzle",
@@ -307,12 +307,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/hokoo/wpConnections.git",
-                "reference": "fa679e4863d4cc79f69e2add9527eb626e92c81e"
+                "reference": "5962cc7b921fa603efe3c959df8a7f49f272fff0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/hokoo/wpConnections/zipball/fa679e4863d4cc79f69e2add9527eb626e92c81e",
-                "reference": "fa679e4863d4cc79f69e2add9527eb626e92c81e",
+                "url": "https://api.github.com/repos/hokoo/wpConnections/zipball/5962cc7b921fa603efe3c959df8a7f49f272fff0",
+                "reference": "5962cc7b921fa603efe3c959df8a7f49f272fff0",
                 "shasum": ""
             },
             "require": {
@@ -338,21 +338,24 @@
                 "source": "https://github.com/hokoo/wpConnections/tree/master",
                 "issues": "https://github.com/hokoo/wpConnections/issues"
             },
-            "time": "2021-10-23T17:01:15+00:00"
+            "time": "2021-10-23T18:50:44+00:00"
         },
         {
             "name": "hokoo/wppostable",
-            "version": "0.3",
+            "version": "dev-master",
             "source": {
                 "type": "git",
                 "url": "https://github.com/hokoo/wpPostAble.git",
-                "reference": "aa9743577fbf773fac55d20edb790bbd95f9f0ad"
+                "reference": "d905f2a998afadf150b3cb24472c52c03b0e2dee"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/hokoo/wpPostAble/zipball/aa9743577fbf773fac55d20edb790bbd95f9f0ad",
-                "reference": "aa9743577fbf773fac55d20edb790bbd95f9f0ad",
+                "url": "https://api.github.com/repos/hokoo/wpPostAble/zipball/d905f2a998afadf150b3cb24472c52c03b0e2dee",
+                "reference": "d905f2a998afadf150b3cb24472c52c03b0e2dee",
                 "shasum": ""
+            },
+            "require": {
+                "ext-json": "*"
             },
             "type": "library",
             "autoload": {
@@ -371,10 +374,10 @@
             ],
             "description": "Library provides a functionality for associating your classes with WordPress class WP_Post.",
             "support": {
-                "source": "https://github.com/hokoo/wpPostAble/tree/0.3",
+                "source": "https://github.com/hokoo/wpPostAble/tree/master",
                 "issues": "https://github.com/hokoo/wpPostAble/issues"
             },
-            "time": "2021-08-21T19:30:23+00:00"
+            "time": "2021-10-24T07:58:18+00:00"
         },
         {
             "name": "longman/telegram-bot",
@@ -992,7 +995,9 @@
     },
     "prefer-stable": false,
     "prefer-lowest": false,
-    "platform": [],
+    "platform": {
+        "ext-json": "*"
+    },
     "platform-dev": [],
     "plugin-api-version": "1.1.0"
 }
