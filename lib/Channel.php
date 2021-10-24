@@ -13,7 +13,7 @@ use iTRON\wpPostAble\Exceptions\wppaCreatePostException;
 use iTRON\wpPostAble\Exceptions\wppaLoadPostException;
 use OutOfBoundsException;
 
-class Channel implements wpPostAble{
+class Channel extends Entity implements wpPostAble{
 	use wpPostAbleTrait;
 
 	/**

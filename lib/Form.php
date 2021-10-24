@@ -7,7 +7,7 @@ use iTRON\wpPostAble\wpPostAbleTrait;
 use iTRON\wpPostAble\Exceptions\wppaCreatePostException;
 use iTRON\wpPostAble\Exceptions\wppaLoadPostException;
 
-class Form implements WPPostAble{
+class Form extends Entity implements WPPostAble{
 	use WPPostAbleTrait;
 
 	/**

@@ -7,7 +7,7 @@ use iTRON\wpPostAble\wpPostAbleTrait;
 use iTRON\wpPostAble\Exceptions\wppaCreatePostException;
 use iTRON\wpPostAble\Exceptions\wppaLoadPostException;
 
-class Chat implements WPPostAble{
+class Chat extends Entity implements WPPostAble{
 	use WPPostAbleTrait;
 
 	const META_CHANNEL_ID = 'cf7tg_channel_id';
