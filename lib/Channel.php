@@ -38,6 +38,8 @@ class Channel extends Entity implements wpPostAble{
 	 * @throws wppaLoadPostException
 	 */
 	public function __construct( int $post_id = 0 ) {
+		parent::__construct();
+
 		$this->wpPostAble( 'cf7tg_channel', $post_id );
 		$this->load();
 	}
@@ -57,7 +59,10 @@ class Channel extends Entity implements wpPostAble{
 			return $this->chats;
 		}
 
-		$wpConnections = wpConnectionsClient::getChat2ChannelRelation()->findConnections( new Query\Connection( null, $this->post->ID ) );
+		$wpConnections = $this->connectionsClient
+			->getChat2ChannelRelation()
+			->findConnections( new Query\Connection( null, $this->post->ID ) );
+
 		$this->chats = new ChatCollection();
 		return $this->chats->fromConnections( $wpConnections );
 	}
@@ -67,7 +72,10 @@ class Channel extends Entity implements wpPostAble{
 			return $this->forms;
 		}
 
-		$wpConnections = wpConnectionsClient::getForm2ChannelRelation()->findConnections( new Query\Connection( null, $this->post->ID ) );
+		$wpConnections = $this->connectionsClient
+			->getForm2ChannelRelation()
+			->findConnections( new Query\Connection( null, $this->post->ID ) );
+
 		$this->forms = new FormCollection();
 		return $this->forms->fromConnections( $wpConnections );
 	}
@@ -77,7 +85,10 @@ class Channel extends Entity implements wpPostAble{
 			return $this->bot;
 		}
 
-		$wpConnections = wpConnectionsClient::getBot2ChannelRelation()->findConnections( new Query\Connection( null, $this->post->ID ) );
+		$wpConnections = $this->connectionsClient
+			->getBot2ChannelRelation()
+			->findConnections( new Query\Connection( null, $this->post->ID ) );
+
 		$bot = new FormCollection();
 
 		try {
@@ -89,29 +100,23 @@ class Channel extends Entity implements wpPostAble{
 		return $this->bot;
 	}
 
-	protected function chatRelation(): Relation {
-		return wpConnectionsClient::getChat2ChannelRelation();
-	}
-
-	protected function formRelation() : Relation {
-		return wpConnectionsClient::getForm2ChannelRelation();
-	}
-
-	protected function botRelation() : Relation {
-		return wpConnectionsClient::getBot2ChannelRelation();
-	}
-
 	/**
 	 * @throws MissingParameters
 	 * @throws ConnectionWrongData
 	 */
 	public function addChat( Chat $chat ): Channel {
-		$this->chatRelation()->createConnection( new Query\Connection( $chat->post->ID, $this->post->ID ) );
+		$this->connectionsClient
+			->getChat2ChannelRelation()
+			->createConnection( new Query\Connection( $chat->post->ID, $this->post->ID ) );
+
 		return $this;
 	}
 
 	public function removeChat( Chat $chat ): Channel {
-		$this->chatRelation()->detachConnections( new Query\Connection( $chat->post->ID, $this->post->ID ) );
+		$this->connectionsClient
+			->getChat2ChannelRelation()
+			->detachConnections( new Query\Connection( $chat->post->ID, $this->post->ID ) );
+
 		return $this;
 	}
 
@@ -120,12 +125,18 @@ class Channel extends Entity implements wpPostAble{
 	 * @throws ConnectionWrongData
 	 */
 	public function addForm( Form $form ): Channel {
-		$this->formRelation()->createConnection( new Query\Connection( $form->post->ID, $this->post->ID ) );
+		$this->connectionsClient
+			->getForm2ChannelRelation()
+			->createConnection( new Query\Connection( $form->post->ID, $this->post->ID ) );
+
 		return $this;
 	}
 
 	public function removeForm( Form $form ): Channel {
-		$this->formRelation()->detachConnections( new Query\Connection( $form->post->ID, $this->post->ID ) );
+		$this->connectionsClient
+			->getForm2ChannelRelation()
+			->detachConnections( new Query\Connection( $form->post->ID, $this->post->ID ) );
+
 		return $this;
 	}
 
@@ -136,7 +147,9 @@ class Channel extends Entity implements wpPostAble{
 	public function setBot( Bot $bot ): Channel {
 		$this->unsetBot();
 
-		$this->botRelation()->createConnection( new Query\Connection( $bot->post->ID, $this->post->ID ) );
+		$this->connectionsClient
+			->getBot2ChannelRelation()
+			->createConnection( new Query\Connection( $bot->post->ID, $this->post->ID ) );
 
 		return $this;
 	}
@@ -146,7 +159,7 @@ class Channel extends Entity implements wpPostAble{
 			$query = new Query\Connection();
 			$query->set( 'from', $this->getBot()->post->ID );
 			$query->set( 'to', $this->post->ID );
-			$this->botRelation()->detachConnections( $query );
+			$this->connectionsClient->getBot2ChannelRelation()->detachConnections( $query );
 		}
 
 		return $this;

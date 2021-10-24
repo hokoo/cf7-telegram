@@ -3,7 +3,8 @@ namespace iTRON\CF7TG;
 
 use Exception;
 use iTRON\wpConnections\Client;
-use iTRON\wpConnections\Query\Relation;
+use iTRON\wpConnections\Relation;
+use iTRON\wpConnections\Query;
 use iTRON\wpConnections\Exceptions\MissingParameters;
 
 class wpConnectionsClient {
@@ -34,7 +35,7 @@ class wpConnectionsClient {
 
 		self::$client = new Client( 'cf7-telegram' );
 
-		$chat2channel = new Relation();
+		$chat2channel = new Query\Relation();
 		$chat2channel
 			->set( 'name', self::CHAT2CHANNEL )
 			->set( 'from', 'cf7tg_chat' )
@@ -42,7 +43,7 @@ class wpConnectionsClient {
 			->set( 'cardinality', 'm-m' )
 			->set( 'duplicatable', false );
 
-		$bot2channel = new Relation();
+		$bot2channel = new Query\Relation();
 		$bot2channel
 			->set( 'name', self::BOT2CHANNEL )
 			->set( 'from', 'cf7tg_bot' )
@@ -50,7 +51,7 @@ class wpConnectionsClient {
 			->set( 'cardinality', 'm-1' )
 			->set( 'duplicatable', false );
 
-		$form2channel = new Relation();
+		$form2channel = new Query\Relation();
 		$form2channel
 			->set( 'name', self::FORM2CHANNEL )
 			->set( 'from', 'wpcf7_contact_form' )
@@ -69,15 +70,15 @@ class wpConnectionsClient {
 		return self::$client;
 	}
 
-	public static function getBot2ChannelRelation(): \iTRON\wpConnections\Relation {
-		return self::getInstance()->getRelation( self::BOT2CHANNEL );
+	public function getBot2ChannelRelation(): Relation {
+		return self::$client->getRelation( self::BOT2CHANNEL );
 	}
 
-	public static function getChat2ChannelRelation(): \iTRON\wpConnections\Relation {
-		return self::getInstance()->getRelation( self::CHAT2CHANNEL );
+	public function getChat2ChannelRelation(): Relation {
+		return self::$client->getRelation( self::CHAT2CHANNEL );
 	}
 
-	public static function getForm2ChannelRelation(): \iTRON\wpConnections\Relation {
-		return self::getInstance()->getRelation( self::FORM2CHANNEL );
+	public function getForm2ChannelRelation(): Relation {
+		return self::$client->getRelation( self::FORM2CHANNEL );
 	}
 }

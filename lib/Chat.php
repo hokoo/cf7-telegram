@@ -19,6 +19,8 @@ class Chat extends Entity implements WPPostAble{
 	 * @throws wppaCreatePostException
 	 */
 	public function __construct( int $chat_id = 0 ) {
+		parent::__construct();
+
 		$this->wpPostAble( 'cf7tg_chat', $chat_id );
 	}
 }
