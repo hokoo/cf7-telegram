@@ -3,10 +3,10 @@
 namespace iTRON\cf7Telegram;
 
 use iTRON\CF7TG\wpConnectionsClient;
-use iTRON\wpConnections\ConnectionCollection;
 use iTRON\wpConnections\Exceptions\ConnectionWrongData;
 use iTRON\wpConnections\Exceptions\MissingParameters;
 use iTRON\wpConnections\Query;
+use iTRON\wpConnections\Relation;
 use iTRON\wpPostAble\wpPostAble;
 use iTRON\wpPostAble\wpPostAbleTrait;
 use iTRON\wpPostAble\Exceptions\wppaCreatePostException;
@@ -89,12 +89,29 @@ class Channel implements wpPostAble{
 		return $this->bot;
 	}
 
+	protected function chatRelation(): Relation {
+		return wpConnectionsClient::getChat2ChannelRelation();
+	}
+
+	protected function formRelation() : Relation {
+		return wpConnectionsClient::getForm2ChannelRelation();
+	}
+
+	protected function botRelation() : Relation {
+		return wpConnectionsClient::getBot2ChannelRelation();
+	}
+
 	/**
 	 * @throws MissingParameters
 	 * @throws ConnectionWrongData
 	 */
 	public function addChat( Chat $chat ): Channel {
-		wpConnectionsClient::getChat2ChannelRelation()->createConnection( new Query\Connection( $chat->post->ID, $this->post->ID ) );
+		$this->chatRelation()->createConnection( new Query\Connection( $chat->post->ID, $this->post->ID ) );
+		return $this;
+	}
+
+	public function removeChat( Chat $chat ): Channel {
+		$this->chatRelation()->detachConnections( new Query\Connection( $chat->post->ID, $this->post->ID ) );
 		return $this;
 	}
 
@@ -103,7 +120,12 @@ class Channel implements wpPostAble{
 	 * @throws ConnectionWrongData
 	 */
 	public function addForm( Form $form ): Channel {
-		wpConnectionsClient::getForm2ChannelRelation()->createConnection( new Query\Connection( $form->post->ID, $this->post->ID ) );
+		$this->formRelation()->createConnection( new Query\Connection( $form->post->ID, $this->post->ID ) );
+		return $this;
+	}
+
+	public function removeForm( Form $form ): Channel {
+		$this->formRelation()->detachConnections( new Query\Connection( $form->post->ID, $this->post->ID ) );
 		return $this;
 	}
 
@@ -114,7 +136,7 @@ class Channel implements wpPostAble{
 	public function setBot( Bot $bot ): Channel {
 		$this->unsetBot();
 
-		wpConnectionsClient::getBot2ChannelRelation()->createConnection( new Query\Connection( $bot->post->ID, $this->post->ID ) );
+		$this->botRelation()->createConnection( new Query\Connection( $bot->post->ID, $this->post->ID ) );
 
 		return $this;
 	}
@@ -124,7 +146,7 @@ class Channel implements wpPostAble{
 			$query = new Query\Connection();
 			$query->set( 'from', $this->getBot()->post->ID );
 			$query->set( 'to', $this->post->ID );
-			wpConnectionsClient::getBot2ChannelRelation()->detachConnections( $query );
+			$this->botRelation()->detachConnections( $query );
 		}
 
 		return $this;
