@@ -10,7 +10,13 @@ abstract class Entity {
 	 */
 	protected $connectionsClient;
 
+	/**
+	 * @var Logger $logger
+	 */
+	protected $logger;
+
 	public function __construct() {
 		$this->connectionsClient = wpConnectionsClient::getInstance();
+		$this->logger = new Logger();
 	}
 }
