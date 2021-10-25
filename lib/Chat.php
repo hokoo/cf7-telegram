@@ -2,6 +2,7 @@
 
 namespace iTRON\cf7Telegram;
 
+use iTRON\wpPostAble\Exceptions\wppaSavePostException;
 use iTRON\wpPostAble\wpPostAble;
 use iTRON\wpPostAble\wpPostAbleTrait;
 use iTRON\wpPostAble\Exceptions\wppaCreatePostException;
@@ -9,10 +10,6 @@ use iTRON\wpPostAble\Exceptions\wppaLoadPostException;
 
 class Chat extends Entity implements WPPostAble{
 	use WPPostAbleTrait;
-
-	const META_CHANNEL_ID = 'cf7tg_channel_id';
-
-	public $username;
 
 	/**
 	 * @throws wppaLoadPostException
@@ -22,5 +19,18 @@ class Chat extends Entity implements WPPostAble{
 		parent::__construct();
 
 		$this->wpPostAble( 'cf7tg_chat', $chat_id );
+	}
+
+	/**
+	 * @throws wppaSavePostException
+	 */
+	public function setChatID( string $chatID ): Chat {
+		$this->setParam( 'chatID', trim( $chatID ) );
+		$this->savePost();
+		return $this;
+	}
+
+	public function getChatID() {
+		return $this->getParam( 'chatID' );
 	}
 }
