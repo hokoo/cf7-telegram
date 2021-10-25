@@ -22,10 +22,10 @@
   ],
   "require": {
     "ramsey/collection": "*",
-    "longman/telegram-bot": "*",
     "hokoo/wppostable": ">=0.3",
     "hokoo/wpconnections": "dev-master",
-    "ext-json": "*"
+    "ext-json": "*",
+    "irazasyed/telegram-bot-sdk": "^2.0"
   },
   "autoload": {
     "psr-4": {

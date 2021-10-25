@@ -10,14 +10,14 @@ use iTRON\wpPostAble\Exceptions\wppaLoadPostException;
 use iTRON\wpPostAble\Exceptions\wppaSavePostException;
 use iTRON\wpPostAble\wpPostAble;
 use iTRON\wpPostAble\wpPostAbleTrait;
-use Longman\TelegramBot\Exception\TelegramException;
-use Longman\TelegramBot\Telegram;
+use Telegram\Bot\Api;
+use Telegram\Bot\Exceptions\TelegramSDKException;
 
 class Bot extends Entity implements wpPostAble{
 	use WPPostAbleTrait;
 
 	/**
-	 * @var Telegram $api
+	 * @var Api $api
 	 */
 	protected $api;
 
@@ -33,9 +33,9 @@ class Bot extends Entity implements wpPostAble{
 		if ( is_null( $this->getToken() ) ) return;
 
 		try {
-			$this->api = new Telegram( $this->getToken() );
-		} catch ( TelegramException $e ) {
-			$this->logger->write( $e->getMessage(), 'Can not authorize the bot.', Logger::LEVEL_CRITICAL );
+			$this->api = new Api( $this->getToken() );
+		} catch ( TelegramSDKException $e ) {
+			$this->logger->write( $e->getMessage(), 'Bot initialization error.', Logger::LEVEL_CRITICAL );
 		}
 	}
 
