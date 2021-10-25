@@ -32,7 +32,7 @@ class Logger {
 				'msg'			=> $title,
 				'data'			=> $data,
 			],
-			[ '%d', '%d', '%s', '%s', '%s' ]
+			[ '%s', '%d', '%d', '%s', '%s' ]
 		);
 
 	}
