@@ -9,6 +9,9 @@
 * Text Domain: cf7-telegram
 * Domain Path: /languages
 */
+
+use iTRON\cf7Telegram\Client;
+
 define( 'WPCF7TG_PLUGIN_NAME', plugin_basename( __FILE__ ) );
 
 define( 'WPCF7TG_DOMAIN', 'cf7-telegram' );
@@ -23,6 +26,8 @@ require __DIR__ . '/vendor/autoload.php';
 //require __DIR__ . '/inc/p2p_activation.php';
 
 $wpcf7tg = wpcf7_Telegram::get_instance();
+
+Client::getInstance()->init();
 
 load_plugin_textdomain( WPCF7TG_DOMAIN, FALSE,  dirname( WPCF7TG_PLUGIN_NAME ) . '/languages' );
 
