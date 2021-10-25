@@ -2,6 +2,9 @@
 
 namespace iTRON\cf7Telegram;
 
+use iTRON\wpConnections\Query;
+use iTRON\wpConnections\Exceptions\ConnectionWrongData;
+use iTRON\wpConnections\Exceptions\MissingParameters;
 use iTRON\wpPostAble\Exceptions\wppaSavePostException;
 use iTRON\wpPostAble\wpPostAble;
 use iTRON\wpPostAble\wpPostAbleTrait;
@@ -32,5 +35,23 @@ class Chat extends Entity implements WPPostAble{
 
 	public function getChatID() {
 		return $this->getParam( 'chatID' );
+	}
+
+	/**
+	 * @throws ConnectionWrongData
+	 * @throws MissingParameters
+	 */
+	public function connectChannel( Channel $channel ): Chat {
+		$channel->addChat( $this );
+		return $this;
+	}
+
+	public function disconnectChannel( Channel $channel = null ): Chat {
+		$channelID = isset ( $channel ) ? $channel->post->ID : null;
+		$this->connectionsClient
+			->getChat2ChannelRelation()
+			->detachConnections( new Query\Connection( $this->post->ID, $channelID ) );
+
+		return $this;
 	}
 }
