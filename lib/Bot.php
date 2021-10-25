@@ -30,6 +30,10 @@ class Bot extends Entity implements wpPostAble{
 
 		$this->wpPostAble( Client::CPT_BOT, $bot_id );
 
+		$this->initAPI();
+	}
+
+	private function initAPI() {
 		if ( is_null( $this->getToken() ) ) return;
 
 		try {
@@ -49,6 +53,7 @@ class Bot extends Entity implements wpPostAble{
 	public function setToken( string $token ): Bot {
 		$this->setParam( 'token', trim( $token ) );
 		$this->savePost();
+		$this->initAPI();
 		return $this;
 	}
 
@@ -82,4 +87,10 @@ class Bot extends Entity implements wpPostAble{
 
 		return $this;
 	}
+
+	// @TODO Temporary method
+	public function getAPI() {
+		return $this->api;
+	}
+
 }
