@@ -67,12 +67,12 @@ class Bot extends Entity implements wpPostAble{
 	 * @throws ConnectionWrongData
 	 * @throws MissingParameters
 	 */
-	public function connectChannel( Channel $channel ): Bot {
+	public function connectChannel( Channel $channel ): Entity {
 		$channel->setBot( $this );
 		return $this;
 	}
 
-	public function disconnectChannel( Channel $channel = null ): Bot {
+	public function disconnectChannel( Channel $channel = null ): Entity {
 		$channelID = isset ( $channel ) ? $channel->post->ID : null;
 		$this->connectionsClient
 			->getBot2ChannelRelation()

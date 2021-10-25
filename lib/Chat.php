@@ -41,12 +41,12 @@ class Chat extends Entity implements WPPostAble{
 	 * @throws ConnectionWrongData
 	 * @throws MissingParameters
 	 */
-	public function connectChannel( Channel $channel ): Chat {
+	public function connectChannel( Channel $channel ): Entity {
 		$channel->addChat( $this );
 		return $this;
 	}
 
-	public function disconnectChannel( Channel $channel = null ): Chat {
+	public function disconnectChannel( Channel $channel = null ): Entity {
 		$channelID = isset ( $channel ) ? $channel->post->ID : null;
 		$this->connectionsClient
 			->getChat2ChannelRelation()

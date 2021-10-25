@@ -164,4 +164,15 @@ class Channel extends Entity implements wpPostAble{
 
 		return $this;
 	}
+
+	/**
+	 * Nothing to release.
+	 */
+	protected function connectChannel( Channel $channel ): Entity {
+		return $this;
+	}
+
+	protected function disconnectChannel( Channel $channel = null ): Entity {
+		return $this;
+	}
 }
