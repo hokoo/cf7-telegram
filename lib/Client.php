@@ -58,7 +58,7 @@ class Client {
 		add_action( 'init', [ $this, 'registerCPT' ] );
 	}
 
-	private function registerCPT() {
+	public function registerCPT() {
 
 		register_post_type(self::CPT_BOT, [
 			'labels' => [
@@ -122,7 +122,7 @@ class Client {
 			$this->getConnectionsClient()->registerRelation( $bot2channel );
 			$this->getConnectionsClient()->registerRelation( $form2channel );
 		} catch ( wpConnections\Exceptions\MissingParameters $e ) {
-			$this->logger->write( "[TELEGRAM] {$e->getMessage()}", 'Can not register the relations.', Logger::LEVEL_CRITICAL );
+			$this->logger->write( $e->getMessage(), 'Can not register the relations.', Logger::LEVEL_CRITICAL );
 		}
 	}
 

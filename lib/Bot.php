@@ -30,6 +30,8 @@ class Bot extends Entity implements wpPostAble{
 
 		$this->wpPostAble( Client::CPT_BOT, $bot_id );
 
+		if ( is_null( $this->getToken() ) ) return;
+
 		try {
 			$this->api = new Telegram( $this->getToken() );
 		} catch ( TelegramException $e ) {
@@ -37,7 +39,7 @@ class Bot extends Entity implements wpPostAble{
 		}
 	}
 
-	public function getToken(): string {
+	public function getToken() {
 		return $this->getParam( 'token' );
 	}
 
