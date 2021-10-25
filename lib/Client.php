@@ -16,6 +16,11 @@ class Client {
 	 */
 	private static $connectionsClient;
 
+	/**
+	 * @var Logger $logger
+	 */
+	private $logger;
+
 	const CPT_CHAT = 'cf7tg_chat';
 	const CPT_BOT = 'cf7tg_bot';
 	const CPT_CHANNEL = 'cf7tg_channel';
@@ -46,9 +51,11 @@ class Client {
 	}
 
 	public function init() {
-		add_action( 'init', [ $this, 'registerCPT' ] );
+		$this->logger = new Logger();
 
 		$this->registerConnectionsClient();
+
+		add_action( 'init', [ $this, 'registerCPT' ] );
 	}
 
 	private function registerCPT() {
@@ -115,7 +122,7 @@ class Client {
 			$this->getConnectionsClient()->registerRelation( $bot2channel );
 			$this->getConnectionsClient()->registerRelation( $form2channel );
 		} catch ( wpConnections\Exceptions\MissingParameters $e ) {
-			error_log( "[TELEGRAM] createRelation error: {$e->getMessage()}" );
+			$this->logger->write( "[TELEGRAM] {$e->getMessage()}", 'Can not register the relations.', Logger::LEVEL_CRITICAL );
 		}
 	}
 
