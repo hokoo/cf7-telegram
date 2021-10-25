@@ -2,11 +2,9 @@
 
 namespace iTRON\cf7Telegram;
 
-use iTRON\CF7TG\wpConnectionsClient;
-
 abstract class Entity {
 	/**
-	 * @var wpConnectionsClient $connectionsClient
+	 * @var Client $connectionsClient
 	 */
 	protected $connectionsClient;
 
@@ -16,7 +14,7 @@ abstract class Entity {
 	protected $logger;
 
 	public function __construct() {
-		$this->connectionsClient = wpConnectionsClient::getInstance();
+		$this->connectionsClient = Client::getInstance()->getConnectionsClient();
 		$this->logger = new Logger();
 	}
 

@@ -2,7 +2,6 @@
 
 namespace iTRON\cf7Telegram;
 
-use iTRON\CF7TG\wpConnectionsClient;
 use iTRON\wpConnections\Exceptions\ConnectionWrongData;
 use iTRON\wpConnections\Exceptions\MissingParameters;
 use iTRON\wpConnections\Query;
@@ -40,7 +39,7 @@ class Channel extends Entity implements wpPostAble{
 	public function __construct( int $post_id = 0 ) {
 		parent::__construct();
 
-		$this->wpPostAble( 'cf7tg_channel', $post_id );
+		$this->wpPostAble( Client::CPT_CHANNEL, $post_id );
 		$this->load();
 	}
 

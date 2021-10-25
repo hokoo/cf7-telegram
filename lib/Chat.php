@@ -21,7 +21,7 @@ class Chat extends Entity implements WPPostAble{
 	public function __construct( int $chat_id = 0 ) {
 		parent::__construct();
 
-		$this->wpPostAble( 'cf7tg_chat', $chat_id );
+		$this->wpPostAble( Client::CPT_CHAT, $chat_id );
 	}
 
 	/**

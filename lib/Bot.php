@@ -28,7 +28,7 @@ class Bot extends Entity implements wpPostAble{
 	public function __construct( int $bot_id = 0 ) {
 		parent::__construct();
 
-		$this->wpPostAble( 'cf7tg_bot', $bot_id );
+		$this->wpPostAble( Client::CPT_BOT, $bot_id );
 
 		try {
 			$this->api = new Telegram( $this->getToken() );
