@@ -1,13 +1,23 @@
 <?php
+namespace iTRON\cf7Telegram;
 
 use iTRON\wpConnections\ConnectionCollection;
+use iTRON\wpPostAble\wpPostAble;
+use Ramsey\Collection\CollectionInterface;
 
 trait wppaCollectionFromConnectionsTrait {
 
-	public function fromConnections( ConnectionCollection $connections, string $sourceColumn = 'from' ): self {
+	public function createByConnections( ConnectionCollection $connections, string $sourceColumn = 'from' ): self {
 		// Chat IDs obtained
 		$ids = $connections->column( $sourceColumn );
 
+		return $this->createByIDs( $ids );
+	}
+
+	/**
+	 * @TODO Logging exceptions
+	 */
+	public function createByIDs( array $ids ): self {
 		$classname = $this->getType();
 
 		foreach ( $ids as $id ) {
@@ -15,5 +25,16 @@ trait wppaCollectionFromConnectionsTrait {
 		}
 
 		return $this;
+	}
+
+	/**
+	 * @param array $ids
+	 *
+	 * @return CollectionInterface
+	 */
+	public function filterByIDs( array $ids ): CollectionInterface {
+		return $this->filter( function ( wpPostAble $collectionItem ) use ( $ids ) {
+			return in_array( $collectionItem->getPost()->ID, $ids, false );
+		} );
 	}
 }
