@@ -2,8 +2,12 @@
 
 namespace iTRON\cf7Telegram;
 
-use Exception;
+use iTRON\cf7Telegram\Collections\ChannelCollection;
 use iTRON\wpConnections;
+use WP_Query;
+use WPCF7_ContactForm;
+use WPCF7_Submission;
+use Exception;
 
 class Client {
 	/**
@@ -15,6 +19,11 @@ class Client {
 	 * @var wpConnections\Client;
 	 */
 	private static $connectionsClient;
+
+	/**
+	 * @var ChannelCollection $channels
+	 */
+	private $channels;
 
 	/**
 	 * @var Logger $logger
@@ -55,7 +64,8 @@ class Client {
 
 		$this->registerConnectionsClient();
 
-		add_action( 'init', [ $this, 'registerCPT' ] );
+		add_action( 'init', [ $this, 'registerCPT' ], 0 );
+		add_action( 'wpcf7_before_send_mail', [ $this, 'handleSubscribe' ], 99999, 3 );
 	}
 
 	public function registerCPT() {
@@ -124,6 +134,25 @@ class Client {
 		} catch ( wpConnections\Exceptions\MissingParameters $e ) {
 			$this->logger->write( $e->getMessage(), 'Can not register the relations.', Logger::LEVEL_CRITICAL );
 		}
+	}
+
+	public function handleSubscribe( WPCF7_ContactForm $cf, &$abort, WPCF7_Submission $instance ) {
+		CF7::handleSubscribe( $cf, $abort, $instance );
+	}
+
+	public function getChannels(): ChannelCollection {
+		if ( ! isset( $this->channels ) ) {
+			$q = new WP_Query( [
+				'post_type'     => self::CPT_CHANNEL,
+				'fields'        => 'ids',
+				'posts_per_pge' => -1,
+			] );
+
+			$this->channels = new ChannelCollection();
+			$this->channels->createByIDs( $q->posts );
+		}
+
+		return $this->channels;
 	}
 
 	public function getConnectionsClient(): wpConnections\Client {

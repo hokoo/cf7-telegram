@@ -49,6 +49,11 @@ The Chat ID parameter is your Telegram-identifier. But this is not your phone nu
 You can see your Chat ID by typing anything to Telegram-Bot <code>@wpcf7Bot</code>.
 
 == Changelog ==
+= 1.0 =
+
+* Filter name 'wpcf7tg_markdown' replaced with 'cf7tg_markdown'
+* Filter 'cf7tg_markdown_content' added
+
 = 0.8 =
 * Addons available
 

@@ -48,7 +48,7 @@ class Chat extends Entity implements WPPostAble{
 
 	public function disconnectChannel( Channel $channel = null ): Entity {
 		$channelID = isset ( $channel ) ? $channel->post->ID : null;
-		$this->connectionsClient
+		$this->client
 			->getChat2ChannelRelation()
 			->detachConnections( new Query\Connection( $this->post->ID, $channelID ) );
 

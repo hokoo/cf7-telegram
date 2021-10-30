@@ -2,10 +2,12 @@
 
 namespace iTRON\cf7Telegram;
 
+use iTRON\cf7Telegram\Collections\BotCollection;
+use iTRON\cf7Telegram\Collections\ChatCollection;
+use iTRON\cf7Telegram\Collections\FormCollection;
 use iTRON\wpConnections\Exceptions\ConnectionWrongData;
 use iTRON\wpConnections\Exceptions\MissingParameters;
 use iTRON\wpConnections\Query;
-use iTRON\wpConnections\Relation;
 use iTRON\wpPostAble\wpPostAble;
 use iTRON\wpPostAble\wpPostAbleTrait;
 use iTRON\wpPostAble\Exceptions\wppaCreatePostException;
@@ -58,12 +60,12 @@ class Channel extends Entity implements wpPostAble{
 			return $this->chats;
 		}
 
-		$wpConnections = $this->connectionsClient
+		$wpConnections = $this->client
 			->getChat2ChannelRelation()
-			->findConnections( new Query\Connection( null, $this->post->ID ) );
+			->findConnections( new Query\Connection( 0, $this->post->ID ) );
 
 		$this->chats = new ChatCollection();
-		return $this->chats->fromConnections( $wpConnections );
+		return $this->chats->createByConnections( $wpConnections );
 	}
 
 	public function getForms(): FormCollection {
@@ -71,12 +73,12 @@ class Channel extends Entity implements wpPostAble{
 			return $this->forms;
 		}
 
-		$wpConnections = $this->connectionsClient
+		$wpConnections = $this->client
 			->getForm2ChannelRelation()
-			->findConnections( new Query\Connection( null, $this->post->ID ) );
+			->findConnections( new Query\Connection( 0, $this->post->ID ) );
 
 		$this->forms = new FormCollection();
-		return $this->forms->fromConnections( $wpConnections );
+		return $this->forms->createByConnections( $wpConnections );
 	}
 
 	public function getBot() {
@@ -84,14 +86,14 @@ class Channel extends Entity implements wpPostAble{
 			return $this->bot;
 		}
 
-		$wpConnections = $this->connectionsClient
+		$wpConnections = $this->client
 			->getBot2ChannelRelation()
-			->findConnections( new Query\Connection( null, $this->post->ID ) );
+			->findConnections( new Query\Connection( 0, $this->post->ID ) );
 
-		$bot = new FormCollection();
+		$bot = new BotCollection();
 
 		try {
-			$this->bot = $bot->fromConnections( $wpConnections )->first();
+			$this->bot = $bot->createByConnections( $wpConnections )->first();
 		} catch ( OutOfBoundsException $e ) {
 			$this->bot = null;
 		}
@@ -104,7 +106,7 @@ class Channel extends Entity implements wpPostAble{
 	 * @throws ConnectionWrongData
 	 */
 	public function addChat( Chat $chat ): Channel {
-		$this->connectionsClient
+		$this->client
 			->getChat2ChannelRelation()
 			->createConnection( new Query\Connection( $chat->post->ID, $this->post->ID ) );
 
@@ -112,7 +114,7 @@ class Channel extends Entity implements wpPostAble{
 	}
 
 	public function removeChat( Chat $chat ): Channel {
-		$this->connectionsClient
+		$this->client
 			->getChat2ChannelRelation()
 			->detachConnections( new Query\Connection( $chat->post->ID, $this->post->ID ) );
 
@@ -124,7 +126,7 @@ class Channel extends Entity implements wpPostAble{
 	 * @throws ConnectionWrongData
 	 */
 	public function addForm( Form $form ): Channel {
-		$this->connectionsClient
+		$this->client
 			->getForm2ChannelRelation()
 			->createConnection( new Query\Connection( $form->post->ID, $this->post->ID ) );
 
@@ -132,7 +134,7 @@ class Channel extends Entity implements wpPostAble{
 	}
 
 	public function removeForm( Form $form ): Channel {
-		$this->connectionsClient
+		$this->client
 			->getForm2ChannelRelation()
 			->detachConnections( new Query\Connection( $form->post->ID, $this->post->ID ) );
 
@@ -146,7 +148,7 @@ class Channel extends Entity implements wpPostAble{
 	public function setBot( Bot $bot ): Channel {
 		$this->unsetBot();
 
-		$this->connectionsClient
+		$this->client
 			->getBot2ChannelRelation()
 			->createConnection( new Query\Connection( $bot->post->ID, $this->post->ID ) );
 
@@ -158,10 +160,24 @@ class Channel extends Entity implements wpPostAble{
 			$query = new Query\Connection();
 			$query->set( 'from', $this->getBot()->post->ID );
 			$query->set( 'to', $this->post->ID );
-			$this->connectionsClient->getBot2ChannelRelation()->detachConnections( $query );
+			$this->client->getBot2ChannelRelation()->detachConnections( $query );
 		}
 
 		return $this;
+	}
+
+	public function doSendOut( string $message, string $mode ) {
+		do_action( 'logger', ['doSendOut', $this] );
+		$chats = $this->getChats();
+
+		if ( $chats->isEmpty() ) {
+			return;
+		}
+
+		foreach ( $chats as $chat ) {
+			/** @var Chat $chat */
+			$this->getBot()->sendMessage( $chat->getChatID(), $message, $mode );
+		}
 	}
 
 	/**

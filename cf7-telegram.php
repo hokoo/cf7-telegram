@@ -27,7 +27,7 @@ require __DIR__ . '/vendor/autoload.php';
 
 $wpcf7tg = wpcf7_Telegram::get_instance();
 
-Client::getInstance()->init();
+add_action( 'setup_theme', [ Client::getInstance(), 'init' ] );
 
 load_plugin_textdomain( WPCF7TG_DOMAIN, FALSE,  dirname( WPCF7TG_PLUGIN_NAME ) . '/languages' );
 
