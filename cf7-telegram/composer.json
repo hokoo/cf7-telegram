@@ -1,5 +1,5 @@
 {
-  "name": "hokoo/wpcf7_telegram",
+  "name": "hokoo/wpcf7_telegram_app",
   "description": "Plugin provides Telegram notifications about incoming Contact Form 7 messages.",
   "type": "wordpress-plugin",
   "minimum-stability": "dev",

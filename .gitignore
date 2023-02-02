@@ -1,2 +1,15 @@
 /vendor/
+/cf7-telegram/vendor/
+/wordpress/
+/wp-content/
+
+/index.php
+/wp-config.php
+/.env
+
+# logs
+/install/nginx/*
+/install/php-fpm/error.log
+
+# Configs
 /.idea/

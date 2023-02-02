@@ -1,0 +1,56 @@
+version: "3"
+
+services:
+  mysql:
+    container_name: "${PROJECT_NAME}_mysql"
+    image: mysql:5.7
+    stop_grace_period: 30s
+    environment:
+      MYSQL_ROOT_PASSWORD: $DB_ROOT_PASSWORD
+      MYSQL_DATABASE: $DB_NAME
+      MYSQL_USER: $DB_USER
+      MYSQL_PASSWORD: $DB_PASSWORD
+    ports:
+      - "3066:3306"
+    networks:
+      - cf7tgdev-network
+
+  php:
+    build:
+      context: install/php-fpm
+      args:
+        NWP_PHP_VER: $PHP_TAG
+    container_name: "${PROJECT_NAME}_php"
+    environment:
+      PHP_SENDMAIL_PATH: /usr/sbin/sendmail -t -i -S mailhog:1025
+      DB_HOST: $DB_HOST
+      DB_USER: $DB_USER
+      DB_PASSWORD: $DB_PASSWORD
+      DB_NAME: $DB_NAME
+      PHP_FPM_USER: wodby
+      PHP_FPM_GROUP: wodby
+    volumes:
+      - ./:/var/www/html
+    networks:
+      - cf7tgdev-network
+
+  nginx:
+    container_name: "${PROJECT_NAME}_nginx"
+    image: nginx:alpine
+    working_dir: /var/www/html/
+    depends_on:
+      - php
+    volumes:
+      - ./:/var/www/html/
+      - ./install/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./install/php-fpm/error.log:/var/log/php/cf7tgdev.error.log
+      - ./install/nginx/access.log:/var/log/nginx/cf7tgdev.access.log
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - cf7tgdev-network
+
+networks:
+  cf7tgdev-network:
+    driver: bridge
