@@ -1,9 +1,7 @@
 {
   "name": "hokoo/wpcf7_telegram",
-  "description": "This plugin allows to post CF7-messages to you through Telegram-bot.",
-  "type": "wordpress-plugin",
-  "minimum-stability": "dev",
-  "license": "MIT",
+  "description": "",
+  "license": "proprietary",
   "authors": [
     {
       "name": "Igor Tron",
@@ -12,39 +10,38 @@
   ],
   "repositories": [
     {
-      "type": "package",
-      "package": {
-        "name": "takayukister/contact-form-7",
-        "version": "5.5.2",
-        "source": {
-          "url": "https://github.com/takayukister/contact-form-7.git",
-          "type": "git",
-          "reference": "master"
-        }
-      }
-    },
-    {
-      "type": "vcs",
-      "url": "https://github.com/hokoo/wpPostAble.git"
-    },
-    {
-      "type": "vcs",
-      "url": "https://github.com/hokoo/wpConnections.git"
+      "type": "composer",
+      "url": "https://wpackagist.org"
     }
   ],
   "require": {
-    "ramsey/collection": "*",
-    "hokoo/wppostable": ">=0.3",
-    "hokoo/wpconnections": "dev-master",
-    "ext-json": "*",
-    "irazasyed/telegram-bot-sdk": "^2.0"
-  },
-  "require-dev": {
-    "takayukister/contact-form-7": "5.5.2"
+    "johnpbloch/wordpress-core-installer": "*",
+    "composer/installers": "^1.0@dev",
+    "johnpbloch/wordpress": "^5",
+    "wpackagist-plugin/contact-form-7": "5.5.6.1",
+    "mobiledetect/mobiledetectlib": "^2.8",
+    "wpackagist-plugin/classic-editor": "^1.5",
+    "wpackagist-plugin/wp-smtp": "^1.1",
+    "johnbillion/query-monitor": "^3.7",
+    "wpackagist-plugin/wp-data-logger": "^2.0"
   },
   "autoload": {
-    "psr-4": {
-      "iTRON\\cf7Telegram\\": "lib"
+  },
+  "extra": {
+    "installer-paths": {
+      "wordpress/wp-content/plugins/{$name}": [
+        "type:wordpress-plugin"
+      ]
+    }
+  },
+  "scripts": {
+    "pre-install-cmd": [],
+    "post-install-cmd": []
+  },
+  "config": {
+    "allow-plugins": {
+      "composer/installers": true,
+      "johnpbloch/wordpress-core-installer": true
     }
   }
 }

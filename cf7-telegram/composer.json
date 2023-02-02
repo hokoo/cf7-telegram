@@ -1,0 +1,35 @@
+{
+  "name": "hokoo/wpcf7_telegram_app",
+  "description": "Plugin provides Telegram notifications about incoming Contact Form 7 messages.",
+  "type": "wordpress-plugin",
+  "minimum-stability": "dev",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Igor Tron",
+      "email": "public@itron.pro"
+    }
+  ],
+  "repositories": [
+    {
+      "type": "vcs",
+      "url": "https://github.com/hokoo/wpPostAble.git"
+    },
+    {
+      "type": "vcs",
+      "url": "https://github.com/hokoo/wpConnections.git"
+    }
+  ],
+  "require": {
+    "ramsey/collection": "*",
+    "hokoo/wppostable": ">=0.3",
+    "hokoo/wpconnections": "dev-master",
+    "ext-json": "*",
+    "irazasyed/telegram-bot-sdk": "^2.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "iTRON\\cf7Telegram\\": "lib"
+    }
+  }
+}
