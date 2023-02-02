@@ -1,6 +1,6 @@
 {
   "name": "hokoo/wpcf7_telegram",
-  "description": "This plugin allows to post CF7-messages to you through Telegram-bot.",
+  "description": "Plugin provides Telegram notifications about incoming Contact Form 7 messages.",
   "type": "wordpress-plugin",
   "minimum-stability": "dev",
   "license": "MIT",
@@ -11,18 +11,6 @@
     }
   ],
   "repositories": [
-    {
-      "type": "package",
-      "package": {
-        "name": "takayukister/contact-form-7",
-        "version": "5.5.2",
-        "source": {
-          "url": "https://github.com/takayukister/contact-form-7.git",
-          "type": "git",
-          "reference": "master"
-        }
-      }
-    },
     {
       "type": "vcs",
       "url": "https://github.com/hokoo/wpPostAble.git"
@@ -38,9 +26,6 @@
     "hokoo/wpconnections": "dev-master",
     "ext-json": "*",
     "irazasyed/telegram-bot-sdk": "^2.0"
-  },
-  "require-dev": {
-    "takayukister/contact-form-7": "5.5.2"
   },
   "autoload": {
     "psr-4": {
