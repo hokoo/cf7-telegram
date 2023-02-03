@@ -3,7 +3,7 @@
 # import variables from .env file
 . ./.env
 
-echo -e -n "${RRed}Script will remove all configs and generated folders. Sure? (y/n)${Color_Off}"
+echo -e -n "${RRED}Script will remove all configs and generated folders. Sure? (y/n)${COLOR_OFF}"
 
 read item
 case "$item" in

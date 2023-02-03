@@ -55,16 +55,15 @@ server {
 
     if (!-e $request_filename) {
         rewrite ^/(wp-admin/.*)$ /wordpress/$1 last;
-    	rewrite ^/[_0-9a-zA-Z-\/]+(/wp-admin/.*)$ /wordpress/$1 last;
 
     	rewrite /wp-admin$ $scheme://$host$uri/ permanent;
 
     	rewrite ^/(wp-includes/.*)$ /wordpress/$1 last;
+    	rewrite ^/(wp-content/.*)$ /wordpress/$1 last;
 
-    	rewrite ^/[_0-9a-zA-Z-\/]+(/wp-includes/.*) /wordpress/$1 last;
     	rewrite ^/(wp-[^/]+\.php)$ /wordpress/$1 last;
-        rewrite ^/[_0-9a-zA-Z-\/]+(/wp-.*) /wordpress/$1 last;
-        rewrite ^/[_0-9a-zA-Z-\/]+(/.*\.php)$ $1 last;
+        rewrite ^/(/wp-.*) /wordpress/$1 last;
+        rewrite ^/(/.*\.php)$ $1 last;
     }
 
 

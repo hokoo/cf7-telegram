@@ -10,7 +10,7 @@ echo "Containers creating..."
 docker-compose -p cf7tg up -d
 echo "Containers created."
 
-echo -e "Composers installation... Yes, there are two composers ${RYELLOW}:-D${COLOR_OFF}"
+echo -e "Composers installation... Yes, there are two composers here ${RYELLOW}:-D${COLOR_OFF}"
 docker-compose -p cf7tg exec php sh -c "composer install"
 docker-compose -p cf7tg exec php sh -c "cd ./cf7-telegram && composer install"
 
@@ -18,7 +18,7 @@ echo "WP setup preparing..."
 # prepare file structure
 
 # Now we have to clone plugin into WP plugins directory
-make sync
+make sync q
 
 [ ! -f ./index.php ] && echo "<?php
 define( 'WP_USE_THEMES', true );
@@ -38,7 +38,10 @@ case "$item" in
     y|Y)
     echo "WP database init new instance..."
     docker-compose -p cf7tg exec php sh -c "wp core install --url=$PROJECT_BASE_URL --title=\"$WP_TITLE\" --admin_user=$WP_ADMIN --admin_password=$WP_ADMIN_PASS --admin_email=$WP_ADMIN_EMAIL --skip-email"
-    printf "${RGREEN}WP User Admin: ${RYELLOW}%s \n${RGREEN}WP User Pass: ${RYELLOW}%s${COLOR_OFF}\n" $WP_ADMIN $WP_ADMIN_PASS
+    docker-compose -p cf7tg exec php sh -c "wp plugin delete akismet hello"
+    docker-compose -p cf7tg exec php sh -c "wp plugin activate --all"
+    docker-compose -p cf7tg exec php sh -c "wp core update --version=5.3"
+    printf "WP User Admin: ${RYELLOW}%s \n${COLOR_OFF}WP User Pass: ${RYELLOW}%s${COLOR_OFF}\n" $WP_ADMIN $WP_ADMIN_PASS
       ;;
 
     *)
@@ -46,6 +49,6 @@ case "$item" in
       ;;
 esac
 
-echo -e "${RRED}Do not forget update the hosts file with line:"
-echo -e "${RGREEN}127.0.0.1 cf7tgdev.loc${COLOR_OFF}"
+echo -e "${ICYAN}Do not forget update the hosts file with line:"
+echo -e "${BIGREEN}127.0.0.1 cf7tgdev.loc${COLOR_OFF}"
 echo "Done."
