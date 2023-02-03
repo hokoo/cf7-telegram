@@ -37,7 +37,7 @@ read -r item
 case "$item" in
     y|Y)
     echo "WP database init new instance..."
-    docker-compose -p cf7tg exec php sh -c "wp core install --url=$PROJECT_BASE_URL --title=\"$WP_TITLE\" --admin_user=$WP_ADMIN --admin_password=$WP_ADMIN_PASS --admin_email=$WP_ADMIN_EMAIL --skip-email"
+    docker-compose -p cf7tg exec php sh -c "wp db reset --yes && wp core install --url=$PROJECT_BASE_URL --title=\"$WP_TITLE\" --admin_user=$WP_ADMIN --admin_password=$WP_ADMIN_PASS --admin_email=$WP_ADMIN_EMAIL --skip-email"
     docker-compose -p cf7tg exec php sh -c "wp plugin delete akismet hello"
     docker-compose -p cf7tg exec php sh -c "wp plugin activate --all"
     docker-compose -p cf7tg exec php sh -c "wp core update --version=5.3"
