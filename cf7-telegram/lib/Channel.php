@@ -62,7 +62,7 @@ class Channel extends Entity implements wpPostAble{
 
 		$wpConnections = $this->client
 			->getChat2ChannelRelation()
-			->findConnections( new Query\Connection( 0, $this->post->ID ) );
+			->findConnections( new Query\Connection( 0, $this->getPost()->ID ) );
 
 		$this->chats = new ChatCollection();
 		return $this->chats->createByConnections( $wpConnections );
@@ -75,7 +75,7 @@ class Channel extends Entity implements wpPostAble{
 
 		$wpConnections = $this->client
 			->getForm2ChannelRelation()
-			->findConnections( new Query\Connection( 0, $this->post->ID ) );
+			->findConnections( new Query\Connection( 0, $this->getPost()->ID ) );
 
 		$this->forms = new FormCollection();
 		return $this->forms->createByConnections( $wpConnections );
@@ -88,7 +88,7 @@ class Channel extends Entity implements wpPostAble{
 
 		$wpConnections = $this->client
 			->getBot2ChannelRelation()
-			->findConnections( new Query\Connection( 0, $this->post->ID ) );
+			->findConnections( new Query\Connection( 0, $this->getPost()->ID ) );
 
 		$bot = new BotCollection();
 
@@ -108,7 +108,7 @@ class Channel extends Entity implements wpPostAble{
 	public function addChat( Chat $chat ): Channel {
 		$this->client
 			->getChat2ChannelRelation()
-			->createConnection( new Query\Connection( $chat->post->ID, $this->post->ID ) );
+			->createConnection( new Query\Connection( $chat->getPost()->ID, $this->getPost()->ID ) );
 
 		return $this;
 	}
@@ -116,7 +116,7 @@ class Channel extends Entity implements wpPostAble{
 	public function removeChat( Chat $chat ): Channel {
 		$this->client
 			->getChat2ChannelRelation()
-			->detachConnections( new Query\Connection( $chat->post->ID, $this->post->ID ) );
+			->detachConnections( new Query\Connection( $chat->getPost()->ID, $this->getPost()->ID ) );
 
 		return $this;
 	}
@@ -128,7 +128,7 @@ class Channel extends Entity implements wpPostAble{
 	public function addForm( Form $form ): Channel {
 		$this->client
 			->getForm2ChannelRelation()
-			->createConnection( new Query\Connection( $form->post->ID, $this->post->ID ) );
+			->createConnection( new Query\Connection( $form->getPost()->ID, $this->getPost()->ID ) );
 
 		return $this;
 	}
@@ -136,7 +136,7 @@ class Channel extends Entity implements wpPostAble{
 	public function removeForm( Form $form ): Channel {
 		$this->client
 			->getForm2ChannelRelation()
-			->detachConnections( new Query\Connection( $form->post->ID, $this->post->ID ) );
+			->detachConnections( new Query\Connection( $form->getPost()->ID, $this->getPost()->ID ) );
 
 		return $this;
 	}
@@ -150,7 +150,7 @@ class Channel extends Entity implements wpPostAble{
 
 		$this->client
 			->getBot2ChannelRelation()
-			->createConnection( new Query\Connection( $bot->post->ID, $this->post->ID ) );
+			->createConnection( new Query\Connection( $bot->getPost()->ID, $this->getPost()->ID ) );
 
 		return $this;
 	}
@@ -158,8 +158,8 @@ class Channel extends Entity implements wpPostAble{
 	public function unsetBot(): Channel {
 		if ( $this->getBot() ) {
 			$query = new Query\Connection();
-			$query->set( 'from', $this->getBot()->post->ID );
-			$query->set( 'to', $this->post->ID );
+			$query->set( 'from', $this->getBot()->getPost()->ID );
+			$query->set( 'to', $this->getPost()->ID );
 			$this->client->getBot2ChannelRelation()->detachConnections( $query );
 		}
 
