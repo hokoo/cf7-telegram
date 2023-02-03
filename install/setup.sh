@@ -7,12 +7,12 @@ bash ./install/setup-env.sh
 . ./.env
 
 echo "Containers creating..."
-docker-compose up -d
+docker-compose -p cf7tg up -d
 echo "Containers created."
 
 echo -e "Composers installation... Yes, there are two composers ${RYELLOW}:-D${COLOR_OFF}"
-docker-compose exec php sh -c "composer install"
-docker-compose exec php sh -c "cd ./cf7-telegram && composer install"
+docker-compose -p cf7tg exec php sh -c "composer install"
+docker-compose -p cf7tg exec php sh -c "cd ./cf7-telegram && composer install"
 
 echo "WP setup preparing..."
 # prepare file structure
@@ -37,7 +37,7 @@ read -r item
 case "$item" in
     y|Y)
     echo "WP database init new instance..."
-    docker-compose exec php sh -c "wp core install --url=$PROJECT_BASE_URL --title=\"$WP_TITLE\" --admin_user=$WP_ADMIN --admin_password=$WP_ADMIN_PASS --admin_email=$WP_ADMIN_EMAIL --skip-email"
+    docker-compose -p cf7tg exec php sh -c "wp core install --url=$PROJECT_BASE_URL --title=\"$WP_TITLE\" --admin_user=$WP_ADMIN --admin_password=$WP_ADMIN_PASS --admin_email=$WP_ADMIN_EMAIL --skip-email"
     printf "${RGREEN}WP User Admin: ${RYELLOW}%s \n${RGREEN}WP User Pass: ${RYELLOW}%s${COLOR_OFF}\n" $WP_ADMIN $WP_ADMIN_PASS
       ;;
 
