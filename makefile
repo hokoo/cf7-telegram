@@ -10,3 +10,8 @@ sync:
 clear.all:
 	bash ./install/clear.sh
 
+php.connect:
+	docker-compose -p cf7tg exec php bash
+
+php.connect.root:
+	docker-compose -p cf7tg exec --user=root php bash

@@ -43,8 +43,8 @@ services:
     volumes:
       - ./:/var/www/html/
       - ./install/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
-      - ./install/php-fpm/error.log:/var/log/php/cf7tgdev.error.log
-      - ./install/nginx/access.log:/var/log/nginx/cf7tgdev.access.log
+      - ./install/php-fpm/error.log:/var/log/php/cf7tgdev.loc.error.log
+      - ./install/nginx/access.log:/var/log/nginx/cf7tgdev.loc.access.log
     ports:
       - "80:80"
       - "443:443"
