@@ -6,6 +6,8 @@
 /index.php
 /wp-config.php
 /.env
+*.sql
+*.tgz
 
 # logs
 /install/nginx/*
