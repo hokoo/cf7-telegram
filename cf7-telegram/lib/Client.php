@@ -48,8 +48,8 @@ class Client {
 	 * @throws Exception
 	 */
 	public function __wakeup() {
-		throw new Exception("Cannot unserialize the \iTRON\cf7Telegram\Client() instance.");
-	}
+        trigger_error( 'Deserializing of iTRON\cf7Telegram\Client() instance is prohibited.', E_USER_NOTICE );
+    }
 
 	public static function getInstance(): Client {
 		if ( empty( self::$instance ) ) {

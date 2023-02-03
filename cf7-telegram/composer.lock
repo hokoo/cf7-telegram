@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "01a57f835105bac211704635db39a951",
+    "content-hash": "f615e3739d11c1853427a8c0338969b3",
     "packages": [
         {
             "name": "doctrine/inflector",
@@ -409,27 +409,25 @@
         },
         {
             "name": "hokoo/wpconnections",
-            "version": "dev-master",
+            "version": "dev-dev",
             "source": {
                 "type": "git",
                 "url": "https://github.com/hokoo/wpConnections.git",
-                "reference": "52e0a7eee17a7ac1daead146084c4e935bc73612"
+                "reference": "7b1fc8a4bdc2a159f5b1f3a29e3838501372de01"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/hokoo/wpConnections/zipball/52e0a7eee17a7ac1daead146084c4e935bc73612",
-                "reference": "52e0a7eee17a7ac1daead146084c4e935bc73612",
+                "url": "https://api.github.com/repos/hokoo/wpConnections/zipball/7b1fc8a4bdc2a159f5b1f3a29e3838501372de01",
+                "reference": "7b1fc8a4bdc2a159f5b1f3a29e3838501372de01",
                 "shasum": ""
             },
             "require": {
-                "ramsey/collection": "*",
-                "scribu/scb-framework": "dev-master"
+                "ramsey/collection": "*"
             },
             "require-dev": {
                 "johnpbloch/wordpress-core": "5.0.13",
                 "symfony/var-dumper": "5.4.x-dev"
             },
-            "default-branch": true,
             "type": "library",
             "autoload": {
                 "psr-4": {
@@ -442,29 +440,28 @@
             "description": "A library for many-to-many relationships in WordPress",
             "homepage": "https://github.com/hokoo/wpConnections",
             "support": {
-                "source": "https://github.com/hokoo/wpConnections/tree/master",
+                "source": "https://github.com/hokoo/wpConnections/tree/dev",
                 "issues": "https://github.com/hokoo/wpConnections/issues"
             },
-            "time": "2022-05-22T17:55:38+00:00"
+            "time": "2023-02-03T17:52:41+00:00"
         },
         {
             "name": "hokoo/wppostable",
-            "version": "dev-master",
+            "version": "dev-dev",
             "source": {
                 "type": "git",
                 "url": "https://github.com/hokoo/wpPostAble.git",
-                "reference": "5266328bbb5b718d272ba34c752406b1fa593566"
+                "reference": "5c67b999873041bf0ac3fce499e6b13b3c7ef277"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/hokoo/wpPostAble/zipball/5266328bbb5b718d272ba34c752406b1fa593566",
-                "reference": "5266328bbb5b718d272ba34c752406b1fa593566",
+                "url": "https://api.github.com/repos/hokoo/wpPostAble/zipball/5c67b999873041bf0ac3fce499e6b13b3c7ef277",
+                "reference": "5c67b999873041bf0ac3fce499e6b13b3c7ef277",
                 "shasum": ""
             },
             "require": {
                 "ext-json": "*"
             },
-            "default-branch": true,
             "type": "library",
             "autoload": {
                 "psr-4": {
@@ -482,10 +479,10 @@
             ],
             "description": "Library provides a functionality for associating your classes with WordPress class WP_Post.",
             "support": {
-                "source": "https://github.com/hokoo/wpPostAble/tree/master",
+                "source": "https://github.com/hokoo/wpPostAble/tree/dev",
                 "issues": "https://github.com/hokoo/wpPostAble/issues"
             },
-            "time": "2022-05-31T07:26:01+00:00"
+            "time": "2023-02-03T16:23:38+00:00"
         },
         {
             "name": "illuminate/contracts",
@@ -1055,53 +1052,6 @@
                 }
             ],
             "time": "2022-12-27T19:12:24+00:00"
-        },
-        {
-            "name": "scribu/scb-framework",
-            "version": "dev-master",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/scribu/wp-scb-framework.git",
-                "reference": "d35d5126c6d323711dd14b9d97aaa927eaaba123"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/scribu/wp-scb-framework/zipball/d35d5126c6d323711dd14b9d97aaa927eaaba123",
-                "reference": "d35d5126c6d323711dd14b9d97aaa927eaaba123",
-                "shasum": ""
-            },
-            "default-branch": true,
-            "type": "library",
-            "autoload": {
-                "files": [
-                    "load-composer.php",
-                    "Util.php"
-                ],
-                "classmap": [
-                    "."
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "GPL-3.0+"
-            ],
-            "authors": [
-                {
-                    "name": "Cristi Burcă",
-                    "homepage": "http://scribu.net/"
-                }
-            ],
-            "description": "A set of useful classes for faster plugin development",
-            "homepage": "https://github.com/scribu/wp-scb-framework",
-            "keywords": [
-                "wordpress"
-            ],
-            "support": {
-                "issues": "https://github.com/scribu/wp-scb-framework/issues",
-                "source": "https://github.com/scribu/wp-scb-framework",
-                "wiki": "https://github.com/scribu/wp-scb-framework/wiki"
-            },
-            "time": "2020-03-15T20:51:58+00:00"
         },
         {
             "name": "symfony/deprecation-contracts",
@@ -1848,6 +1798,7 @@
     "aliases": [],
     "minimum-stability": "dev",
     "stability-flags": {
+        "hokoo/wppostable": 20,
         "hokoo/wpconnections": 20
     },
     "prefer-stable": false,

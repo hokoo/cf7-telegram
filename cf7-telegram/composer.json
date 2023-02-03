@@ -22,8 +22,8 @@
   ],
   "require": {
     "ramsey/collection": "*",
-    "hokoo/wppostable": ">=0.3",
-    "hokoo/wpconnections": "dev-master",
+    "hokoo/wppostable": "dev-dev",
+    "hokoo/wpconnections": "dev-dev",
     "ext-json": "*",
     "irazasyed/telegram-bot-sdk": "^2.0"
   },

@@ -80,10 +80,10 @@ class Bot extends Entity implements wpPostAble{
 	}
 
 	public function disconnectChannel( Channel $channel = null ): Entity {
-		$channelID = isset ( $channel ) ? $channel->post->ID : null;
+		$channelID = isset ( $channel ) ? $channel->getPost()->ID : null;
 		$this->client
 			->getBot2ChannelRelation()
-			->detachConnections( new Query\Connection( $this->post->ID, $channelID ) );
+			->detachConnections( new Query\Connection( $this->getPost()->ID, $channelID ) );
 
 		return $this;
 	}
