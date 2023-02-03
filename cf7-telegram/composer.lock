@@ -413,17 +413,16 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/hokoo/wpConnections.git",
-                "reference": "64f3fce65d9ef2c9cbbfadcb769b0832228317e4"
+                "reference": "7b1fc8a4bdc2a159f5b1f3a29e3838501372de01"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/hokoo/wpConnections/zipball/64f3fce65d9ef2c9cbbfadcb769b0832228317e4",
-                "reference": "64f3fce65d9ef2c9cbbfadcb769b0832228317e4",
+                "url": "https://api.github.com/repos/hokoo/wpConnections/zipball/7b1fc8a4bdc2a159f5b1f3a29e3838501372de01",
+                "reference": "7b1fc8a4bdc2a159f5b1f3a29e3838501372de01",
                 "shasum": ""
             },
             "require": {
-                "ramsey/collection": "*",
-                "scribu/scb-framework": "dev-master"
+                "ramsey/collection": "*"
             },
             "require-dev": {
                 "johnpbloch/wordpress-core": "5.0.13",
@@ -444,7 +443,7 @@
                 "source": "https://github.com/hokoo/wpConnections/tree/dev",
                 "issues": "https://github.com/hokoo/wpConnections/issues"
             },
-            "time": "2023-02-03T16:14:01+00:00"
+            "time": "2023-02-03T17:52:41+00:00"
         },
         {
             "name": "hokoo/wppostable",
@@ -1053,53 +1052,6 @@
                 }
             ],
             "time": "2022-12-27T19:12:24+00:00"
-        },
-        {
-            "name": "scribu/scb-framework",
-            "version": "dev-master",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/scribu/wp-scb-framework.git",
-                "reference": "d35d5126c6d323711dd14b9d97aaa927eaaba123"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/scribu/wp-scb-framework/zipball/d35d5126c6d323711dd14b9d97aaa927eaaba123",
-                "reference": "d35d5126c6d323711dd14b9d97aaa927eaaba123",
-                "shasum": ""
-            },
-            "default-branch": true,
-            "type": "library",
-            "autoload": {
-                "files": [
-                    "load-composer.php",
-                    "Util.php"
-                ],
-                "classmap": [
-                    "."
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "GPL-3.0+"
-            ],
-            "authors": [
-                {
-                    "name": "Cristi Burcă",
-                    "homepage": "http://scribu.net/"
-                }
-            ],
-            "description": "A set of useful classes for faster plugin development",
-            "homepage": "https://github.com/scribu/wp-scb-framework",
-            "keywords": [
-                "wordpress"
-            ],
-            "support": {
-                "issues": "https://github.com/scribu/wp-scb-framework/issues",
-                "source": "https://github.com/scribu/wp-scb-framework",
-                "wiki": "https://github.com/scribu/wp-scb-framework/wiki"
-            },
-            "time": "2020-03-15T20:51:58+00:00"
         },
         {
             "name": "symfony/deprecation-contracts",
