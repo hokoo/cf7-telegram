@@ -1,7 +1,9 @@
 <?php
 
-namespace iTRON\cf7Telegram;
+namespace iTRON\cf7Telegram\Controllers;
 
+use iTRON\cf7Telegram\Channel;
+use iTRON\cf7Telegram\Client;
 use iTRON\wpConnections\Query;
 
 class CF7 {
