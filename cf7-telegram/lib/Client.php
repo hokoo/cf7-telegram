@@ -3,6 +3,9 @@
 namespace iTRON\cf7Telegram;
 
 use iTRON\cf7Telegram\Collections\ChannelCollection;
+use iTRON\cf7Telegram\Controllers\CF7;
+use iTRON\cf7Telegram\Controllers\CPT;
+use iTRON\cf7Telegram\Controllers\RestApi;
 use iTRON\wpConnections;
 use WP_Query;
 use WPCF7_ContactForm;
@@ -64,41 +67,14 @@ class Client {
 
 		$this->registerConnectionsClient();
 
-		add_action( 'init', [ $this, 'registerCPT' ], 0 );
+		add_action( 'init', [ CPT::class, 'register' ], 10 );
+		add_action( 'rest_api_init', [ RestApi::class, 'registerFields' ] );
+
 		add_action( 'wpcf7_before_send_mail', [ $this, 'handleSubscribe' ], 99999, 3 );
-	}
 
-	public function registerCPT() {
-
-		register_post_type(self::CPT_BOT, [
-			'labels' => [
-				'name'  => 'Bots'
-			],
-			'public' => true,
-//			'public' => false,
-//			'show_in_menu' => false,
-			'publicly_queryable' => true,
-		]);
-
-		register_post_type(self::CPT_CHAT, [
-			'labels' => [
-				'name'  => 'Сhats'
-			],
-			'public' => true,
-//			'public' => false,
-//			'show_in_menu' => false,
-			'publicly_queryable' => true,
-		]);
-
-		register_post_type(self::CPT_CHANNEL, [
-			'labels' => [
-				'name'  => 'Channels'
-			],
-			'public' => true,
-//			'public' => false,
-//			'show_in_menu' => false,
-			'publicly_queryable' => true,
-		]);
+        add_action( 'admin_enqueue_scripts', function() {
+            wp_enqueue_script( 'wp-api' );
+        } );
 
 	}
 
