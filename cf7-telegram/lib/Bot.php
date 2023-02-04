@@ -2,6 +2,7 @@
 
 namespace iTRON\cf7Telegram;
 
+use iTRON\cf7Telegram\Exceptions\Telegram;
 use iTRON\wpConnections\Exceptions\ConnectionWrongData;
 use iTRON\wpConnections\Exceptions\MissingParameters;
 use iTRON\wpConnections\Query;
@@ -88,13 +89,21 @@ class Bot extends Entity implements wpPostAble{
 		return $this;
 	}
 
+	/**
+	 * @throws Telegram
+	 */
 	public function sendMessage( string $chat_id, string $message, string $mode ) {
-		$this->api->sendMessage( [
-			'chat_id'                   => $chat_id,
-			'text'                      => $message,
-			'parse_mode'                => $mode,
-			'disable_web_page_preview'  => true,
-		] );
+		try {
+			$this->api->sendMessage( [
+				'chat_id'                  => $chat_id,
+				'text'                     => $message,
+				'parse_mode'               => $mode,
+				'disable_web_page_preview' => true,
+			] );
+		} catch ( TelegramSDKException $e ) {
+			$this->logger->write( $e->getMessage(), 'An error has occurred during sending message' );
+			throw new Telegram( $e->getMessage(), $e->getCode(), $e );
+		}
 	}
 
 	// @TODO Temporary method

@@ -5,6 +5,7 @@ namespace iTRON\cf7Telegram;
 use iTRON\cf7Telegram\Collections\BotCollection;
 use iTRON\cf7Telegram\Collections\ChatCollection;
 use iTRON\cf7Telegram\Collections\FormCollection;
+use iTRON\cf7Telegram\Exceptions\Telegram;
 use iTRON\wpConnections\Exceptions\ConnectionWrongData;
 use iTRON\wpConnections\Exceptions\MissingParameters;
 use iTRON\wpConnections\Query;
@@ -167,7 +168,6 @@ class Channel extends Entity implements wpPostAble{
 	}
 
 	public function doSendOut( string $message, string $mode ) {
-		do_action( 'logger', ['doSendOut', $this] );
 		$chats = $this->getChats();
 
 		if ( $chats->isEmpty() ) {
@@ -176,7 +176,21 @@ class Channel extends Entity implements wpPostAble{
 
 		foreach ( $chats as $chat ) {
 			/** @var Chat $chat */
-			$this->getBot()->sendMessage( $chat->getChatID(), $message, $mode );
+			try {
+				$this->getBot()->sendMessage( $chat->getChatID(), $message, $mode );
+			} catch ( Telegram $e ) {
+				$this->logger->write(
+					[
+						'telegramChatID'=> $chat->getChatID(),
+						'chatTitle'     => $chat->getTitle(),
+						'chatPostID'    => $chat->getPost()->ID,
+						'channelTitle'  => $this->getTitle(),
+						'channelPostID' => $this->getPost()->ID,
+					],
+					$e->getMessage() . " [chatID:{$chat->getChatID()}]",
+					Logger::LEVEL_CRITICAL
+				);
+			}
 		}
 	}
 

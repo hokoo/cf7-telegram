@@ -67,7 +67,6 @@ class CF7 {
 		endif;
 
 		$targetChannels = $client->getChannels()->filterByIDs( $connections->column( 'to' ) );
-		do_action( 'logger', [ 'CF7 $targetChannels', $targetChannels ] );
 		foreach ( $targetChannels as $channel ) {
 			/** @var Channel $channel */
 			$channel->doSendOut( apply_filters( 'cf7tg_filtered_message', $output, $instance, $mode ), $mode );
