@@ -13,6 +13,7 @@ use iTRON\wpPostAble\wpPostAble;
 use iTRON\wpPostAble\wpPostAbleTrait;
 use Telegram\Bot\Api;
 use Telegram\Bot\Exceptions\TelegramSDKException;
+use Telegram\Bot\Objects\User;
 
 class Bot extends Entity implements wpPostAble{
 	use WPPostAbleTrait;
@@ -111,4 +112,25 @@ class Bot extends Entity implements wpPostAble{
 		return $this->api;
 	}
 
+	/**
+	 * Checks whether itself is online.
+	 */
+	public function ping(): bool {
+		try {
+			$res = $this->api->getMe();
+		} catch ( TelegramSDKException $e ){
+			$this->logger->write(
+				[
+					'botTitle'          => $this->getTitle(),
+					'wpPostID'          => $this->getPost()->ID,
+					'botTokenFirst13'   => substr( $this->getToken(), 0, 13 ),
+				],
+				'Bot is unreachable'
+			);
+
+			return false;
+		}
+
+		return true;
+	}
 }

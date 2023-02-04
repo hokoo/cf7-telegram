@@ -3,6 +3,7 @@
 namespace iTRON\cf7Telegram\Controllers;
 
 use iTRON\cf7Telegram\Client;
+use iTRON\cf7Telegram\RestApiControllers\BotController;
 
 class CPT {
 	public static function register() {
@@ -15,7 +16,7 @@ class CPT {
 //			'show_in_menu' => false,
 			'publicly_queryable' => false,
 			'show_in_rest' => true,
-			'rest_controller_class' => '\iTRON\cf7Telegram\RestApiControllers\Bot',
+			'rest_controller_class' => BotController::class,
 		]);
 
 		register_post_type(Client::CPT_CHAT, [
