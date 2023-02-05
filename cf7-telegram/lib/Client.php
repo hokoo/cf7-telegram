@@ -36,6 +36,7 @@ class Client {
 	const CPT_CHAT = 'cf7tg_chat';
 	const CPT_BOT = 'cf7tg_bot';
 	const CPT_CHANNEL = 'cf7tg_channel';
+	const CPT_CF7FORM = 'wpcf7_contact_form';
 	const CHAT2CHANNEL = 'chat2channel';
 	const FORM2CHANNEL = 'form2channel';
 	const BOT2CHANNEL = 'bot2channel';
@@ -66,12 +67,10 @@ class Client {
 		$this->logger = new Logger();
 
 		$this->registerConnectionsClient();
+		CPT::init();
 
-		add_action( 'init', [ CPT::class, 'register' ], 10 );
 		add_action( 'rest_api_init', [ RestApi::class, 'registerFields' ] );
-
 		add_action( 'wpcf7_before_send_mail', [ $this, 'handleSubscribe' ], 99999, 3 );
-
         add_action( 'admin_enqueue_scripts', function() {
             wp_enqueue_script( 'wp-api' );
         } );

@@ -20,7 +20,7 @@ class Form extends Entity implements WPPostAble{
 	public function __construct( int $form_id = 0 ) {
 		parent::__construct();
 
-		$this->wpPostAble( 'wpcf7_contact_form', $form_id );
+		$this->wpPostAble( Client::CPT_CF7FORM, $form_id );
 	}
 
 	/**

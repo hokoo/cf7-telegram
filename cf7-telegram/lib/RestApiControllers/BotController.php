@@ -40,6 +40,13 @@ class BotController extends AbstractController{
 		return rest_ensure_response( [ 'online' => $bot->ping() ] );
 	}
 
+	/**
+	 * @TODO
+	 *
+	 * @param $request
+	 *
+	 * @return bool
+	 */
 	public function get_item_permissions_check( $request ): bool {
 		return true;
 	}
