@@ -3,8 +3,8 @@
 namespace iTRON\cf7Telegram\Controllers;
 
 use iTRON\cf7Telegram\Client;
-use iTRON\cf7Telegram\RestApiControllers\BotController;
-use iTRON\cf7Telegram\RestApiControllers\CF7FormController;
+use iTRON\cf7Telegram\Controllers\RestApi\BotController;
+use iTRON\cf7Telegram\Controllers\RestApi\CF7FormController;
 
 class CPT {
 	public static function init() {

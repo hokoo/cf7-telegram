@@ -1,6 +1,6 @@
 <?php
 
-namespace iTRON\cf7Telegram\RestApiControllers;
+namespace iTRON\cf7Telegram\Controllers\RestApi;
 
 use iTRON\cf7Telegram\Bot;
 use iTRON\wpPostAble\Exceptions\wppaCreatePostException;
@@ -55,7 +55,7 @@ class BotController extends Controller{
 		$response = parent::prepare_item_for_response( $post, $request );
 
 		$base = sprintf( '%s/%s', $this->namespace, $this->rest_base );
-		$response->add_link( 'ping', rest_url( trailingslashit( $base ) . $post->ID . '/ping' ) );
+		$response->add_link( 'ping', rest_url( BotController . phptrailingslashit( $base ) . $post->ID . '/ping' ) );
 
 		return $response;
 	}

@@ -1,6 +1,6 @@
 <?php
 
-namespace iTRON\cf7Telegram\RestApiControllers;
+namespace iTRON\cf7Telegram\Controllers\RestApi;
 
 use WP_REST_Posts_Controller;
 

@@ -7,6 +7,11 @@ use iTRON\cf7Telegram\Chat;
 use iTRON\cf7Telegram\Client;
 
 class RestApi {
+
+	public static function init() {
+		add_action( 'rest_api_init', [ self::class, 'registerFields' ] );
+	}
+
 	public static function registerFields() {
 		register_rest_field( Client::CPT_BOT, 'token', array(
 			'get_callback' => function( $object ) {

@@ -8,8 +8,6 @@ use iTRON\cf7Telegram\Controllers\CPT;
 use iTRON\cf7Telegram\Controllers\RestApi;
 use iTRON\wpConnections;
 use WP_Query;
-use WPCF7_ContactForm;
-use WPCF7_Submission;
 use Exception;
 
 class Client {
@@ -68,9 +66,9 @@ class Client {
 
 		$this->registerConnectionsClient();
 		CPT::init();
+		RestApi::init();
 
-		add_action( 'rest_api_init', [ RestApi::class, 'registerFields' ] );
-		add_action( 'wpcf7_before_send_mail', [ $this, 'handleSubscribe' ], 99999, 3 );
+		add_action( 'wpcf7_before_send_mail', [ CF7::class, 'handleSubscribe' ], 99999, 3 );
         add_action( 'admin_enqueue_scripts', function() {
             wp_enqueue_script( 'wp-api' );
         } );
@@ -109,10 +107,6 @@ class Client {
 		} catch ( wpConnections\Exceptions\MissingParameters $e ) {
 			$this->logger->write( $e->getMessage(), 'Can not register the relations.', Logger::LEVEL_CRITICAL );
 		}
-	}
-
-	public function handleSubscribe( WPCF7_ContactForm $cf, &$abort, WPCF7_Submission $instance ) {
-		CF7::handleSubscribe( $cf, $abort, $instance );
 	}
 
 	public function getChannels(): ChannelCollection {

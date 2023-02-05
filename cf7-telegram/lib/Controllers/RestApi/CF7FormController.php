@@ -1,6 +1,6 @@
 <?php
 
-namespace iTRON\cf7Telegram\RestApiControllers;
+namespace iTRON\cf7Telegram\Controllers\RestApi;
 
 class CF7FormController extends Controller {
 
