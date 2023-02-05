@@ -2,7 +2,7 @@
 
 namespace iTRON\cf7Telegram\RestApiControllers;
 
-class CF7FormController extends AbstractController {
+class CF7FormController extends Controller {
 
 	/**
 	 * @TODO

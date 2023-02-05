@@ -8,7 +8,7 @@ use iTRON\wpPostAble\Exceptions\wppaLoadPostException;
 use WP_REST_Response;
 use WP_REST_Server;
 
-class BotController extends AbstractController{
+class BotController extends Controller{
 	public function register_routes() {
 		parent::register_routes();
 
