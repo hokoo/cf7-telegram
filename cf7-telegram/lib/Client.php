@@ -31,6 +31,7 @@ class Client {
 	 */
 	private $logger;
 
+    const WPCONNECTIONS_CLIENT = 'cf7-telegram';
 	const CPT_CHAT = 'cf7tg_chat';
 	const CPT_BOT = 'cf7tg_bot';
 	const CPT_CHANNEL = 'cf7tg_channel';
@@ -126,7 +127,7 @@ class Client {
 
 	public function getConnectionsClient(): wpConnections\Client {
 		if ( empty( self::$connectionsClient ) ) {
-			self::$connectionsClient = new wpConnections\Client( 'cf7-telegram' );
+			self::$connectionsClient = new wpConnections\Client( self::WPCONNECTIONS_CLIENT );
 		}
 
 		return self::$connectionsClient;
