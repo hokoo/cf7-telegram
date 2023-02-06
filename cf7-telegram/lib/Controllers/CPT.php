@@ -17,8 +17,8 @@ class CPT {
 			'labels' => [
 				'name'  => 'Bots'
 			],
-//			'public' => true,
-			'public' => false,
+			'public' => true,
+//			'public' => false,
 //			'show_in_menu' => false,
 			'publicly_queryable' => false,
 			'show_in_rest' => true,
@@ -29,7 +29,7 @@ class CPT {
 			'labels' => [
 				'name'  => 'Сhats'
 			],
-			'public' => false,
+			'public' => true,
 //			'public' => false,
 //			'show_in_menu' => false,
 			'publicly_queryable' => false,
