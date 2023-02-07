@@ -14,7 +14,7 @@ class Logger {
 	/**
 	 * @var string $table
 	 */
-	private $table = 'itron_log';
+	private $table = 'cf7tg_log';
 
 	function __construct(){
 		$this->mb_create_table();
