@@ -7,6 +7,8 @@ use iTRON\cf7Telegram\Controllers\CF7;
 use iTRON\cf7Telegram\Controllers\CPT;
 use iTRON\cf7Telegram\Controllers\RestApi;
 use iTRON\wpConnections;
+use iTRON\wpConnections\Exceptions\RelationNotFound;
+use iTRON\wpConnections\Query;
 use WP_Query;
 use Exception;
 
@@ -77,7 +79,7 @@ class Client {
 	}
 
 	private function registerConnectionsClient() {
-		$chat2channel = new wpConnections\Query\Relation();
+		$chat2channel = new Query\Relation();
 		$chat2channel
 			->set( 'name', self::CHAT2CHANNEL )
 			->set( 'from', self::CPT_CHAT )
@@ -85,7 +87,7 @@ class Client {
 			->set( 'cardinality', 'm-m' )
 			->set( 'duplicatable', false );
 
-		$bot2channel = new wpConnections\Query\Relation();
+		$bot2channel = new Query\Relation();
 		$bot2channel
 			->set( 'name', self::BOT2CHANNEL )
 			->set( 'from', self::CPT_BOT )
@@ -93,7 +95,7 @@ class Client {
 			->set( 'cardinality', 'm-1' )
 			->set( 'duplicatable', false );
 
-		$form2channel = new wpConnections\Query\Relation();
+		$form2channel = new Query\Relation();
 		$form2channel
 			->set( 'name', self::FORM2CHANNEL )
 			->set( 'from', 'wpcf7_contact_form' )
@@ -105,7 +107,7 @@ class Client {
 			$this->getConnectionsClient()->registerRelation( $chat2channel );
 			$this->getConnectionsClient()->registerRelation( $bot2channel );
 			$this->getConnectionsClient()->registerRelation( $form2channel );
-		} catch ( wpConnections\Exceptions\MissingParameters $e ) {
+		} catch ( wpConnections\Exceptions\Exception $e ) {
 			$this->logger->write( $e->getMessage(), 'Can not register the relations.', Logger::LEVEL_CRITICAL );
 		}
 	}
@@ -133,15 +135,24 @@ class Client {
 		return self::$connectionsClient;
 	}
 
-	public function getBot2ChannelRelation(): wpConnections\Relation {
+    /**
+     * @throws RelationNotFound
+     */
+    public function getBot2ChannelRelation(): wpConnections\Relation {
 		return $this->getConnectionsClient()->getRelation( self::BOT2CHANNEL );
 	}
 
-	public function getChat2ChannelRelation(): wpConnections\Relation {
+    /**
+     * @throws RelationNotFound
+     */
+    public function getChat2ChannelRelation(): wpConnections\Relation {
 		return $this->getConnectionsClient()->getRelation( self::CHAT2CHANNEL );
 	}
 
-	public function getForm2ChannelRelation(): wpConnections\Relation {
+    /**
+     * @throws RelationNotFound
+     */
+    public function getForm2ChannelRelation(): wpConnections\Relation {
 		return $this->getConnectionsClient()->getRelation( self::FORM2CHANNEL );
 	}
 }
