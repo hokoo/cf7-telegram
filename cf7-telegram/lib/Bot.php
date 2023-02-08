@@ -5,6 +5,7 @@ namespace iTRON\cf7Telegram;
 use iTRON\cf7Telegram\Exceptions\Telegram;
 use iTRON\wpConnections\Exceptions\ConnectionWrongData;
 use iTRON\wpConnections\Exceptions\MissingParameters;
+use iTRON\wpConnections\Exceptions\RelationNotFound;
 use iTRON\wpConnections\Query;
 use iTRON\wpPostAble\Exceptions\wppaCreatePostException;
 use iTRON\wpPostAble\Exceptions\wppaLoadPostException;
@@ -18,10 +19,7 @@ use Telegram\Bot\Objects\User;
 class Bot extends Entity implements wpPostAble{
 	use WPPostAbleTrait;
 
-	/**
-	 * @var Api $api
-	 */
-	protected $api;
+	protected Api $api;
 
 	/**
 	 * @throws wppaLoadPostException
@@ -72,16 +70,20 @@ class Bot extends Entity implements wpPostAble{
 		return $this;
 	}
 
-	/**
-	 * @throws ConnectionWrongData
-	 * @throws MissingParameters
-	 */
+    /**
+     * @throws ConnectionWrongData
+     * @throws MissingParameters
+     * @throws RelationNotFound
+     */
 	public function connectChannel( Channel $channel ): Entity {
 		$channel->setBot( $this );
 		return $this;
 	}
 
-	public function disconnectChannel( Channel $channel = null ): Entity {
+    /**
+     * @throws RelationNotFound
+     */
+    public function disconnectChannel(Channel $channel = null ): Entity {
 		$channelID = isset ( $channel ) ? $channel->getPost()->ID : null;
 		$this->client
 			->getBot2ChannelRelation()

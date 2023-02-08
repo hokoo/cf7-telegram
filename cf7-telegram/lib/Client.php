@@ -13,25 +13,10 @@ use WP_Query;
 use Exception;
 
 class Client {
-	/**
-	 * @var Client
-	 */
-	private static $instance;
-
-	/**
-	 * @var wpConnections\Client;
-	 */
-	private static $connectionsClient;
-
-	/**
-	 * @var ChannelCollection $channels
-	 */
-	private $channels;
-
-	/**
-	 * @var Logger $logger
-	 */
-	private $logger;
+	private static Client $instance;
+	private static wpConnections\Client $connectionsClient;
+	private ChannelCollection $channels;
+	private Logger $logger;
 
     const WPCONNECTIONS_CLIENT = 'cf7-telegram';
 	const CPT_CHAT = 'cf7tg_chat';
