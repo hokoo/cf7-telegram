@@ -1,11 +1,14 @@
 <?php
 
-namespace iTRON\cf7Telegram;
+namespace iTRON\cf7Telegram\Controllers;
 
+use iTRON\cf7Telegram\Channel;
+use iTRON\cf7Telegram\Client;
+use iTRON\wpConnections\Exceptions\RelationNotFound;
 use iTRON\wpConnections\Query;
 
 class CF7 {
-	private static $markdown_tags = [
+	private static array $markdown_tags = [
 		'bold' => [
 			'<h1>','</h1>', '<h2>','</h2>', '<h3>','</h3>', '<h4>','</h4>', '<h5>','</h5>', '<h6>','</h6>',
 			'<b>','</b>',
@@ -28,9 +31,10 @@ class CF7 {
 		]
 	];
 
-	public static function handleSubscribe( \WPCF7_ContactForm $cf, &$abort, \WPCF7_Submission $instance ) {
-//		do_action( 'logger', $cf );
-//		do_action( 'logger', $abort );
+    /**
+     * @throws RelationNotFound
+     */
+    public static function handleSubscribe(\WPCF7_ContactForm $cf, &$abort, \WPCF7_Submission $instance ) {
 
 		if ( $abort ) {
 			return;
@@ -65,7 +69,6 @@ class CF7 {
 		endif;
 
 		$targetChannels = $client->getChannels()->filterByIDs( $connections->column( 'to' ) );
-		do_action( 'logger', [ 'CF7 $targetChannels', $targetChannels ] );
 		foreach ( $targetChannels as $channel ) {
 			/** @var Channel $channel */
 			$channel->doSendOut( apply_filters( 'cf7tg_filtered_message', $output, $instance, $mode ), $mode );

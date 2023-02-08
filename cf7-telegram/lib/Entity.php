@@ -3,15 +3,9 @@
 namespace iTRON\cf7Telegram;
 
 abstract class Entity {
-	/**
-	 * @var Client $client
-	 */
-	protected $client;
+	protected Client $client;
 
-	/**
-	 * @var Logger $logger
-	 */
-	protected $logger;
+	protected Logger $logger;
 
 	public function __construct() {
 		$this->client = Client::getInstance();

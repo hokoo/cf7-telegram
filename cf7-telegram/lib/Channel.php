@@ -5,8 +5,10 @@ namespace iTRON\cf7Telegram;
 use iTRON\cf7Telegram\Collections\BotCollection;
 use iTRON\cf7Telegram\Collections\ChatCollection;
 use iTRON\cf7Telegram\Collections\FormCollection;
+use iTRON\cf7Telegram\Exceptions\Telegram;
 use iTRON\wpConnections\Exceptions\ConnectionWrongData;
 use iTRON\wpConnections\Exceptions\MissingParameters;
+use iTRON\wpConnections\Exceptions\RelationNotFound;
 use iTRON\wpConnections\Query;
 use iTRON\wpPostAble\wpPostAble;
 use iTRON\wpPostAble\wpPostAbleTrait;
@@ -17,22 +19,9 @@ use OutOfBoundsException;
 class Channel extends Entity implements wpPostAble{
 	use wpPostAbleTrait;
 
-	/**
-	 * @var ChatCollection
-	 */
-	public $chats;
-
-	/**
-	 * @var FormCollection
-	 */
-	public $forms;
-
-	/**
-	 * Telegram Bot
-	 * @var Bot
-	 */
-	public $bot;
-
+	public ChatCollection $chats;
+	public FormCollection $forms;
+	public Bot $bot;
 
 	/**
 	 * @throws wppaCreatePostException
@@ -45,17 +34,15 @@ class Channel extends Entity implements wpPostAble{
 		$this->load();
 	}
 
-	public function __wakeup() {
-		$this->chats = null;
-		$this->forms = null;
-	}
-
 	/**
 	 * Loads and initiates all Channel data from WP post.
 	 */
 	protected function load(){}
 
-	public function getChats(): ChatCollection {
+    /**
+     * @throws RelationNotFound
+     */
+    public function getChats(): ChatCollection {
 		if ( isset( $this->chats ) ) {
 			return $this->chats;
 		}
@@ -68,7 +55,10 @@ class Channel extends Entity implements wpPostAble{
 		return $this->chats->createByConnections( $wpConnections );
 	}
 
-	public function getForms(): FormCollection {
+    /**
+     * @throws RelationNotFound
+     */
+    public function getForms(): FormCollection {
 		if ( isset( $this->forms ) ) {
 			return $this->forms;
 		}
@@ -81,7 +71,10 @@ class Channel extends Entity implements wpPostAble{
 		return $this->forms->createByConnections( $wpConnections );
 	}
 
-	public function getBot() {
+    /**
+     * @throws RelationNotFound
+     */
+    public function getBot() {
 		if ( isset( $this->bot ) ) {
 			return $this->bot;
 		}
@@ -101,10 +94,11 @@ class Channel extends Entity implements wpPostAble{
 		return $this->bot;
 	}
 
-	/**
-	 * @throws MissingParameters
-	 * @throws ConnectionWrongData
-	 */
+    /**
+     * @throws MissingParameters
+     * @throws ConnectionWrongData
+     * @throws RelationNotFound
+     */
 	public function addChat( Chat $chat ): Channel {
 		$this->client
 			->getChat2ChannelRelation()
@@ -113,7 +107,10 @@ class Channel extends Entity implements wpPostAble{
 		return $this;
 	}
 
-	public function removeChat( Chat $chat ): Channel {
+    /**
+     * @throws RelationNotFound
+     */
+    public function removeChat(Chat $chat ): Channel {
 		$this->client
 			->getChat2ChannelRelation()
 			->detachConnections( new Query\Connection( $chat->getPost()->ID, $this->getPost()->ID ) );
@@ -121,10 +118,11 @@ class Channel extends Entity implements wpPostAble{
 		return $this;
 	}
 
-	/**
-	 * @throws MissingParameters
-	 * @throws ConnectionWrongData
-	 */
+    /**
+     * @throws MissingParameters
+     * @throws ConnectionWrongData
+     * @throws RelationNotFound
+     */
 	public function addForm( Form $form ): Channel {
 		$this->client
 			->getForm2ChannelRelation()
@@ -133,7 +131,10 @@ class Channel extends Entity implements wpPostAble{
 		return $this;
 	}
 
-	public function removeForm( Form $form ): Channel {
+    /**
+     * @throws RelationNotFound
+     */
+    public function removeForm(Form $form ): Channel {
 		$this->client
 			->getForm2ChannelRelation()
 			->detachConnections( new Query\Connection( $form->getPost()->ID, $this->getPost()->ID ) );
@@ -141,10 +142,11 @@ class Channel extends Entity implements wpPostAble{
 		return $this;
 	}
 
-	/**
-	 * @throws MissingParameters
-	 * @throws ConnectionWrongData
-	 */
+    /**
+     * @throws MissingParameters
+     * @throws ConnectionWrongData
+     * @throws RelationNotFound
+     */
 	public function setBot( Bot $bot ): Channel {
 		$this->unsetBot();
 
@@ -155,7 +157,10 @@ class Channel extends Entity implements wpPostAble{
 		return $this;
 	}
 
-	public function unsetBot(): Channel {
+    /**
+     * @throws RelationNotFound
+     */
+    public function unsetBot(): Channel {
 		if ( $this->getBot() ) {
 			$query = new Query\Connection();
 			$query->set( 'from', $this->getBot()->getPost()->ID );
@@ -166,8 +171,10 @@ class Channel extends Entity implements wpPostAble{
 		return $this;
 	}
 
-	public function doSendOut( string $message, string $mode ) {
-		do_action( 'logger', ['doSendOut', $this] );
+    /**
+     * @throws RelationNotFound
+     */
+    public function doSendOut(string $message, string $mode ) {
 		$chats = $this->getChats();
 
 		if ( $chats->isEmpty() ) {
@@ -176,7 +183,21 @@ class Channel extends Entity implements wpPostAble{
 
 		foreach ( $chats as $chat ) {
 			/** @var Chat $chat */
-			$this->getBot()->sendMessage( $chat->getChatID(), $message, $mode );
+			try {
+				$this->getBot()->sendMessage( $chat->getChatID(), $message, $mode );
+			} catch ( Telegram $e ) {
+				$this->logger->write(
+					[
+						'telegramChatID'=> $chat->getChatID(),
+						'chatTitle'     => $chat->getTitle(),
+						'chatPostID'    => $chat->getPost()->ID,
+						'channelTitle'  => $this->getTitle(),
+						'channelPostID' => $this->getPost()->ID,
+					],
+					$e->getMessage() . " [chatID:{$chat->getChatID()}]",
+					Logger::LEVEL_CRITICAL
+				);
+			}
 		}
 	}
 

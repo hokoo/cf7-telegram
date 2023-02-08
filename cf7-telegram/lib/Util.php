@@ -9,7 +9,7 @@ class Util {
 	/**
 	 * Runs the SQL query for installing/upgrading a table.
 	 *
-	 * @param string $key The key used in scb_register_table().
+	 * @param string $tableName
 	 * @param string $columns The SQL columns for the CREATE TABLE statement.
 	 * @param array $opts (optional) Various other options.
 	 *

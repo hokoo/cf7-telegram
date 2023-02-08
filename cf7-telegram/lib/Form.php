@@ -2,6 +2,7 @@
 
 namespace iTRON\cf7Telegram;
 
+use iTRON\wpConnections\Exceptions\RelationNotFound;
 use iTRON\wpConnections\Query;
 use iTRON\wpConnections\Exceptions\ConnectionWrongData;
 use iTRON\wpConnections\Exceptions\MissingParameters;
@@ -20,19 +21,23 @@ class Form extends Entity implements WPPostAble{
 	public function __construct( int $form_id = 0 ) {
 		parent::__construct();
 
-		$this->wpPostAble( 'wpcf7_contact_form', $form_id );
+		$this->wpPostAble( Client::CPT_CF7FORM, $form_id );
 	}
 
 	/**
 	 * @throws ConnectionWrongData
 	 * @throws MissingParameters
-	 */
+     * @throws RelationNotFound
+     */
 	public function connectChannel( Channel $channel ): Entity {
 		$channel->addForm( $this );
 		return $this;
 	}
 
-	public function disconnectChannel( Channel $channel = null ): Entity {
+    /**
+     * @throws RelationNotFound
+     */
+    public function disconnectChannel( Channel $channel = null ): Entity {
 		$channelID = isset ( $channel ) ? $channel->getPost()->ID : null;
 		$this->client
 			->getForm2ChannelRelation()

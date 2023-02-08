@@ -1,12 +1,12 @@
 <?php
-namespace iTRON\cf7Telegram;
+
+namespace iTRON\cf7Telegram\Collections;
 
 use iTRON\wpConnections\ConnectionCollection;
 use iTRON\wpPostAble\wpPostAble;
 use Ramsey\Collection\CollectionInterface;
 
-trait wppaCollectionFromConnectionsTrait {
-
+abstract class Collection extends \Ramsey\Collection\Collection {
 	public function createByConnections( ConnectionCollection $connections, string $sourceColumn = 'from' ): self {
 		// Chat IDs obtained
 		$ids = $connections->column( $sourceColumn );
