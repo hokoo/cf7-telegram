@@ -34,11 +34,6 @@ class Channel extends Entity implements wpPostAble{
 		$this->load();
 	}
 
-	public function __wakeup() {
-		$this->chats = null;
-		$this->forms = null;
-	}
-
 	/**
 	 * Loads and initiates all Channel data from WP post.
 	 */
