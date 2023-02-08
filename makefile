@@ -4,6 +4,9 @@ setup.all:
 setup.env:
 	bash ./install/setup-env.sh
 
+git.wpc:
+	bash ./install/gitwpc.sh
+
 sync:
 	bash ./install/sync.sh $(filter-out $@,$(MAKECMDGOALS))
 
