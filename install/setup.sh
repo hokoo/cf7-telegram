@@ -40,7 +40,6 @@ case "$item" in
     docker-compose -p cf7tg exec php sh -c "wp db reset --yes && wp core install --url=$PROJECT_BASE_URL --title=\"$WP_TITLE\" --admin_user=$WP_ADMIN --admin_password=$WP_ADMIN_PASS --admin_email=$WP_ADMIN_EMAIL --skip-email"
     docker-compose -p cf7tg exec php sh -c "wp plugin delete akismet hello"
     docker-compose -p cf7tg exec php sh -c "wp plugin activate --all"
-    docker-compose -p cf7tg exec php sh -c "wp core update --version=5.3"
     printf "WP User Admin: ${RYELLOW}%s \n${COLOR_OFF}WP User Pass: ${RYELLOW}%s${COLOR_OFF}\n" $WP_ADMIN $WP_ADMIN_PASS
       ;;
 
@@ -49,6 +48,7 @@ case "$item" in
       ;;
 esac
 
+docker-compose -p cf7tg exec php sh -c "wp core update --version=5.3"
 echo -e "${ICYAN}Do not forget update the hosts file with line:"
 echo -e "${BIGREEN}127.0.0.1 cf7tgdev.loc${COLOR_OFF}"
 echo "Done."
