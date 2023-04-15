@@ -118,6 +118,10 @@ class Bot extends Entity implements wpPostAble{
 	 * Checks whether itself is online.
 	 */
 	public function ping(): bool {
+		if ( ! isset( $this->api ) ) {
+			return false;
+		}
+
 		try {
 			$res = $this->api->getMe();
 		} catch ( TelegramSDKException $e ){

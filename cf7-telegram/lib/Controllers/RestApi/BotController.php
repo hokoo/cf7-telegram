@@ -32,11 +32,20 @@ class BotController extends Controller {
 	}
 
 	/**
-	 * @throws wppaLoadPostException
 	 * @throws wppaCreatePostException
 	 */
 	public function ping( $request ) {
-		$bot = new Bot( $request['id'] );
+		try {
+			$bot = new Bot( $request['id'] );
+		} catch ( wppaLoadPostException $exception ) {
+			// Apparently the wrong post ID has been provided which does not belong Bot CPT.
+			return new \WP_Error(
+				'rest_post_invalid_id',
+				__( 'Invalid post ID.' ),
+				[ 'status' => 404 ]
+			);
+		}
+
 		return rest_ensure_response( [ 'online' => $bot->ping() ] );
 	}
 
