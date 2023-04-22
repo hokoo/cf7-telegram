@@ -43,6 +43,7 @@ services:
     volumes:
       - ./:/var/www/html/
       - ./install/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./install/nginx/ssl/:/etc/nginx/ssl/
       - ./install/php-fpm/error.log:/var/log/php/cf7tgdev.loc.error.log
       - ./install/nginx/access.log:/var/log/nginx/cf7tgdev.loc.access.log
     ports:

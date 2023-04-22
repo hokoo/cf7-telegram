@@ -1,5 +1,9 @@
 #!/bin/bash
 
+drawline(){
+  printf %"$(tput cols)"s |tr " " "-"
+}
+
 # run from project root directory
 bash ./install/setup-env.sh
 
@@ -40,7 +44,15 @@ case "$item" in
     docker-compose -p cf7tg exec php sh -c "wp db reset --yes && wp core install --url=$PROJECT_BASE_URL --title=\"$WP_TITLE\" --admin_user=$WP_ADMIN --admin_password=$WP_ADMIN_PASS --admin_email=$WP_ADMIN_EMAIL --skip-email"
     docker-compose -p cf7tg exec php sh -c "wp plugin delete akismet hello"
     docker-compose -p cf7tg exec php sh -c "wp plugin activate --all"
+
+    drawline
+    printf "${ICYAN}WordPress credentials:${COLOR_OFF} \n"
     printf "WP User Admin: ${RYELLOW}%s \n${COLOR_OFF}WP User Pass: ${RYELLOW}%s${COLOR_OFF}\n" $WP_ADMIN $WP_ADMIN_PASS
+
+    printf "\n${ICYAN}Put this Application Key to Postman \`ApplicationApiKey\` variable value: ${RYELLOW} \n"
+    docker-compose -p cf7tg exec php sh -c "wp user application-password create 1 postman --porcelain"
+    printf "${COLOR_OFF}"
+    drawline
       ;;
 
     *)
