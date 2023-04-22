@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "c7a60bb45eb421a9418fbc65e93a16bd",
+    "content-hash": "5e50810fd0b4955cc3f3977eb25b5432",
     "packages": [
         {
             "name": "composer/installers",
@@ -153,16 +153,16 @@
         },
         {
             "name": "johnbillion/query-monitor",
-            "version": "3.11.1",
+            "version": "3.12.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/johnbillion/query-monitor.git",
-                "reference": "46f16175627900cb7d18bebf17f4ca41c62d5c23"
+                "reference": "9c7d97f585309b43094c5dea4545e14a57b57336"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/johnbillion/query-monitor/zipball/46f16175627900cb7d18bebf17f4ca41c62d5c23",
-                "reference": "46f16175627900cb7d18bebf17f4ca41c62d5c23",
+                "url": "https://api.github.com/repos/johnbillion/query-monitor/zipball/9c7d97f585309b43094c5dea4545e14a57b57336",
+                "reference": "9c7d97f585309b43094c5dea4545e14a57b57336",
                 "shasum": ""
             },
             "require": {
@@ -175,6 +175,8 @@
                 "codeception/module-webdriver": "^1.0",
                 "codeception/util-universalframework": "^1.0",
                 "dealerdirect/phpcodesniffer-composer-installer": "0.7.2",
+                "ergebnis/composer-normalize": "^2",
+                "johnbillion/plugin-infrastructure": "dev-trunk",
                 "lucatume/wp-browser": "^3.0.21",
                 "phpcompatibility/phpcompatibility-wp": "2.1.4",
                 "phpstan/phpstan": "^1.0",
@@ -186,7 +188,7 @@
             },
             "type": "wordpress-plugin",
             "extra": {
-                "wordpress-install-dir": "tests/wordpress"
+                "wordpress-install-dir": "vendor/roots/wordpress"
             },
             "autoload": {
                 "classmap": [
@@ -218,24 +220,24 @@
                     "type": "github"
                 }
             ],
-            "time": "2023-01-03T21:14:04+00:00"
+            "time": "2023-03-24T12:42:30+00:00"
         },
         {
             "name": "johnpbloch/wordpress",
-            "version": "5.2.17",
+            "version": "5.6.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/johnpbloch/wordpress.git",
-                "reference": "54f1963ed1693e6b1249354fa61f1050b6f1a25c"
+                "reference": "3055975734646c8d0b8caf7b5af168ced6ec4309"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/johnpbloch/wordpress/zipball/54f1963ed1693e6b1249354fa61f1050b6f1a25c",
-                "reference": "54f1963ed1693e6b1249354fa61f1050b6f1a25c",
+                "url": "https://api.github.com/repos/johnpbloch/wordpress/zipball/3055975734646c8d0b8caf7b5af168ced6ec4309",
+                "reference": "3055975734646c8d0b8caf7b5af168ced6ec4309",
                 "shasum": ""
             },
             "require": {
-                "johnpbloch/wordpress-core": "5.2.17",
+                "johnpbloch/wordpress-core": "5.6.0",
                 "johnpbloch/wordpress-core-installer": "^1.0 || ^2.0",
                 "php": ">=5.6.20"
             },
@@ -247,44 +249,45 @@
             "authors": [
                 {
                     "name": "WordPress Community",
-                    "homepage": "https://wordpress.org/about/"
+                    "homepage": "http://wordpress.org/about/"
                 }
             ],
             "description": "WordPress is open source software you can use to create a beautiful website, blog, or app.",
-            "homepage": "https://wordpress.org/",
+            "homepage": "http://wordpress.org/",
             "keywords": [
                 "blog",
                 "cms",
                 "wordpress"
             ],
             "support": {
-                "docs": "https://developer.wordpress.org/",
-                "forum": "https://wordpress.org/support/",
+                "forum": "http://wordpress.org/support/",
                 "irc": "irc://irc.freenode.net/wordpress",
-                "issues": "https://core.trac.wordpress.org/",
-                "source": "https://core.trac.wordpress.org/browser"
+                "issues": "http://core.trac.wordpress.org/",
+                "source": "http://core.trac.wordpress.org/browser",
+                "wiki": "http://codex.wordpress.org/"
             },
-            "time": "2022-10-17T21:36:18+00:00"
+            "time": "2020-12-08T22:34:35+00:00"
         },
         {
             "name": "johnpbloch/wordpress-core",
-            "version": "5.2.17",
+            "version": "5.6.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/johnpbloch/wordpress-core.git",
-                "reference": "75b74ca9d4128a711b80147bd382c449b0354b04"
+                "reference": "f074617dd69f466302836d1ae5de75c0bd7b6dfd"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/johnpbloch/wordpress-core/zipball/75b74ca9d4128a711b80147bd382c449b0354b04",
-                "reference": "75b74ca9d4128a711b80147bd382c449b0354b04",
+                "url": "https://api.github.com/repos/johnpbloch/wordpress-core/zipball/f074617dd69f466302836d1ae5de75c0bd7b6dfd",
+                "reference": "f074617dd69f466302836d1ae5de75c0bd7b6dfd",
                 "shasum": ""
             },
             "require": {
+                "ext-json": "*",
                 "php": ">=5.6.20"
             },
             "provide": {
-                "wordpress/core-implementation": "5.2.17"
+                "wordpress/core-implementation": "5.6.0"
             },
             "type": "wordpress-core",
             "notification-url": "https://packagist.org/downloads/",
@@ -311,7 +314,7 @@
                 "source": "https://core.trac.wordpress.org/browser",
                 "wiki": "https://codex.wordpress.org/"
             },
-            "time": "2022-10-17T21:36:15+00:00"
+            "time": "2020-12-08T22:34:23+00:00"
         },
         {
             "name": "johnpbloch/wordpress-core-installer",
@@ -425,15 +428,15 @@
         },
         {
             "name": "wpackagist-plugin/classic-editor",
-            "version": "1.6.2",
+            "version": "1.6.3",
             "source": {
                 "type": "svn",
                 "url": "https://plugins.svn.wordpress.org/classic-editor/",
-                "reference": "tags/1.6.2"
+                "reference": "tags/1.6.3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://downloads.wordpress.org/plugin/classic-editor.1.6.2.zip"
+                "url": "https://downloads.wordpress.org/plugin/classic-editor.1.6.3.zip"
             },
             "require": {
                 "composer/installers": "^1.0 || ^2.0"

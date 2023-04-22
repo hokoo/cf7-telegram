@@ -1,7 +1,21 @@
 #!/bin/bash
 
-drawline(){
+draw_line(){
   printf %"$(tput cols)"s |tr " " "-"
+}
+
+fake_posts(){
+  docker-compose -p cf7tg exec php sh -c "\
+  wp post create --post_type=cf7tg_chat --post_title=\"Chat 0\" --post_status=publish && \
+  wp post create --post_type=cf7tg_chat --post_title=\"Chat 1\" --post_status=publish && \
+  wp post create --post_type=cf7tg_bot --post_title=\"Bot example\" --post_status=publish && \
+  wp post create --post_type=cf7tg_channel --post_title=\"Channel 0\" --post_status=publish && \
+  wp post create --post_type=cf7tg_channel --post_title=\"Channel 1\" --post_status=publish && \
+  wp post create --post_type=cf7tg_channel --post_title=\"Channel 2\" --post_status=publish"
+}
+
+set_permalinks(){
+  docker-compose -p cf7tg exec php sh -c "wp rewrite structure '/%year%/%monthnum%/%postname%/'"
 }
 
 # run from project root directory
@@ -45,14 +59,19 @@ case "$item" in
     docker-compose -p cf7tg exec php sh -c "wp plugin delete akismet hello"
     docker-compose -p cf7tg exec php sh -c "wp plugin activate --all"
 
-    drawline
+    fake_posts
+    printf "${RGREEN}Example content got added.${COLOR_OFF} \n"
+
+    set_permalinks
+
+    draw_line
     printf "${ICYAN}WordPress credentials:${COLOR_OFF} \n"
     printf "WP User Admin: ${RYELLOW}%s \n${COLOR_OFF}WP User Pass: ${RYELLOW}%s${COLOR_OFF}\n" $WP_ADMIN $WP_ADMIN_PASS
 
     printf "\n${ICYAN}Put this Application Key to Postman \`ApplicationApiKey\` variable value: ${RYELLOW} \n"
     docker-compose -p cf7tg exec php sh -c "wp user application-password create 1 postman --porcelain"
     printf "${COLOR_OFF}"
-    drawline
+    draw_line
       ;;
 
     *)
@@ -60,7 +79,6 @@ case "$item" in
       ;;
 esac
 
-docker-compose -p cf7tg exec php sh -c "wp core update --version=5.3"
 echo -e "${ICYAN}Do not forget update the hosts file with line:"
 echo -e "${BIGREEN}127.0.0.1 cf7tgdev.loc${COLOR_OFF}"
 echo "Done."

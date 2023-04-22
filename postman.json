@@ -90,7 +90,7 @@
 							]
 						},
 						"url": {
-							"raw": "https://cf7tgdev.loc/wp-json/wp/v2/cf7tg_channel/20",
+							"raw": "https://cf7tgdev.loc/wp-json/wp/v2/cf7tg_channel/8",
 							"protocol": "https",
 							"host": [
 								"cf7tgdev",
@@ -101,7 +101,7 @@
 								"wp",
 								"v2",
 								"cf7tg_channel",
-								"20"
+								"8"
 							]
 						}
 					},
@@ -128,7 +128,7 @@
 							]
 						},
 						"url": {
-							"raw": "https://cf7tgdev.loc/wp-json/wp/v2/cf7tg_channel/20",
+							"raw": "https://cf7tgdev.loc/wp-json/wp/v2/cf7tg_channel/10",
 							"protocol": "https",
 							"host": [
 								"cf7tgdev",
@@ -139,7 +139,7 @@
 								"wp",
 								"v2",
 								"cf7tg_channel",
-								"20"
+								"10"
 							]
 						}
 					},
@@ -156,7 +156,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "https://cf7tgdev.loc/wp-json/wp/v2/cf7tg_bot/14",
+							"raw": "https://cf7tgdev.loc/wp-json/wp/v2/cf7tg_bot/5",
 							"protocol": "https",
 							"host": [
 								"cf7tgdev",
@@ -167,7 +167,7 @@
 								"wp",
 								"v2",
 								"cf7tg_bot",
-								"14"
+								"5"
 							]
 						}
 					},
@@ -202,7 +202,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "https://cf7tgdev.loc/wp-json/wp/v2/cf7tg_bot/8/ping",
+							"raw": "https://cf7tgdev.loc/wp-json/wp/v2/cf7tg_bot/5/ping",
 							"protocol": "https",
 							"host": [
 								"cf7tgdev",
@@ -213,7 +213,7 @@
 								"wp",
 								"v2",
 								"cf7tg_bot",
-								"8",
+								"5",
 								"ping"
 							]
 						}

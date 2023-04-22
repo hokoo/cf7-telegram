@@ -9,7 +9,9 @@ read item
 case "$item" in
     y|Y)
     rm -rf ./vendor
+    rm -f ./composer.lock
     rm -rf ./cf7-telegram/vendor
+    rm -f ./cf7-telegram/composer.lock
     rm -rf ./wordpress
     rm -f ./wp-config.php
     rm -f ./index.php
