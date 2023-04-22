@@ -1,0 +1,415 @@
+{
+	"info": {
+		"_postman_id": "9582ef2a-1000-43d2-97c6-ae99781a4b93",
+		"name": "CF7 Telegram",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "9699367"
+	},
+	"item": [
+		{
+			"name": "Channel",
+			"item": [
+				{
+					"name": "Channel Collection",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://cf7tgdev.loc/wp-json/wp/v2/cf7tg_channel/",
+							"protocol": "https",
+							"host": [
+								"cf7tgdev",
+								"loc"
+							],
+							"path": [
+								"wp-json",
+								"wp",
+								"v2",
+								"cf7tg_channel",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Channel",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "title",
+									"value": "Channel WOW",
+									"type": "text"
+								},
+								{
+									"key": "content",
+									"value": "Content",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "https://cf7tgdev.loc/wp-json/wp/v2/cf7tg_channel",
+							"protocol": "https",
+							"host": [
+								"cf7tgdev",
+								"loc"
+							],
+							"path": [
+								"wp-json",
+								"wp",
+								"v2",
+								"cf7tg_channel"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Channel",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "title",
+									"value": "Channel WOW",
+									"type": "text"
+								},
+								{
+									"key": "content",
+									"value": "Content",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "https://cf7tgdev.loc/wp-json/wp/v2/cf7tg_channel/20",
+							"protocol": "https",
+							"host": [
+								"cf7tgdev",
+								"loc"
+							],
+							"path": [
+								"wp-json",
+								"wp",
+								"v2",
+								"cf7tg_channel",
+								"20"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Channel",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "title",
+									"value": "Channel WOW",
+									"type": "text"
+								},
+								{
+									"key": "content",
+									"value": "Content",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "https://cf7tgdev.loc/wp-json/wp/v2/cf7tg_channel/20",
+							"protocol": "https",
+							"host": [
+								"cf7tgdev",
+								"loc"
+							],
+							"path": [
+								"wp-json",
+								"wp",
+								"v2",
+								"cf7tg_channel",
+								"20"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Bot",
+			"item": [
+				{
+					"name": "Get Bot",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://cf7tgdev.loc/wp-json/wp/v2/cf7tg_bot/14",
+							"protocol": "https",
+							"host": [
+								"cf7tgdev",
+								"loc"
+							],
+							"path": [
+								"wp-json",
+								"wp",
+								"v2",
+								"cf7tg_bot",
+								"14"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Bot collection",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://cf7tgdev.loc/wp-json/wp/v2/cf7tg_bot/",
+							"protocol": "https",
+							"host": [
+								"cf7tgdev",
+								"loc"
+							],
+							"path": [
+								"wp-json",
+								"wp",
+								"v2",
+								"cf7tg_bot",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Bot Ping",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://cf7tgdev.loc/wp-json/wp/v2/cf7tg_bot/8/ping",
+							"protocol": "https",
+							"host": [
+								"cf7tgdev",
+								"loc"
+							],
+							"path": [
+								"wp-json",
+								"wp",
+								"v2",
+								"cf7tg_bot",
+								"8",
+								"ping"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Chat",
+			"item": [
+				{
+					"name": "Chat Collection",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": []
+						},
+						"url": {
+							"raw": "https://cf7tgdev.loc/wp-json/wp/v2/cf7tg_chat",
+							"protocol": "https",
+							"host": [
+								"cf7tgdev",
+								"loc"
+							],
+							"path": [
+								"wp-json",
+								"wp",
+								"v2",
+								"cf7tg_chat"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "WP Common",
+			"item": [
+				{
+					"name": "REST API Root",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://cf7tgdev.loc/wp-json/wp/v2/",
+							"protocol": "https",
+							"host": [
+								"cf7tgdev",
+								"loc"
+							],
+							"path": [
+								"wp-json",
+								"wp",
+								"v2",
+								""
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "CF7",
+			"item": [
+				{
+					"name": "CF7 hacked",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": []
+						},
+						"url": {
+							"raw": "https://cf7tgdev.loc/wp-json/wp/v2/wpcf7_contact_form",
+							"protocol": "https",
+							"host": [
+								"cf7tgdev",
+								"loc"
+							],
+							"path": [
+								"wp-json",
+								"wp",
+								"v2",
+								"wpcf7_contact_form"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CF7 original",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://cf7tgdev.loc/wp-json/contact-form-7/v1/contact-forms",
+							"protocol": "https",
+							"host": [
+								"cf7tgdev",
+								"loc"
+							],
+							"path": [
+								"wp-json",
+								"contact-form-7",
+								"v1",
+								"contact-forms"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get CF7 Form",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": []
+						},
+						"url": {
+							"raw": "https://cf7tgdev.loc/wp-json/wp/v2/wpcf7_contact_form/4",
+							"protocol": "https",
+							"host": [
+								"cf7tgdev",
+								"loc"
+							],
+							"path": [
+								"wp-json",
+								"wp",
+								"v2",
+								"wpcf7_contact_form",
+								"4"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "basic",
+		"basic": [
+			{
+				"key": "password",
+				"value": "{{ApplicationApiKey}}",
+				"type": "string"
+			},
+			{
+				"key": "username",
+				"value": "admin",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "ApplicationApiKey",
+			"value": "",
+			"type": "string"
+		}
+	]
+}
