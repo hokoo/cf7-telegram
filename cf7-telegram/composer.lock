@@ -303,12 +303,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/guzzle/psr7.git",
-                "reference": "e98e3e6d4f86621a9b75f623996e6bbdeb4b9318"
+                "reference": "0e7537563a4fbad4f0257a23287b723336d5cb48"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/guzzle/psr7/zipball/e98e3e6d4f86621a9b75f623996e6bbdeb4b9318",
-                "reference": "e98e3e6d4f86621a9b75f623996e6bbdeb4b9318",
+                "url": "https://api.github.com/repos/guzzle/psr7/zipball/0e7537563a4fbad4f0257a23287b723336d5cb48",
+                "reference": "0e7537563a4fbad4f0257a23287b723336d5cb48",
                 "shasum": ""
             },
             "require": {
@@ -327,11 +327,6 @@
                 "laminas/laminas-httphandlerrunner": "Emit PSR-7 responses"
             },
             "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "1.9-dev"
-                }
-            },
             "autoload": {
                 "files": [
                     "src/functions_include.php"
@@ -389,7 +384,7 @@
             ],
             "support": {
                 "issues": "https://github.com/guzzle/psr7/issues",
-                "source": "https://github.com/guzzle/psr7/tree/1.9.0"
+                "source": "https://github.com/guzzle/psr7/tree/1.x"
             },
             "funding": [
                 {
@@ -405,7 +400,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2022-06-20T21:43:03+00:00"
+            "time": "2023-04-17T13:09:45+00:00"
         },
         {
             "name": "hokoo/wpconnections",
@@ -413,26 +408,34 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/hokoo/wpConnections.git",
-                "reference": "7b1fc8a4bdc2a159f5b1f3a29e3838501372de01"
+                "reference": "8b62595461b2f64697b618ffaaea07398f709f1c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/hokoo/wpConnections/zipball/7b1fc8a4bdc2a159f5b1f3a29e3838501372de01",
-                "reference": "7b1fc8a4bdc2a159f5b1f3a29e3838501372de01",
+                "url": "https://api.github.com/repos/hokoo/wpConnections/zipball/8b62595461b2f64697b618ffaaea07398f709f1c",
+                "reference": "8b62595461b2f64697b618ffaaea07398f709f1c",
                 "shasum": ""
             },
             "require": {
+                "psr/log": "^1.1",
                 "ramsey/collection": "*"
             },
             "require-dev": {
                 "johnpbloch/wordpress-core": "5.0.13",
+                "phpunit/phpunit": "9.6.x-dev",
                 "symfony/var-dumper": "5.4.x-dev"
             },
             "type": "library",
             "autoload": {
                 "psr-4": {
+                    "iTRON\\wpConnections\\Tests\\": "tests/",
                     "iTRON\\wpConnections\\": "src"
                 }
+            },
+            "scripts": {
+                "phpunit": [
+                    "phpunit"
+                ]
             },
             "license": [
                 "GPL-2.0+"
@@ -443,7 +446,7 @@
                 "source": "https://github.com/hokoo/wpConnections/tree/dev",
                 "issues": "https://github.com/hokoo/wpConnections/issues"
             },
-            "time": "2023-02-03T17:52:41+00:00"
+            "time": "2023-02-19T18:09:39+00:00"
         },
         {
             "name": "hokoo/wppostable",
@@ -451,12 +454,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/hokoo/wpPostAble.git",
-                "reference": "5c67b999873041bf0ac3fce499e6b13b3c7ef277"
+                "reference": "c3006763613565f059c1f2455f8755fcbc857862"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/hokoo/wpPostAble/zipball/5c67b999873041bf0ac3fce499e6b13b3c7ef277",
-                "reference": "5c67b999873041bf0ac3fce499e6b13b3c7ef277",
+                "url": "https://api.github.com/repos/hokoo/wpPostAble/zipball/c3006763613565f059c1f2455f8755fcbc857862",
+                "reference": "c3006763613565f059c1f2455f8755fcbc857862",
                 "shasum": ""
             },
             "require": {
@@ -479,10 +482,10 @@
             ],
             "description": "Library provides a functionality for associating your classes with WordPress class WP_Post.",
             "support": {
-                "source": "https://github.com/hokoo/wpPostAble/tree/dev",
+                "source": "https://github.com/hokoo/wpPostAble/tree/0.5",
                 "issues": "https://github.com/hokoo/wpPostAble/issues"
             },
-            "time": "2023-02-03T16:23:38+00:00"
+            "time": "2023-02-04T20:21:32+00:00"
         },
         {
             "name": "illuminate/contracts",
@@ -669,12 +672,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/briannesbitt/Carbon.git",
-                "reference": "496712849902241f04902033b0441b269effe001"
+                "reference": "1aec3f8d66ea86c3c9bb4ed0f6b31b156cfc1288"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/briannesbitt/Carbon/zipball/496712849902241f04902033b0441b269effe001",
-                "reference": "496712849902241f04902033b0441b269effe001",
+                "url": "https://api.github.com/repos/briannesbitt/Carbon/zipball/1aec3f8d66ea86c3c9bb4ed0f6b31b156cfc1288",
+                "reference": "1aec3f8d66ea86c3c9bb4ed0f6b31b156cfc1288",
                 "shasum": ""
             },
             "require": {
@@ -764,7 +767,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2023-01-29T18:53:47+00:00"
+            "time": "2023-02-25T13:14:29+00:00"
         },
         {
             "name": "psr/container",
@@ -816,26 +819,25 @@
         },
         {
             "name": "psr/http-message",
-            "version": "dev-master",
+            "version": "1.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/php-fig/http-message.git",
-                "reference": "efd67d1dc14a7ef4fc4e518e7dee91c271d524e4"
+                "reference": "cb6ce4845ce34a8ad9e68117c10ee90a29919eba"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/php-fig/http-message/zipball/efd67d1dc14a7ef4fc4e518e7dee91c271d524e4",
-                "reference": "efd67d1dc14a7ef4fc4e518e7dee91c271d524e4",
+                "url": "https://api.github.com/repos/php-fig/http-message/zipball/cb6ce4845ce34a8ad9e68117c10ee90a29919eba",
+                "reference": "cb6ce4845ce34a8ad9e68117c10ee90a29919eba",
                 "shasum": ""
             },
             "require": {
-                "php": ">=5.3.0"
+                "php": "^7.2 || ^8.0"
             },
-            "default-branch": true,
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "1.0.x-dev"
+                    "dev-master": "1.1.x-dev"
                 }
             },
             "autoload": {
@@ -864,9 +866,59 @@
                 "response"
             ],
             "support": {
-                "source": "https://github.com/php-fig/http-message/tree/master"
+                "source": "https://github.com/php-fig/http-message/tree/1.1"
             },
-            "time": "2019-08-29T13:16:46+00:00"
+            "time": "2023-04-04T09:50:52+00:00"
+        },
+        {
+            "name": "psr/log",
+            "version": "1.1.4",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/php-fig/log.git",
+                "reference": "d49695b909c3b7628b6289db5479a1c204601f11"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/php-fig/log/zipball/d49695b909c3b7628b6289db5479a1c204601f11",
+                "reference": "d49695b909c3b7628b6289db5479a1c204601f11",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3.0"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "1.1.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Psr\\Log\\": "Psr/Log/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "PHP-FIG",
+                    "homepage": "https://www.php-fig.org/"
+                }
+            ],
+            "description": "Common interface for logging libraries",
+            "homepage": "https://github.com/php-fig/log",
+            "keywords": [
+                "log",
+                "psr",
+                "psr-3"
+            ],
+            "support": {
+                "source": "https://github.com/php-fig/log/tree/1.1.4"
+            },
+            "time": "2021-05-03T11:20:27+00:00"
         },
         {
             "name": "psr/simple-cache",
@@ -1059,12 +1111,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/deprecation-contracts.git",
-                "reference": "e8b495ea28c1d97b5e0c121748d6f9b53d075c66"
+                "reference": "80d075412b557d41002320b96a096ca65aa2c98d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/deprecation-contracts/zipball/e8b495ea28c1d97b5e0c121748d6f9b53d075c66",
-                "reference": "e8b495ea28c1d97b5e0c121748d6f9b53d075c66",
+                "url": "https://api.github.com/repos/symfony/deprecation-contracts/zipball/80d075412b557d41002320b96a096ca65aa2c98d",
+                "reference": "80d075412b557d41002320b96a096ca65aa2c98d",
                 "shasum": ""
             },
             "require": {
@@ -1118,7 +1170,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2022-01-02T09:53:40+00:00"
+            "time": "2023-01-24T14:02:46+00:00"
         },
         {
             "name": "symfony/polyfill-intl-idn",
@@ -1624,12 +1676,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/translation.git",
-                "reference": "8ff0f66cc8dc4b940d8550b80c4dbabb5e550aca"
+                "reference": "9a401392f01bc385aa42760eff481d213a0cc2ba"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/translation/zipball/8ff0f66cc8dc4b940d8550b80c4dbabb5e550aca",
-                "reference": "8ff0f66cc8dc4b940d8550b80c4dbabb5e550aca",
+                "url": "https://api.github.com/repos/symfony/translation/zipball/9a401392f01bc385aa42760eff481d213a0cc2ba",
+                "reference": "9a401392f01bc385aa42760eff481d213a0cc2ba",
                 "shasum": ""
             },
             "require": {
@@ -1713,7 +1765,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2023-01-24T14:02:46+00:00"
+            "time": "2023-03-27T16:07:23+00:00"
         },
         {
             "name": "symfony/translation-contracts",
@@ -1721,12 +1773,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/translation-contracts.git",
-                "reference": "79cebc7b8c230e88868a3a85693c1e30b44f750e"
+                "reference": "ce0a6a932d572261f65b11e55991886c8d0e43ba"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/translation-contracts/zipball/79cebc7b8c230e88868a3a85693c1e30b44f750e",
-                "reference": "79cebc7b8c230e88868a3a85693c1e30b44f750e",
+                "url": "https://api.github.com/repos/symfony/translation-contracts/zipball/ce0a6a932d572261f65b11e55991886c8d0e43ba",
+                "reference": "ce0a6a932d572261f65b11e55991886c8d0e43ba",
                 "shasum": ""
             },
             "require": {
@@ -1791,7 +1843,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2022-10-27T07:55:40+00:00"
+            "time": "2023-02-14T08:03:56+00:00"
         }
     ],
     "packages-dev": [],
