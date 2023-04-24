@@ -4,6 +4,9 @@ setup.all:
 setup.env:
 	bash ./install/setup-env.sh
 
+setup.container:
+	bash ./install/setup-container.sh
+
 git.wpc:
 	bash ./install/gitwpc.sh
 
