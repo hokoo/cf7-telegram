@@ -52,6 +52,16 @@ services:
     networks:
       - cf7tgdev-network
 
+  node:
+    container_name: "${PROJECT_NAME}_node"
+    image: node:18
+    tty: true
+    working_dir: /var/www/html/
+    volumes:
+      - ./:/var/www/html/
+    networks:
+      - cf7tgdev-network
+
 networks:
   cf7tgdev-network:
     driver: bridge
