@@ -18,3 +18,9 @@ php.connect:
 
 php.connect.root:
 	docker-compose -p cf7tg exec --user=root php bash
+
+node.connect:
+	docker-compose -p cf7tg exec node bash
+
+node.connect.root:
+	docker-compose -p cf7tg exec --user=root node bash
