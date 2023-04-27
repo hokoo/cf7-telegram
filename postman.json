@@ -42,12 +42,18 @@
 							"urlencoded": [
 								{
 									"key": "title",
-									"value": "Channel WOW",
+									"value": "Awesome Channel",
 									"type": "text"
 								},
 								{
 									"key": "content",
 									"value": "Content",
+									"type": "text",
+									"disabled": true
+								},
+								{
+									"key": "status",
+									"value": "publish",
 									"type": "text"
 								}
 							]
@@ -114,18 +120,7 @@
 						"header": [],
 						"body": {
 							"mode": "urlencoded",
-							"urlencoded": [
-								{
-									"key": "title",
-									"value": "Channel WOW",
-									"type": "text"
-								},
-								{
-									"key": "content",
-									"value": "Content",
-									"type": "text"
-								}
-							]
+							"urlencoded": []
 						},
 						"url": {
 							"raw": "https://cf7tgdev.loc/wp-json/wp/v2/cf7tg_channel/10",
@@ -156,7 +151,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "https://cf7tgdev.loc/wp-json/wp/v2/cf7tg_bot/5",
+							"raw": "https://cf7tgdev.loc/wp-json/wp/v2/cf7tg_bot/7",
 							"protocol": "https",
 							"host": [
 								"cf7tgdev",
@@ -167,7 +162,7 @@
 								"wp",
 								"v2",
 								"cf7tg_bot",
-								"5"
+								"7"
 							]
 						}
 					},
@@ -215,6 +210,114 @@
 								"cf7tg_bot",
 								"5",
 								"ping"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Bot",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "title",
+									"value": "New Bot",
+									"type": "text"
+								},
+								{
+									"key": "token",
+									"value": "123",
+									"type": "text",
+									"disabled": true
+								},
+								{
+									"key": "status",
+									"value": "publish",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "https://cf7tgdev.loc/wp-json/wp/v2/cf7tg_bot",
+							"protocol": "https",
+							"host": [
+								"cf7tgdev",
+								"loc"
+							],
+							"path": [
+								"wp-json",
+								"wp",
+								"v2",
+								"cf7tg_bot"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Bot",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "title",
+									"value": "Updated Bot Title",
+									"type": "text"
+								},
+								{
+									"key": "token",
+									"value": "789",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "https://cf7tgdev.loc/wp-json/wp/v2/cf7tg_bot/7",
+							"protocol": "https",
+							"host": [
+								"cf7tgdev",
+								"loc"
+							],
+							"path": [
+								"wp-json",
+								"wp",
+								"v2",
+								"cf7tg_bot",
+								"7"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Bot",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": []
+						},
+						"url": {
+							"raw": "https://cf7tgdev.loc/wp-json/wp/v2/cf7tg_bot/7",
+							"protocol": "https",
+							"host": [
+								"cf7tgdev",
+								"loc"
+							],
+							"path": [
+								"wp-json",
+								"wp",
+								"v2",
+								"cf7tg_bot",
+								"7"
 							]
 						}
 					},
