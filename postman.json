@@ -390,7 +390,7 @@
 			"name": "CF7",
 			"item": [
 				{
-					"name": "CF7 hacked",
+					"name": "Get Form Collection",
 					"protocolProfileBehavior": {
 						"disableBodyPruning": true
 					},
@@ -419,29 +419,7 @@
 					"response": []
 				},
 				{
-					"name": "CF7 original",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "https://cf7tgdev.loc/wp-json/contact-form-7/v1/contact-forms",
-							"protocol": "https",
-							"host": [
-								"cf7tgdev",
-								"loc"
-							],
-							"path": [
-								"wp-json",
-								"contact-form-7",
-								"v1",
-								"contact-forms"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Get CF7 Form",
+					"name": "Get Form",
 					"protocolProfileBehavior": {
 						"disableBodyPruning": true
 					},
@@ -465,6 +443,28 @@
 								"v2",
 								"wpcf7_contact_form",
 								"4"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CF7 original",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://cf7tgdev.loc/wp-json/contact-form-7/v1/contact-forms",
+							"protocol": "https",
+							"host": [
+								"cf7tgdev",
+								"loc"
+							],
+							"path": [
+								"wp-json",
+								"contact-form-7",
+								"v1",
+								"contact-forms"
 							]
 						}
 					},
