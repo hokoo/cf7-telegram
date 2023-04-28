@@ -476,6 +476,34 @@
 			"name": "Connections",
 			"item": [
 				{
+					"name": "WPC REST Root",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": []
+						},
+						"url": {
+							"raw": "https://cf7tgdev.loc/wp-json/wp-connections/v1",
+							"protocol": "https",
+							"host": [
+								"cf7tgdev",
+								"loc"
+							],
+							"path": [
+								"wp-json",
+								"wp-connections",
+								"v1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "Client",
 					"request": {
 						"method": "GET",
