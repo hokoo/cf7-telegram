@@ -32,7 +32,7 @@ class Settings {
 
 		wp_enqueue_style( 'wpcf7telegram-admin-styles', self::pluginUrl() . '/assets/css/index.css', null, WPCF7TG_VERSION );
 		wp_enqueue_script( 'wpcf7telegram-admin', self::pluginUrl() . '/assets/js/index.js', null, WPCF7TG_VERSION );
-		wp_localize_script( 'wpcf7telegram-admin', 'wpData', array(
+		wp_localize_script( 'wpcf7telegram-admin', 'cf7TelegramData', array(
 			'rest_client_url'   => get_rest_url( null, 'wp-connections/v1' . '/client/' . Client::WPCONNECTIONS_CLIENT ),
 			// Put this nonce to X-WP-Nonce header request.
 			'nonce'		        => wp_create_nonce( 'wpcf7_telegram_nonce' ),
