@@ -57,10 +57,6 @@ class Client {
 		RestApi::init();
 
 		add_action( 'wpcf7_before_send_mail', [ CF7::class, 'handleSubscribe' ], 99999, 3 );
-        add_action( 'admin_enqueue_scripts', function() {
-            wp_enqueue_script( 'wp-api' );
-        } );
-
 	}
 
 	private function registerConnectionsClient() {

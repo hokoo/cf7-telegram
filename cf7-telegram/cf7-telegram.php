@@ -11,6 +11,7 @@
 */
 
 use iTRON\cf7Telegram\Client;
+use iTRON\cf7Telegram\Settings;
 
 define( 'WPCF7TG_PLUGIN_NAME', plugin_basename( __FILE__ ) );
 
@@ -24,6 +25,7 @@ require ( __DIR__ . '/classes/wpcf7telegram.php' );
 require __DIR__ . '/vendor/autoload.php';
 
 add_action( 'setup_theme', [ Client::getInstance(), 'init' ] );
+Settings::init();
 
 load_plugin_textdomain( WPCF7TG_DOMAIN, FALSE,  dirname( WPCF7TG_PLUGIN_NAME ) . '/languages' );
 
