@@ -546,11 +546,18 @@ class wpcf7_Telegram{
 	}
 	
 	function view_addonds(){
+		echo '<h2>'. __( 'Extensions', 'cf7-telegram' ) .'</h2>';
 		
 		foreach ( $this->addons as $slug => $name ) :
+			$attachment_addon_link = "https://nebster.net/product/contact-form-7-telegram-attachments/";
 			echo class_exists( $slug ) ?
 				'<p>' . __( 'Uses addon:', WPCF7TG_DOMAIN ) . ' ' . $name . '</p>' :
-				'<p><a href="https://nebster.net/product/contact-form-7-telegram-attachments/" target="_blank" >' . __( 'File sending add-on is available', WPCF7TG_DOMAIN ) . '</a>. ' .  __( 'Sale 75% until Dec, 31, 2020', WPCF7TG_DOMAIN ) . '</p>';
+				/* translators: 1. File sending extension link, 2. end sale date, 3. "Get it now!" link  */
+				sprintf( __( 'We have a %1$s available that is 75%% OFF until %2$s: %3$s', WPCF7TG_DOMAIN ),
+					'<a href="'.$attachment_addon_link.'" target="_blank" >' . __( 'File sending extension', WPCF7TG_DOMAIN ) . '</a>',
+					date_i18n( get_option( 'date_format' ), strtotime( '31-12-' . date( 'Y' ) )  ),
+					'<a href="'.$attachment_addon_link.'" target="_blank" >' . __( 'Get it now!', WPCF7TG_DOMAIN ) . '</a>',
+				) . '</p>';
 		endforeach;
 	}
 }
