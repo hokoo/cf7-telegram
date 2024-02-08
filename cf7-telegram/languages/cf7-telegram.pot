@@ -1,115 +1,224 @@
-#, fuzzy
+# Copyright (C) 2024 Hokku
+# This file is distributed under the GPL v2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Contact Form 7 Telegram\n"
-"POT-Creation-Date: 2020-02-09 13:07+0300\n"
-"PO-Revision-Date: 2020-02-08 19:05+0300\n"
-"Last-Translator: \n"
-"Language-Team: iTRON <public@itron.pro>\n"
+"Project-Id-Version: Contact Form 7 + Telegram 1.0-rc1\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/cf7-telegram\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 2.3\n"
-"X-Poedit-Basepath: ..\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"Language: en_GB\n"
-"X-Poedit-KeywordsList: __;_e;sprintf\n"
-"X-Poedit-SearchPath-0: .\n"
+"POT-Creation-Date: 2024-02-08T02:27:47+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.8.1\n"
+"X-Domain: cf7-telegram\n"
 
-#: inc/class-wpcf7telegram.php:39
+#. Plugin Name of the plugin
+msgid "Contact Form 7 + Telegram"
+msgstr ""
+
+#. Description of the plugin
+msgid "Sends messages to Telegram-chat"
+msgstr ""
+
+#. Author of the plugin
+msgid "Hokku"
+msgstr ""
+
+#: classes/wpcf7telegram.php:40
 msgid "Prevent duplicate object creation"
 msgstr ""
 
-#: inc/class-wpcf7telegram.php:84
+#: classes/wpcf7telegram.php:45
+msgid "File Sending"
+msgstr ""
+
+#: classes/wpcf7telegram.php:91
+#: lib/Settings.php:60
 msgid "Do you really want to approve?"
 msgstr ""
 
-#: inc/class-wpcf7telegram.php:85
+#: classes/wpcf7telegram.php:92
+#: lib/Settings.php:61
 msgid "Do you really want to refuse?"
 msgstr ""
 
-#: inc/class-wpcf7telegram.php:86
+#: classes/wpcf7telegram.php:93
+#: lib/Settings.php:62
+msgid "Do you really want to pause?"
+msgstr ""
+
+#: classes/wpcf7telegram.php:94
+#: lib/Settings.php:63
 msgid "Successfully approved"
 msgstr ""
 
-#: inc/class-wpcf7telegram.php:87
+#: classes/wpcf7telegram.php:95
+#: lib/Settings.php:64
 msgid "Request refused"
 msgstr ""
 
-#: inc/class-wpcf7telegram.php:96
+#: classes/wpcf7telegram.php:104
 msgid "Bot-settings"
 msgstr ""
 
-#: inc/class-wpcf7telegram.php:103
+#: classes/wpcf7telegram.php:111
 msgid "Bot Token<br/><small>You need to create your own Telegram-Bot.<br/><a target=\"_blanc\" href=\"https://core.telegram.org/bots#3-how-do-i-create-a-bot\">How to create</a></small>"
 msgstr ""
 
-#: inc/class-wpcf7telegram.php:112
+#: classes/wpcf7telegram.php:120
 msgid "Defined by WPFC7TG_BOT_TOKEN constant"
 msgstr ""
 
-#: inc/class-wpcf7telegram.php:112
+#: classes/wpcf7telegram.php:120
 msgid "or define by WPFC7TG_BOT_TOKEN constant"
 msgstr ""
 
-#: inc/class-wpcf7telegram.php:140
+#: classes/wpcf7telegram.php:148
+#: lib/Settings.php:18
 msgid "Telegram notificator settings"
 msgstr ""
 
-#: inc/class-wpcf7telegram.php:150
+#: classes/wpcf7telegram.php:158
 msgid "Just use the shortcode <code>[telegram]</code> in the form for activate notification through Telegram."
 msgstr ""
 
-#: inc/class-wpcf7telegram.php:286
-msgid "Error has occured. See php error log."
+#: classes/wpcf7telegram.php:302
+msgid "An error has occured. See php error log."
 msgstr ""
 
-#: inc/class-wpcf7telegram.php:297
+#: classes/wpcf7telegram.php:313
 msgid "Bot username"
 msgstr ""
 
-#: inc/class-wpcf7telegram.php:301
+#: classes/wpcf7telegram.php:318
 msgid "Bot is online"
 msgstr ""
 
-#: inc/class-wpcf7telegram.php:302
+#: classes/wpcf7telegram.php:319
 msgid "Bot is broken"
 msgstr ""
 
-#: inc/class-wpcf7telegram.php:302
+#: classes/wpcf7telegram.php:319
 msgid "unknown"
 msgstr ""
 
-#: inc/class-wpcf7telegram.php:306
+#: classes/wpcf7telegram.php:326
 msgid "Subscribers list"
 msgstr ""
 
-#: inc/class-wpcf7telegram.php:311
+#: classes/wpcf7telegram.php:331
 msgid "List is empty"
 msgstr ""
 
-#: inc/class-wpcf7telegram.php:313
-#, php-format
+#. translators: "cf7tg_start" command
+#: classes/wpcf7telegram.php:333
 msgid "Add user: send the <code>%s</code> comand to your bot"
 msgstr ""
 
-#: inc/class-wpcf7telegram.php:314
-#, php-format
+#. translators: "cf7tg_start" command
+#: classes/wpcf7telegram.php:335
 msgid "Add group: add your bot to the group and send the <code>%s</code> comand to your group"
 msgstr ""
 
-#: inc/class-wpcf7telegram.php:408
+#: classes/wpcf7telegram.php:429
 msgid "Subscribed for Contact Form 7 notifications from"
 msgstr ""
 
-#: inc/class-wpcf7telegram.php:505
+#: classes/wpcf7telegram.php:526
 msgid "Approve"
 msgstr ""
 
-#: inc/class-wpcf7telegram.php:506
+#: classes/wpcf7telegram.php:527
+#: lib/Settings.php:52
 msgid "Pause"
 msgstr ""
 
-#: inc/class-wpcf7telegram.php:507
+#: classes/wpcf7telegram.php:528
 msgid "Delete"
+msgstr ""
+
+#: classes/wpcf7telegram.php:550
+msgid "Extensions"
+msgstr ""
+
+#: classes/wpcf7telegram.php:555
+msgid "Uses addon:"
+msgstr ""
+
+#. translators: 1. File sending extension link, 2. end sale date, 3. "Get it now!" link
+#: classes/wpcf7telegram.php:557
+msgid "We have a %1$s available that is 75%% OFF until %2$s: %3$s"
+msgstr ""
+
+#: classes/wpcf7telegram.php:558
+msgid "File sending extension"
+msgstr ""
+
+#: classes/wpcf7telegram.php:560
+msgid "Get it now!"
+msgstr ""
+
+#: lib/Settings.php:41
+msgid "New Channel Name"
+msgstr ""
+
+#: lib/Settings.php:42
+msgid "Create new channel"
+msgstr ""
+
+#: lib/Settings.php:43
+msgid "Rename channel"
+msgstr ""
+
+#: lib/Settings.php:44
+msgid "Connect form"
+msgstr ""
+
+#: lib/Settings.php:45
+msgid "Connect bot"
+msgstr ""
+
+#. translators: channel name
+#: lib/Settings.php:47
+msgid "Disconnect this bot from %s channel?"
+msgstr ""
+
+#. translators: channel name
+#: lib/Settings.php:49
+msgid "Do you really want to remove %s channel?"
+msgstr ""
+
+#. translators: 1. form name, 2. channel name
+#: lib/Settings.php:51
+msgid "Do you really want to disconnect %1$s form from %2$s channel?"
+msgstr ""
+
+#: lib/Settings.php:53
+msgid "Resume"
+msgstr ""
+
+#: lib/Settings.php:56
+msgid "Bot"
+msgstr ""
+
+#: lib/Settings.php:57
+msgid "API Key"
+msgstr ""
+
+#: lib/Settings.php:65
+msgid "Muted"
+msgstr ""
+
+#: lib/Settings.php:66
+msgid "Mute"
+msgstr ""
+
+#: lib/Settings.php:67
+msgid "Remove"
+msgstr ""
+
+#: lib/Settings.php:68
+msgid "Activate"
 msgstr ""
