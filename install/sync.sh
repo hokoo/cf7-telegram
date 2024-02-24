@@ -1,4 +1,5 @@
 #!/bin/bash
+#Deprecated
 
 # import variables from .env file
 . ./.env
