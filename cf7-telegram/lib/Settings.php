@@ -16,6 +16,7 @@ class Settings {
 		<div id="cf7-telegram-container">
 			<div class="wrap">
 				<h1><?php echo __( 'Telegram notificator settings', 'cf7-telegram' ); ?></h1>
+				<?php self::put_settings_content(); ?>
 			</div>
 		</div>
 		<?php
@@ -73,5 +74,13 @@ class Settings {
 
 	public static function pluginUrl() {
 		return untrailingslashit( plugins_url( '/', WPCF7TG_FILE ) );
+	}
+
+	public static function pluginDir(): string {
+		return untrailingslashit( plugin_dir_path( WPCF7TG_FILE ) );
+	}
+
+	public static function put_settings_content() {
+		include self::pluginDir() . '/assets/settings-content.html';
 	}
 }
