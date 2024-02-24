@@ -10,9 +10,6 @@ setup.container:
 git.wpc:
 	bash ./install/gitwpc.sh
 
-sync:
-	bash ./install/sync.sh $(filter-out $@,$(MAKECMDGOALS))
-
 clear.all:
 	bash ./install/clear.sh
 

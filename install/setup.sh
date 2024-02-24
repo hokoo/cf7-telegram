@@ -1,25 +1,23 @@
 #!/bin/bash
 
-# import variables from .env file
-. ./.env
-
 # import functions
 . ./install/setup-functions.sh
 
-# run from project root directory
-bash ./install/setup-env.sh
-
+setup-env
+configure-nginx
 setup-container
 
 echo -e "Composers installation... Yes, there are two composers here ${RYELLOW}:-D${COLOR_OFF}"
 docker-compose -p cf7tg exec php sh -c "composer install"
 docker-compose -p cf7tg exec php sh -c "cd ./cf7-telegram && composer install"
 
+# Create symlink for the plugin
+echo "Symlinking plugin..."
+docker-compose -p cf7tg exec php sh -c "ln -s /var/www/html/cf7-telegram /var/www/html/wordpress/wp-content/plugins/cf7-telegram"
+echo -e "${ICYAN}Result: ${RYELLOW}$(ls -l ./wordpress/wp-content/plugins/ | grep cf7-telegram)${COLOR_OFF}"
+
 echo "WP setup preparing..."
 # prepare file structure
-
-# Now we have to clone plugin into WP plugins directory
-make sync q
 
 [ ! -f ./index.php ] && echo "<?php
 define( 'WP_USE_THEMES', true );
