@@ -1,14 +1,10 @@
 #!/bin/bash
 
-# import variables from .env file
-. ./.env
-
 # import functions
 . ./install/setup-functions.sh
 
-# run from project root directory
-bash ./install/setup-env.sh
-
+setup-env
+configure-nginx
 setup-container
 
 echo -e "Composers installation... Yes, there are two composers here ${RYELLOW}:-D${COLOR_OFF}"
