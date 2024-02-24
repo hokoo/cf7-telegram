@@ -12,14 +12,16 @@ class Settings {
 	}
 
 	public static function plugin_menu_cbf(){
-		?>
+		$s = <<<HTML
 		<div id="cf7-telegram-container">
 			<div class="wrap">
-				<h1><?php echo __( 'Telegram notificator settings', 'cf7-telegram' ); ?></h1>
-				<?php self::put_settings_content(); ?>
+				<h1>%s</h1>
+				%s
 			</div>
 		</div>
-		<?php
+HTML;
+
+		printf( $s, __( 'Telegram notificator settings', 'cf7-telegram' ), self::get_settings_content() );
 	}
 
 	public static function initScreen(){
@@ -80,7 +82,7 @@ class Settings {
 		return untrailingslashit( plugin_dir_path( WPCF7TG_FILE ) );
 	}
 
-	public static function put_settings_content() {
-		include self::pluginDir() . '/assets/settings-content.html';
+	private static function get_settings_content() : string {
+		return file_get_contents( self::pluginDir() . '/assets/settings-content.html' );
 	}
 }
