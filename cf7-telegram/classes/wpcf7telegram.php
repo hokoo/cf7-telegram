@@ -37,17 +37,18 @@ class wpcf7_Telegram{
 	);
 	
 	function __construct(){
-		if ( ! empty( self::$instance ) ) return new WP_Error( 'duplicate_object', __( 'Prevent duplicate object creation', WPCF7TG_DOMAIN ) );
+		if ( ! empty( self::$instance ) ) return new WP_Error( 'duplicate_object', __( 'Prevent duplicate object creation', 'cf7-telegram' ) );
 	}
 	
 	private function init(){
 		$this->addons = array(
-			'wpcf7tg_mediafiles' => __( 'File Sending', WPCF7TG_DOMAIN ),
+			'wpcf7tg_mediafiles' => __( 'File Sending', 'cf7-telegram' ),
 		);
 		
 		$this->load_bot_token();
 		$this->load_chats();
 		
+		add_action( 'plugins_loaded', array( $this, 'translations' ) );
 		add_action( 'admin_menu', array( $this, 'menu_page' ) );
 		add_action( 'admin_init', array( $this, 'save_form' ), 50 );
 		add_action( 'admin_init', array( $this, 'settings_section' ), 999 );
@@ -66,6 +67,10 @@ class wpcf7_Telegram{
 		endif;
 
 		return self::$instance;
+	}
+
+	public function translations() {
+		load_plugin_textdomain( 'cf7-telegram', FALSE,  dirname( WPCF7TG_PLUGIN_NAME ) . '/languages' );
 	}
 	
 	public function current_screen(){
@@ -88,11 +93,11 @@ class wpcf7_Telegram{
 			'ajax'		=> admin_url('admin-ajax.php'),
 			'nonce'		=> wp_create_nonce( 'wpcf7_telegram_nonce' ),
 			'l10n'		=> array(
-				'confirm_approve'	=> __( 'Do you really want to approve?', WPCF7TG_DOMAIN ),
-				'confirm_refuse'	=> __( 'Do you really want to refuse?', WPCF7TG_DOMAIN ),
-				'confirm_pause'		=> __( 'Do you really want to pause?', WPCF7TG_DOMAIN ),
-				'approved'	=> __( 'Successfully approved', WPCF7TG_DOMAIN ),
-				'refused'	=> __( 'Request refused', WPCF7TG_DOMAIN ),
+				'confirm_approve'	=> __( 'Do you really want to approve?', 'cf7-telegram' ),
+				'confirm_refuse'	=> __( 'Do you really want to refuse?', 'cf7-telegram' ),
+				'confirm_pause'		=> __( 'Do you really want to pause?', 'cf7-telegram' ),
+				'approved'	=> __( 'Successfully approved', 'cf7-telegram' ),
+				'refused'	=> __( 'Request refused', 'cf7-telegram' ),
 			),
 		) );
 	}
@@ -101,14 +106,14 @@ class wpcf7_Telegram{
 		$me = self::get_instance();
 		add_settings_section(
 			'wpcf7_tg_sections__main', 
-			__( 'Bot-settings', WPCF7TG_DOMAIN ),
+			__( 'Bot-settings', 'cf7-telegram' ),
 			array( $me, 'sections__main_callback_function' ),
 			'wpcf7tg_settings_page'
 		);
 		
 		add_settings_field( 
 			'bot_token', 
-			__( 'Bot Token<br/><small>You need to create your own Telegram-Bot.<br/><a target="_blanc" href="https://core.telegram.org/bots#3-how-do-i-create-a-bot">How to create</a></small>', WPCF7TG_DOMAIN ), 
+			__( 'Bot Token<br/><small>You need to create your own Telegram-Bot.<br/><a target="_blanc" href="https://core.telegram.org/bots#3-how-do-i-create-a-bot">How to create</a></small>', 'cf7-telegram' ), 
 			array( $me, 'settings_clb' ), 
 			'wpcf7tg_settings_page', 
 			'wpcf7_tg_sections__main', 
@@ -117,7 +122,7 @@ class wpcf7_Telegram{
 				'name'		=> 'wpcf7_telegram_tkn',
 				'value'		=> self::has_token_constant() ? '' : $me->get_bot_token(),
 				'disabled'	=> self::has_token_constant(),
-				'ph'		=> self::has_token_constant() ? __( 'Defined by WPFC7TG_BOT_TOKEN constant', WPCF7TG_DOMAIN ) : __( 'or define by WPFC7TG_BOT_TOKEN constant', WPCF7TG_DOMAIN ),
+				'ph'		=> self::has_token_constant() ? __( 'Defined by WPFC7TG_BOT_TOKEN constant', 'cf7-telegram' ) : __( 'or define by WPFC7TG_BOT_TOKEN constant', 'cf7-telegram' ),
 			)
 		);
 	}
@@ -145,7 +150,7 @@ class wpcf7_Telegram{
 	function plugin_menu_cbf(){
 	?>	
 		<div class="wrap">	
-			<h1><?php echo __( 'Telegram notificator settings', WPCF7TG_DOMAIN ); ?></h1>
+			<h1><?php echo __( 'Telegram notificator settings', 'cf7-telegram' ); ?></h1>
 			<?php 
 				$this->bot_status();
 				$this->view_full_list();
@@ -155,7 +160,7 @@ class wpcf7_Telegram{
 				<?php settings_fields( 'wpcf7tg_settings_page' ); ?>	
 				<?php do_settings_sections( 'wpcf7tg_settings_page' ); ?> 
 				<input type="hidden" name="wpcf7tg_settings_form_action" value="save" />
-				<p><?php echo __( 'Just use the shortcode <code>[telegram]</code> in the form for activate notification through Telegram.', WPCF7TG_DOMAIN ); ?></p>
+				<p><?php echo __( 'Just use the shortcode <code>[telegram]</code> in the form for activate notification through Telegram.', 'cf7-telegram' ); ?></p>
 				<?php submit_button(); ?>	
 			</form>	
 			<?php
@@ -299,7 +304,7 @@ class wpcf7_Telegram{
 		$check = $this->api_request( 'getMe' );
 		
 		if ( false === $check ) 
-		return new WP_Error( 'check_bot_error', __( 'An error has occured. See php error log.', WPCF7TG_DOMAIN ) );
+		return new WP_Error( 'check_bot_error', __( 'An error has occured. See php error log.', 'cf7-telegram' ) );
 
 		return $check;		
 	}
@@ -310,28 +315,29 @@ class wpcf7_Telegram{
 		$status_format = 
 			'<div class="check_bot %s">
 				<strong class="status">%s</strong>
-				<div>'. __( 'Bot username', WPCF7TG_DOMAIN ) . ': <code class="bot_username">%s</code></div>
+				<div>'. __( 'Bot username', 'cf7-telegram' ) . ': <code class="bot_username">%s</code></div>
 			</div>';
 		
 		if ( ! is_wp_error( $check_bot ) ) :
 			echo ( true === @ $check_bot->ok ) ? 
-				sprintf( $status_format, 'online', __( 'Bot is online', WPCF7TG_DOMAIN ), '@' . $check_bot->result->username ) :
-				sprintf( $status_format, 'failed', __( 'Bot is broken', WPCF7TG_DOMAIN ), __( 'unknown', WPCF7TG_DOMAIN ) );
+				sprintf( $status_format, 'online', __( 'Bot is online', 'cf7-telegram' ), '@' . $check_bot->result->username ) :
+				sprintf( $status_format, 'failed', __( 'Bot is broken', 'cf7-telegram' ), __( 'unknown', 'cf7-telegram' ) );
 		else :
 			echo $check_bot->get_error_message();
 		endif;
 	}
 	
 	private function view_full_list(){
-		echo '<h2>'. __( 'Subscribers list', WPCF7TG_DOMAIN ) .'</h2>';
+		echo '<h2>'. __( 'Subscribers list', 'cf7-telegram' ) .'</h2>';
 		
 		$req = $this->pending_html_list();
 		$app = $this->approved_html_list();
 		
-		if ( ! $req && ! $app ) _e( 'List is empty', WPCF7TG_DOMAIN );
-		
-		echo '<p>', sprintf( __( 'Add user: send the <code>%s</code> comand to your bot', WPCF7TG_DOMAIN ), '/'. $this->cmd ), '</p>';
-		echo '<p>', sprintf( __( 'Add group: add your bot to the group and send the <code>%s</code> comand to your group', WPCF7TG_DOMAIN ), '/'. $this->cmd ), '</p>';
+		if ( ! $req && ! $app ) _e( 'List is empty', 'cf7-telegram' );
+		/* translators: "cf7tg_start" command */
+		echo '<p>', sprintf( __( 'Add user: send the <code>%s</code> comand to your bot', 'cf7-telegram' ), '/'. $this->cmd ), '</p>';
+		/* translators: "cf7tg_start" command */
+		echo '<p>', sprintf( __( 'Add group: add your bot to the group and send the <code>%s</code> comand to your group', 'cf7-telegram' ), '/'. $this->cmd ), '</p>';
 	}
 	
 	private function get_listitem_data( $chat, $status = 'pending' ){
@@ -425,7 +431,7 @@ class wpcf7_Telegram{
 		
 		$this->api_request( 'sendMessage', array(
 			'chat_id'					=> $chat_id,
-			'text'						=> __( 'Subscribed for Contact Form 7 notifications from', WPCF7TG_DOMAIN ) . ' ' . home_url(),
+			'text'						=> __( 'Subscribed for Contact Form 7 notifications from', 'cf7-telegram' ) . ' ' . home_url(),
 			'disable_web_page_preview'	=> true,
 		) );
 		
@@ -522,9 +528,9 @@ class wpcf7_Telegram{
 				%6$s
 			</div>
 			<div class="buttons">
-				<a class="approve" data-action="approve" ><span class="screen-reader-text">'. __( 'Approve', WPCF7TG_DOMAIN ) . '</span>'. __( 'Approve', WPCF7TG_DOMAIN ) . '</a>
-				<a class="pause" data-action="pause" ><span class="screen-reader-text">'. __( 'Pause', WPCF7TG_DOMAIN ) . '</span>'. __( 'Pause', WPCF7TG_DOMAIN ) . '</a>
-				<a class="refuse" data-action="refuse" ><span class="screen-reader-text">'. __( 'Delete', WPCF7TG_DOMAIN ) . '</span>'. __( 'Delete', WPCF7TG_DOMAIN ) . '</a>
+				<a class="approve" data-action="approve" ><span class="screen-reader-text">'. __( 'Approve', 'cf7-telegram' ) . '</span>'. __( 'Approve', 'cf7-telegram' ) . '</a>
+				<a class="pause" data-action="pause" ><span class="screen-reader-text">'. __( 'Pause', 'cf7-telegram' ) . '</span>'. __( 'Pause', 'cf7-telegram' ) . '</a>
+				<a class="refuse" data-action="refuse" ><span class="screen-reader-text">'. __( 'Delete', 'cf7-telegram' ) . '</span>'. __( 'Delete', 'cf7-telegram' ) . '</a>
 			</div>
 		</div>';
 		
@@ -551,12 +557,12 @@ class wpcf7_Telegram{
 		foreach ( $this->addons as $slug => $name ) :
 			$attachment_addon_link = "https://nebster.net/product/contact-form-7-telegram-attachments/";
 			echo class_exists( $slug ) ?
-				'<p>' . __( 'Uses addon:', WPCF7TG_DOMAIN ) . ' ' . $name . '</p>' :
+				'<p>' . __( 'Uses addon:', 'cf7-telegram' ) . ' ' . $name . '</p>' :
 				/* translators: 1. File sending extension link, 2. end sale date, 3. "Get it now!" link  */
-				sprintf( __( 'We have a %1$s available that is 75%% OFF until %2$s: %3$s', WPCF7TG_DOMAIN ),
-					'<a href="'.$attachment_addon_link.'" target="_blank" >' . __( 'File sending extension', WPCF7TG_DOMAIN ) . '</a>',
+				sprintf( __( 'We have a %1$s available that is 75%% OFF until %2$s: %3$s', 'cf7-telegram' ),
+					'<a href="'.$attachment_addon_link.'" target="_blank" >' . __( 'File sending extension', 'cf7-telegram' ) . '</a>',
 					date_i18n( get_option( 'date_format' ), strtotime( '31-12-' . date( 'Y' ) )  ),
-					'<a href="'.$attachment_addon_link.'" target="_blank" >' . __( 'Get it now!', WPCF7TG_DOMAIN ) . '</a>',
+					'<a href="'.$attachment_addon_link.'" target="_blank" >' . __( 'Get it now!', 'cf7-telegram' ) . '</a>',
 				) . '</p>';
 		endforeach;
 	}

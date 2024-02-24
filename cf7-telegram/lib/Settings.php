@@ -15,7 +15,7 @@ class Settings {
 		?>
 		<div id="cf7-telegram-container">
 			<div class="wrap">
-				<h1><?php echo __( 'Telegram notificator settings', WPCF7TG_DOMAIN ); ?></h1>
+				<h1><?php echo __( 'Telegram notificator settings', 'cf7-telegram' ); ?></h1>
 			</div>
 		</div>
 		<?php
@@ -38,31 +38,34 @@ class Settings {
 			'nonce'		        => wp_create_nonce( 'wpcf7_telegram_nonce' ),
 			'l10n'		        => [
 				'channel' => [
-					'new_channel_name'  	    => __( 'New Channel Name', WPCF7TG_DOMAIN ),
-					'create_new_channel'	    => __( 'Create new channel', WPCF7TG_DOMAIN ),
-					'rename_channel'		    => __( 'Rename channel', WPCF7TG_DOMAIN ),
-					'connect_form'              => __( 'Connect form', WPCF7TG_DOMAIN ),
-					'connect_bot'               => __( 'Connect bot', WPCF7TG_DOMAIN ),
-					'confirm_disconnect_bot'    => __( 'Disconnect this bot from %s channel?', WPCF7TG_DOMAIN ),
-					'confirm_remove_channel'    => __( 'Do you really want to remove %s channel?', WPCF7TG_DOMAIN ),
-					'confirm_disconnect_form'   => __( 'Do you really want to disconnect %s form from %s channel?', WPCF7TG_DOMAIN ),
-					'pause_chat'                => __( 'Pause', WPCF7TG_DOMAIN ),
-					'resume_chat'               => __( 'Resume', WPCF7TG_DOMAIN ),
+					'new_channel_name'  	    => __( 'New Channel Name', 'cf7-telegram' ),
+					'create_new_channel'	    => __( 'Create new channel', 'cf7-telegram' ),
+					'rename_channel'		    => __( 'Rename channel', 'cf7-telegram' ),
+					'connect_form'              => __( 'Connect form', 'cf7-telegram' ),
+					'connect_bot'               => __( 'Connect bot', 'cf7-telegram' ),
+					/* translators: channel name */
+					'confirm_disconnect_bot'    => __( 'Disconnect this bot from %s channel?', 'cf7-telegram' ),
+					/* translators: channel name */
+					'confirm_remove_channel'    => __( 'Do you really want to remove %s channel?', 'cf7-telegram' ),
+					/* translators: 1. form name, 2. channel name */
+					'confirm_disconnect_form'   => __( 'Do you really want to disconnect %1$s form from %2$s channel?', 'cf7-telegram' ),
+					'pause_chat'                => __( 'Pause', 'cf7-telegram' ),
+					'resume_chat'               => __( 'Resume', 'cf7-telegram' ),
 				],
 				'bot'   => [
-					'bot'       =>  __( 'Bot', WPCF7TG_DOMAIN ),
-					'api_key'   =>  __( 'API Key', WPCF7TG_DOMAIN ),
+					'bot'       =>  __( 'Bot', 'cf7-telegram' ),
+					'api_key'   =>  __( 'API Key', 'cf7-telegram' ),
 				],
 				'chat'  => [
-					'confirm_approve'	=> __( 'Do you really want to approve?', WPCF7TG_DOMAIN ),
-					'confirm_refuse'	=> __( 'Do you really want to refuse?', WPCF7TG_DOMAIN ),
-					'confirm_pause'     => __( 'Do you really want to pause?', WPCF7TG_DOMAIN ),
-					'approved'          => __( 'Successfully approved', WPCF7TG_DOMAIN ),
-					'refused'           => __( 'Request refused', WPCF7TG_DOMAIN ),
-					'chat_is_muted'     => __( 'Muted', WPCF7TG_DOMAIN ),
-					'mute_chat'         => __( 'Mute', WPCF7TG_DOMAIN ),
-					'remove_chat'       => __( 'Remove', WPCF7TG_DOMAIN ),
-					'activate_chat'     => __( 'Activate', WPCF7TG_DOMAIN ),
+					'confirm_approve'	=> __( 'Do you really want to approve?', 'cf7-telegram' ),
+					'confirm_refuse'	=> __( 'Do you really want to refuse?', 'cf7-telegram' ),
+					'confirm_pause'     => __( 'Do you really want to pause?', 'cf7-telegram' ),
+					'approved'          => __( 'Successfully approved', 'cf7-telegram' ),
+					'refused'           => __( 'Request refused', 'cf7-telegram' ),
+					'chat_is_muted'     => __( 'Muted', 'cf7-telegram' ),
+					'mute_chat'         => __( 'Mute', 'cf7-telegram' ),
+					'remove_chat'       => __( 'Remove', 'cf7-telegram' ),
+					'activate_chat'     => __( 'Activate', 'cf7-telegram' ),
 				],
 			],
 		) );
