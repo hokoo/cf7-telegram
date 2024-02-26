@@ -2,6 +2,7 @@
 
 namespace iTRON\cf7Telegram\Controllers;
 
+use iTRON\cf7Telegram\Settings;
 use WP_Upgrader;
 
 class Migration {
@@ -42,12 +43,12 @@ class Migration {
 	/**
 	 * Checks if the plugin was updated and performs migration if necessary.
 	 *
-	 * @param WP_Upgrader $upgrader
+	 * @param $upgrader
 	 * @param array $hook_extra
 	 *
 	 * @return void
 	 */
-	public function checkMigrate( WP_Upgrader $upgrader, array $hook_extra ) {
+	public function checkMigrate( $upgrader, array $hook_extra ) {
 		if ( 'update' !== $hook_extra['action'] || 'plugin' !== $hook_extra['type'] ) {
 			return;
 		}
@@ -56,31 +57,42 @@ class Migration {
 			return;
 		}
 
-		$old_version = get_option( 'cf7tg_version' );
+		$this->loadMigrations();
+
+		$old_version = get_option( 'cf7tg_version', '0.6' );
 		update_option( 'cf7tg_version', WPCF7TG_VERSION );
 
 		do_action( 'cf7_telegram_migrations', $old_version, WPCF7TG_VERSION );
 	}
 
-	public static function invokeMigration(
-		$old_version,
-		$new_version,
-		$migration_version,
-		callable $migration_function
-	) {
-		// This method is used to invoke migration if necessary.
-		if (
-			version_compare(
-				$old_version,
-				$migration_version,
-				'<'
-			) && version_compare(
-				$new_version,
-				$migration_version,
-				'>='
-			)
-		) {
-			$migration_function();
+	public static function registerMigration ( $migration_version, callable $migration_function ) {
+		add_action( 'cf7_telegram_migrations', function ( $old_version, $new_version ) use ( $migration_version, $migration_function ) {
+			if (
+				version_compare(
+					$old_version,
+					$migration_version,
+					'<'
+				) && version_compare(
+					$new_version,
+					$migration_version,
+					'>='
+				)
+			) {
+				// todo Exception handling
+				$migration_function( $old_version, $new_version );
+			}
+		}, (int) $migration_version * 10, 2 );
+	}
+
+	private function loadMigrations() {
+		foreach ( glob( Settings::pluginDir() . '/inc/migrations/*.php' ) as $file ) {
+			require_once $file;
 		}
+	}
+
+	// todo Write tests
+	public static function test() {
+		// Set the cf7tg_version option to any value to test the migration.
+		do_action('upgrader_process_complete', [], ['type'=>'plugin', 'action'=>'update', 'plugins' => ['cf7-telegram/cf7-telegram.php'] ] );
 	}
 }

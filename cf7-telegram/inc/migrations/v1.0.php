@@ -1,12 +1,9 @@
 <?php
-
 $migration_version = '1.0';
 
-add_action( 'cf7_telegram_migrations', function ( $old_version, $new_version ) use ( $migration_version ) {
-	\iTRON\cf7Telegram\Controllers\Migration::invokeMigration( $old_version,
-		$new_version,
-		$migration_version,
-		function () {
-			// Your migration code here
-		} );
-}, (int) $migration_version * 10, 2 );
+\iTRON\cf7Telegram\Controllers\Migration::registerMigration(
+	$migration_version,
+	function ( $old_version, $new_version ) use ( $migration_version ) {
+		do_action('logger', ['Migration to 1.0', $migration_version, $old_version, $new_version ] );
+	}
+);

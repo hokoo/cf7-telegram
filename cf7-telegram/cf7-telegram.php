@@ -15,7 +15,7 @@ use iTRON\cf7Telegram\Settings;
 
 define( 'WPCF7TG_PLUGIN_NAME', plugin_basename( __FILE__ ) );
 
-define( 'WPCF7TG_VERSION', '1.0-RC1' );
+define( 'WPCF7TG_VERSION', '1.0' );
 define( 'WPCF7TG_FILE', __FILE__ );
 
 require ( __DIR__ . '/inc/wp5_functions/wp5_functions.php' );
