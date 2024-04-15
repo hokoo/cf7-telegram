@@ -1,11 +1,11 @@
 === Contact Form 7 + Telegram ===
 Contributors: hokku
-Donate link: https://www.paypal.me/hokku
+Donate link: https://www.paypal.me/igortron
 Tags: contact form telegram,contact form 7,telegram
 Requires at least: 4.7
-Tested up to: 6.4
-Requires PHP: 5.6 and higher
-Stable tag: 0.8.1
+Tested up to: 6.5
+Requires PHP: 7.2
+Stable tag: 0.8.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -49,6 +49,10 @@ The Chat ID parameter is your Telegram-identifier. But this is not your phone nu
 You can see your Chat ID by typing anything to Telegram-Bot <code>@wpcf7Bot</code>.
 
 == Changelog ==
+= 0.8.2 =
+* Donation link got changed.
+* tested up to WP 6.5
+
 = 0.8.1 =
 * Actualize add-on sale date.
 
@@ -87,7 +91,3 @@ You can see your Chat ID by typing anything to Telegram-Bot <code>@wpcf7Bot</cod
 = 0.5 =
 * Markdown added
 
-== Upgrade Notice ==
-
-= 1.0 =
-This is a large update. Your settings would be refactored. Please, check it after update. In case of any problems, please, contact to support. Anyways, the option to roll back to the previous version is would be available.
