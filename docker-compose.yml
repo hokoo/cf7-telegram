@@ -12,6 +12,8 @@ services:
       MYSQL_PASSWORD: $DB_PASSWORD
     ports:
       - "3066:3306"
+    volumes:
+      - ~/mysql-data/itron/cf7-telegram:/var/lib/mysql
     networks:
       - cf7tgdev-network
 
