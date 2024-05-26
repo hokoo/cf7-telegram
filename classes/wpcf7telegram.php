@@ -243,6 +243,9 @@ class wpcf7_Telegram{
 	}
 	
 	function markdown( $content ){
+		// non-markdown symbols escape
+		$content = str_replace( [ '_', '*', '`', '[' ], [ '\_', '\*', '\`', '\[' ], $content );
+
 		$tags = apply_filters( 'wpcf7tg_markdown', $this->markdown_tags );
 		extract( $tags );
 		$content = ! empty( $bold ) ? str_replace( $bold, '*', $content ) : $content;
