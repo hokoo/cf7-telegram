@@ -49,6 +49,9 @@ The Chat ID parameter is your Telegram-identifier. But this is not your phone nu
 You can see your Chat ID by typing anything to Telegram-Bot <code>@wpcf7Bot</code>.
 
 == Changelog ==
+= 0.8.5 =
+* PHP 7.2 compatibility fixed.
+
 = 0.8.4 =
 * Markdown symbols escaping got added in order to fix [an issue](https://github.com/hokoo/cf7-telegram/issues/17).
 
