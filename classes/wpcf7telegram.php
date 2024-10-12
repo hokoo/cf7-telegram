@@ -559,7 +559,7 @@ class wpcf7_Telegram{
 				sprintf( __( 'We have a %1$s available that is 75%% OFF until %2$s: %3$s', WPCF7TG_DOMAIN ),
 					'<a href="'.$attachment_addon_link.'" target="_blank" >' . __( 'File sending extension', WPCF7TG_DOMAIN ) . '</a>',
 					date_i18n( get_option( 'date_format' ), strtotime( '31-12-' . date( 'Y' ) )  ),
-					'<a href="'.$attachment_addon_link.'" target="_blank" >' . __( 'Get it now!', WPCF7TG_DOMAIN ) . '</a>',
+					'<a href="'.$attachment_addon_link.'" target="_blank" >' . __( 'Get it now!', WPCF7TG_DOMAIN ) . '</a>'
 				) . '</p>';
 		endforeach;
 	}
