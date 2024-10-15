@@ -4,8 +4,11 @@ setup.all:
 setup.env:
 	bash ./install/setup-env.sh
 
-setup.container:
-	bash ./install/setup-container.sh
+docker.up:
+	docker-compose -p cf7tg up -d
+
+docker.down:
+	docker-compose -p cf7tg down
 
 git.wpc:
 	bash ./install/gitwpc.sh

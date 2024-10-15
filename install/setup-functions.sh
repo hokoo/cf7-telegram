@@ -18,12 +18,6 @@ set_permalinks(){
   docker-compose -p cf7tg exec php sh -c "wp rewrite structure '/%year%/%monthnum%/%postname%/'"
 }
 
-setup-container(){
-  echo "Container is being created..."
-  docker-compose -p cf7tg up -d
-  echo "Container is up."
-}
-
 setup-env(){
   # create .env from example
   echo "Create .env from example"

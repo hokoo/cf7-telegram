@@ -1,0 +1,30 @@
+name: Build zip
+on: [ workflow_dispatch ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the source code
+        uses: actions/checkout@v3
+
+      - uses: shivammathur/setup-php@v2
+        name: Set up PHP
+        with:
+          php-version: 8.2
+          coverage: none
+
+      - name: Install PHP Dependencies
+        uses: ramsey/composer-install@v2
+        with:
+          working-directory: cf7-telegram
+          composer-options: "--no-dev"
+
+      - name: Remove all files and directories except plugin directory
+        run: |
+          find . -mindepth 1 -maxdepth 1 -not -name 'cf7-telegram' -exec rm -rf {} +
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cf7-telegram
+          path: ./

@@ -89,3 +89,8 @@ You can see your Chat ID by typing anything to Telegram-Bot <code>@wpcf7Bot</cod
 = 0.5 =
 * Markdown added
 
+
+== Upgrade Notice ==
+
+= 1.0 =
+This is a large update. Your settings would be refactored. Please, check it after update. In case of any problems, please, contact to support. Anyways, the option to roll back to the previous version is would be available except a case if your current version is 0.6 or less.
