@@ -5,7 +5,8 @@
 
 setup-env
 configure-nginx
-setup-container
+
+docker-compose -p cf7tg up -d
 
 echo -e "Composers installation... Yes, there are two composers here ${RYELLOW}:-D${COLOR_OFF}"
 docker-compose -p cf7tg exec php sh -c "composer install"
