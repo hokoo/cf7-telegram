@@ -33,12 +33,33 @@ HTML;
 	public static function admin_enqueue_scripts(){
 		if ( ! did_action( 'wpcf7_telegram_settings' ) ) return;
 
-		wp_enqueue_style( 'wpcf7telegram-admin-styles', self::pluginUrl() . '/assets/css/index.css', null, WPCF7TG_VERSION );
-		wp_enqueue_script( 'wpcf7telegram-admin', self::pluginUrl() . '/assets/js/index.js', null, WPCF7TG_VERSION );
+		$json_manifest = self::pluginDir() . '/react/build/asset-manifest.json';
+		if ( ! file_exists( $json_manifest ) ) {
+			wp_die( 'React build not found' );
+		}
+
+		$manifest = json_decode( file_get_contents( $json_manifest ), true );
+
+//		wp_enqueue_style( 'wpcf7telegram-admin-styles', self::pluginUrl() . '/assets/css/index.css', null, WPCF7TG_VERSION );
+//		wp_enqueue_script( 'wpcf7telegram-admin', self::pluginUrl() . '/assets/js/index.js', null, WPCF7TG_VERSION );
+		wp_enqueue_script( 'wpcf7telegram-admin', self::pluginUrl() . '/react/build/' . $manifest['files']['main.js'], null, WPCF7TG_VERSION, true );
 		wp_localize_script( 'wpcf7telegram-admin', 'cf7TelegramData', array(
-			'rest_client_url'   => get_rest_url( null, 'wp-connections/v1' . '/client/' . Client::WPCONNECTIONS_CLIENT ),
+			'routes' => [
+				'relations' => [
+					'bot2channel'  => get_rest_url( null, 'wp-connections/v1' . '/client/cf7-telegram/relation/bot2channel/' ),
+					'chat2channel'  => get_rest_url( null, 'wp-connections/v1' . '/client/cf7-telegram/relation/chat2channel/' ),
+					'form2channel'  => get_rest_url( null, 'wp-connections/v1' . '/client/cf7-telegram/relation/form2channel/' ),
+				],
+
+				'client'   => get_rest_url( null, 'wp-connections/v1' . '/client/' . Client::WPCONNECTIONS_CLIENT ),
+				'channels' => get_rest_url( null, 'wp/v2' . '/cf7tg_channel/' ),
+				'bots'     => get_rest_url( null, 'wp/v2' . '/cf7tg_bot/' ),
+				'chats'    => get_rest_url( null, 'wp/v2' . '/cf7tg_chat/' ),
+				'forms'    => get_rest_url( null, 'contact-form-7/v1' . '/contact-forms/' ),
+			],
+
 			// Put this nonce to X-WP-Nonce header request.
-			'nonce'		        => wp_create_nonce( 'wpcf7_telegram_nonce' ),
+			'nonce'		        => wp_create_nonce( 'wp_rest' ),
 			'l10n'		        => [
 				'channel' => [
 					'new_channel_name'  	    => __( 'New Channel Name', 'cf7-telegram' ),
