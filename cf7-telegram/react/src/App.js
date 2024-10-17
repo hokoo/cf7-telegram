@@ -1,6 +1,6 @@
 /* global cf7TelegramData */
 
-import React, {useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 
 const fetchClient = async () => {
     const response = await fetch(cf7TelegramData.routes.client, {
@@ -20,7 +20,7 @@ const fetchForms = async () => {
         },
     });
     return await response.json();
-}
+};
 
 const fetchBots = async () => {
     const response = await fetch(cf7TelegramData.routes.bots, {
@@ -30,7 +30,7 @@ const fetchBots = async () => {
         },
     });
     return await response.json();
-}
+};
 
 const fetchChats = async () => {
     const response = await fetch(cf7TelegramData.routes.chats, {
@@ -40,7 +40,7 @@ const fetchChats = async () => {
         },
     });
     return await response.json();
-}
+};
 
 const fetchChannels = async () => {
     const response = await fetch(cf7TelegramData.routes.channels, {
@@ -59,55 +59,32 @@ const fetchFormsForChannel = async (channelId) => {
             'X-WP-Nonce': cf7TelegramData?.nonce,
         },
         body: {
-            to: channelId
+            to: channelId,
         }
     });
     return await response.json();
-}
-
+};
 
 const ChannelList = () => {
     const [client, setClient] = useState([]);
-    const [forms, setForms] = useState([]);
+    const [forms, setForms] = useState([]); // Хранит все формы
     const [bot, setBots] = useState([]);
     const [chat, setChats] = useState([]);
     const [channels, setChannels] = useState([]);
-
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-            fetchClient()
-                .then(data => {
-                    setClient(data);
-                })
-
-            fetchForms()
-                .then(data => {
-                    setForms(data);
-                })
-
-            fetchBots()
-                .then(data => {
-                    setBots(data);
-                })
-
-            fetchChats()
-                .then(data => {
-                    setChats(data);
-                })
-        },
-        []
-    );
+        fetchClient().then(data => setClient(data));
+        fetchForms().then(data => setForms(data)); // Загружаем все формы один раз
+        fetchBots().then(data => setBots(data));
+        fetchChats().then(data => setChats(data));
+    }, []);
 
     useEffect(() => {
         fetchChannels()
             .then(data => {
                 setChannels(data);
                 setLoading(false);
-
-                channels.forEach(channel => {
-                    // fetchFormsForChannel(channel.id)
-                })
             })
             .catch(error => {
                 console.error("Error fetching channels:", error);
@@ -129,7 +106,7 @@ const ChannelList = () => {
             <ul>
                 {channels.map(channel => (
                     <li key={channel.id}>
-                        <Channel channel={channel}/>
+                        <Channel channel={channel} forms={forms} />
                     </li>
                 ))}
             </ul>
@@ -137,11 +114,39 @@ const ChannelList = () => {
     );
 };
 
+const Channel = ({ channel, forms }) => {
+    const [formIdsForChannel, setFormIdsForChannel] = useState([]);
+    const [formsForChannel, setFormsForChannel] = useState([]); // Состояние для хранения отфильтрованных форм
 
-const Channel = ({channel}) => {
+    // Загрузка ID форм для данного канала при монтировании компонента
+    useEffect(() => {
+        fetchFormsForChannel(channel.id).then(data => {
+            const formIds = data.map(relation => relation.data.from); // Извлекаем ID форм из data.from
+            setFormIdsForChannel(formIds); // Сохраняем ID форм для канала
+        });
+    }, [channel.id]);
+
+    // Фильтруем формы по ID, когда formIdsForChannel обновляется
+    useEffect(() => {
+        const channelForms = forms.filter(form => formIdsForChannel.includes(form.id));
+        setFormsForChannel(channelForms); // Устанавливаем формы, которые соответствуют каналу
+    }, [formIdsForChannel, forms]);
+
     return (
         <div className="cf7tg-channel" id={`channel-${channel.id}`}>
             <h4>{channel.title.rendered}</h4>
+            {formsForChannel.length > 0 ? (
+                <div>
+                    <h5>Forms</h5>
+                    <ul>
+                        {formsForChannel.map(form => (
+                            <li>{form.title}</li>
+                        ))}
+                    </ul>
+                </div>
+            ) : (
+                <p>No forms assigned to this channel</p>
+            )}
         </div>
     );
 };
