@@ -31,9 +31,6 @@ class CF7 {
 		]
 	];
 
-    /**
-     * @throws RelationNotFound
-     */
     public static function handleSubscribe(\WPCF7_ContactForm $cf, &$abort, \WPCF7_Submission $instance ) {
 
 		if ( $abort ) {
@@ -71,7 +68,11 @@ class CF7 {
 		$targetChannels = $client->getChannels()->filterByIDs( $connections->column( 'to' ) );
 		foreach ( $targetChannels as $channel ) {
 			/** @var Channel $channel */
-			$channel->doSendOut( apply_filters( 'cf7tg_filtered_message', $output, $instance, $mode ), $mode );
+			try {
+				$channel->doSendOut( apply_filters( 'cf7tg_filtered_message', $output, $instance, $mode ), $mode );
+			} catch ( RelationNotFound $e ) {
+				// @todo log
+			}
 		}
 	}
 
