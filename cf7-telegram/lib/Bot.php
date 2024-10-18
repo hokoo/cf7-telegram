@@ -57,6 +57,19 @@ class Bot extends Entity implements wpPostAble{
 		return $this;
 	}
 
+	public function getLastUpdateID() {
+		return $this->getParam( 'lastUpdateID' );
+	}
+
+	/**
+	 * @throws wppaSavePostException
+	 */
+	public function setLastUpdateID( int $updateID ): Bot {
+		$this->setParam( 'lastUpdateID', $updateID );
+		$this->savePost();
+		return $this;
+	}
+
 	public function getLastStatus() {
 		return $this->getParam( 'lastStatus' );
 	}
