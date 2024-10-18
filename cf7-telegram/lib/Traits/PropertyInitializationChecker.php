@@ -12,6 +12,9 @@ trait PropertyInitializationChecker {
 		}
 
 		$property = $reflectionClass->getProperty($propertyName);
+
+		$property->setAccessible(true);
+
 		return $property->isInitialized($this);
 	}
 }
