@@ -171,9 +171,10 @@ class Channel extends Entity implements wpPostAble{
 		return $this;
 	}
 
-    /**
-     * @throws RelationNotFound
-     */
+	/**
+	 * @throws RelationNotFound
+	 * not @throws Telegram exception due to throwOnError is set to false.
+	 */
     public function doSendOut(string $message, string $mode ) {
 		$chats = $this->getChats();
 
@@ -183,21 +184,7 @@ class Channel extends Entity implements wpPostAble{
 
 		foreach ( $chats as $chat ) {
 			/** @var Chat $chat */
-			try {
-				$this->getBot()->sendMessage( $chat->getChatID(), $message, $mode );
-			} catch ( Telegram $e ) {
-				$this->logger->write(
-					[
-						'telegramChatID'=> $chat->getChatID(),
-						'chatTitle'     => $chat->getTitle(),
-						'chatPostID'    => $chat->getPost()->ID,
-						'channelTitle'  => $this->getTitle(),
-						'channelPostID' => $this->getPost()->ID,
-					],
-					$e->getMessage() . " [chatID:{$chat->getChatID()}]",
-					Logger::LEVEL_CRITICAL
-				);
-			}
+			$this->getBot()->sendMessage( $chat->getChatID(), $message, $mode, false, [ $this ] );
 		}
 	}
 

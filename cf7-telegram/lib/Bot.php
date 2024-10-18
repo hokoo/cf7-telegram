@@ -120,17 +120,29 @@ class Bot extends Entity implements wpPostAble{
 	/**
 	 * @throws Telegram
 	 */
-	public function sendMessage( string $chat_id, string $message, string $mode ) {
+	public function sendMessage( Chat $chat, string $message, string $mode, bool $throwOnError = true, array $extra = [] ) {
 		try {
-			$this->api->sendMessage( [
-				'chat_id'                  => $chat_id,
+			$this->getAPI()->sendMessage( [
+				'chat_id'                  => $chat->getChatID(),
 				'text'                     => $message,
 				'parse_mode'               => $mode,
 				'disable_web_page_preview' => true,
 			] );
-		} catch ( TelegramSDKException $e ) {
-			$this->logger->write( $e->getMessage(), 'An error has occurred during sending message' );
-			throw new Telegram( $e->getMessage(), $e->getCode(), $e );
+		} catch ( TelegramSDKException|BotApiNotInitialized $e ) {
+			$this->logger->write(
+				[
+					'telegramChatID'=> $chat->getChatID(),
+					'chatTitle'     => $chat->getTitle(),
+					'chatPostID'    => $chat->getPost()->ID,
+					'extras'        => $extra,
+				],
+				$e->getMessage() . " [chatID:{$chat->getChatID()}]",
+				Logger::LEVEL_CRITICAL
+			);
+
+			if ( $throwOnError ) {
+				throw new Telegram( $e->getMessage(), $e->getCode(), $e );
+			}
 		}
 	}
 
