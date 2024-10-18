@@ -67,6 +67,7 @@ services:
   node:
     container_name: "${PROJECT_NAME}_node"
     image: node:18
+    user: node
     tty: true
     working_dir: /var/www/html/
     volumes:
