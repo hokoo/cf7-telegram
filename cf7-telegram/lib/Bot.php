@@ -2,7 +2,9 @@
 
 namespace iTRON\cf7Telegram;
 
+use iTRON\cf7Telegram\Exceptions\BotApiNotInitialized;
 use iTRON\cf7Telegram\Exceptions\Telegram;
+use iTRON\cf7Telegram\Traits\PropertyInitializationChecker;
 use iTRON\wpConnections\Exceptions\ConnectionWrongData;
 use iTRON\wpConnections\Exceptions\MissingParameters;
 use iTRON\wpConnections\Exceptions\RelationNotFound;
@@ -18,6 +20,7 @@ use Telegram\Bot\Objects\User;
 
 class Bot extends Entity implements wpPostAble{
 	use WPPostAbleTrait;
+	use PropertyInitializationChecker;
 
 	const STATUS_ONLINE  = 'online';
 	const STATUS_OFFLINE = 'offline';
@@ -37,7 +40,11 @@ class Bot extends Entity implements wpPostAble{
 	}
 
 	private function initAPI() {
-		if ( is_null( $this->getToken() ) ) return;
+		if ( is_null( $this->getToken() ) ) {
+			$this->setBotStatus( self::STATUS_OFFLINE );
+			$this->logger->write( 'Bot token is not set.', 'Bot initialization error.', Logger::LEVEL_ATTENTION );
+			return;
+		}
 
 		try {
 			$this->api = new Api( $this->getToken() );
@@ -127,8 +134,19 @@ class Bot extends Entity implements wpPostAble{
 		}
 	}
 
-	// @TODO Temporary method
+	/**
+	 * @throws BotApiNotInitialized
+	 */
 	public function getAPI(): Api {
+		$approach = 0;
+		while ( ! $this->isPropertyInitialized( 'api' ) ) {
+			if ( ! $approach++ ) {
+				$this->initAPI();
+			} else {
+				throw new BotApiNotInitialized();
+			}
+
+		}
 		return $this->api;
 	}
 
@@ -136,12 +154,8 @@ class Bot extends Entity implements wpPostAble{
 	 * Checks whether itself is online.
 	 */
 	public function ping(): bool {
-		if ( ! isset( $this->api ) ) {
-			return false;
-		}
-
 		try {
-			$res = $this->api->getMe();
+			$res = $this->getAPI()->getMe();
 		} catch ( TelegramSDKException $e ) {
 			$this->setBotStatus( self::STATUS_OFFLINE );
 			$this->logger->write(
@@ -153,6 +167,16 @@ class Bot extends Entity implements wpPostAble{
 				'Bot is unreachable'
 			);
 
+			return false;
+		} catch ( BotApiNotInitialized $e ) {
+			$this->logger->write(
+				[
+					'botTitle' => $this->getTitle(),
+					'wpPostID' => $this->getPost()->ID,
+					'error'    => $e->getMessage(),
+				],
+				'Bot cannot be pinged'
+			);
 			return false;
 		}
 
