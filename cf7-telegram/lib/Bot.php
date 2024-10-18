@@ -19,6 +19,9 @@ use Telegram\Bot\Objects\User;
 class Bot extends Entity implements wpPostAble{
 	use WPPostAbleTrait;
 
+	const STATUS_ONLINE  = 'online';
+	const STATUS_OFFLINE = 'offline';
+
 	protected Api $api;
 
 	/**
@@ -74,12 +77,14 @@ class Bot extends Entity implements wpPostAble{
 		return $this->getParam( 'lastStatus' );
 	}
 
-	/**
-	 * @throws wppaSavePostException
-	 */
 	public function setBotStatus( string $status ): Bot {
 		$this->setParam( 'lastStatus', trim( $status ) );
-		$this->savePost();
+		try {
+			$this->savePost();
+		} catch ( wppaSavePostException $e ) {
+			$this->logger->write( $e->getMessage(), 'An error has occurred during saving the post' );
+		}
+
 		return $this;
 	}
 
@@ -137,7 +142,8 @@ class Bot extends Entity implements wpPostAble{
 
 		try {
 			$res = $this->api->getMe();
-		} catch ( TelegramSDKException $e ){
+		} catch ( TelegramSDKException $e ) {
+			$this->setBotStatus( self::STATUS_OFFLINE );
 			$this->logger->write(
 				[
 					'botTitle'          => $this->getTitle(),
@@ -150,6 +156,22 @@ class Bot extends Entity implements wpPostAble{
 			return false;
 		}
 
-		return true;
+		if ( $res instanceof User ) {
+			$this->setBotStatus( self::STATUS_ONLINE );
+			return true;
+		}
+
+		$this->setBotStatus( self::STATUS_OFFLINE );
+		$this->logger->write(
+			[
+				'botTitle'          => $this->getTitle(),
+				'wpPostID'          => $this->getPost()->ID,
+				'botTokenFirst13'   => substr( $this->getToken(), 0, 13 ),
+				'response'          => $res,
+			],
+			'Bot is unreachable'
+		);
+
+		return false;
 	}
 }
