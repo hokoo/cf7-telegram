@@ -78,7 +78,7 @@ class Bot extends Entity implements wpPostAble{
 	 * @throws wppaSavePostException
 	 */
 	public function setBotStatus( string $status ): Bot {
-		$this->setParam( 'token', trim( $status ) );
+		$this->setParam( 'lastStatus', trim( $status ) );
 		$this->savePost();
 		return $this;
 	}
