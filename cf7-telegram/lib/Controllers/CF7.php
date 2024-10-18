@@ -8,6 +8,8 @@ use iTRON\wpConnections\Exceptions\RelationNotFound;
 use iTRON\wpConnections\Query;
 
 class CF7 {
+	const CMD = 'cf7tg_start';
+
 	private static array $markdown_tags = [
 		'bold' => [
 			'<h1>','</h1>', '<h2>','</h2>', '<h3>','</h3>', '<h4>','</h4>', '<h5>','</h5>', '<h6>','</h6>',

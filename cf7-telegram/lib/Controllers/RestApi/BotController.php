@@ -29,6 +29,25 @@ class BotController extends Controller {
 				],
 			]
 		);
+
+		// Fetch updates endpoint.
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->rest_base . '/(?P<id>[\d]+)' . '/fetch_updates',
+			[
+				'args'   => [
+					'id' => [
+						'description' => __( 'Last update ID.' ),
+						'type'        => 'integer',
+					],
+				],
+				[
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => [ $this, 'fetch_updates' ],
+					'permission_callback' => [ $this, 'get_item_permissions_check' ],
+				],
+			]
+		);
 	}
 
 	/**
@@ -49,11 +68,36 @@ class BotController extends Controller {
 		return rest_ensure_response( [ 'online' => $bot->ping() ] );
 	}
 
+	/**
+	 * Fetch updates REST API endpoint.
+	 */
+	public function fetch_updates( $request ) {
+		try {
+			$bot = new Bot( $request['id'] );
+		} catch ( wppaLoadPostException $exception ) {
+			// Apparently the wrong post ID has been provided which does not belong Bot CPT.
+			return new \WP_Error(
+				'rest_post_invalid_id',
+				__( 'Invalid post ID.' ),
+				[ 'status' => 404 ]
+			);
+		}
+
+		return rest_ensure_response( $bot->fetchUpdates( $request['lastUpdateID'] ) );
+	}
+
+	/**
+	 * @param $post
+	 * @param $request
+	 *
+	 * @return WP_REST_Response
+	 */
 	public function prepare_item_for_response( $post, $request ): WP_REST_Response {
 		$response = parent::prepare_item_for_response( $post, $request );
 
 		$base = sprintf( '%s/%s', $this->namespace, $this->rest_base );
 		$response->add_link( 'ping', rest_url( trailingslashit( $base ) . $post->ID . '/ping' ) );
+		$response->add_link( 'fetch_updates', rest_url( trailingslashit( $base ) . $post->ID . '/fetch_updates' ) );
 
 		return $response;
 	}

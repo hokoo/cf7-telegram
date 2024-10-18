@@ -2,10 +2,13 @@
 
 namespace iTRON\cf7Telegram;
 
+use iTRON\cf7Telegram\Collections\ChatCollection;
+use iTRON\cf7Telegram\Controllers\CF7;
 use iTRON\cf7Telegram\Exceptions\BotApiNotInitialized;
 use iTRON\cf7Telegram\Exceptions\Telegram;
 use iTRON\cf7Telegram\Traits\PropertyInitializationChecker;
 use iTRON\wpConnections\Exceptions\ConnectionWrongData;
+use iTRON\wpConnections\Exceptions\Exception;
 use iTRON\wpConnections\Exceptions\MissingParameters;
 use iTRON\wpConnections\Exceptions\RelationNotFound;
 use iTRON\wpConnections\Query;
@@ -24,6 +27,8 @@ class Bot extends Entity implements wpPostAble{
 
 	const STATUS_ONLINE  = 'online';
 	const STATUS_OFFLINE = 'offline';
+
+	public ChatCollection $chats;
 
 	protected Api $api;
 
@@ -67,8 +72,8 @@ class Bot extends Entity implements wpPostAble{
 		return $this;
 	}
 
-	public function getLastUpdateID() {
-		return $this->getParam( 'lastUpdateID' );
+	public function getLastUpdateID(): int {
+		return (int) $this->getParam( 'lastUpdateID' );
 	}
 
 	/**
@@ -113,6 +118,35 @@ class Bot extends Entity implements wpPostAble{
 		$this->client
 			->getBot2ChannelRelation()
 			->detachConnections( new Query\Connection( $this->getPost()->ID, $channelID ) );
+
+		return $this;
+	}
+
+	/**
+	 * @throws RelationNotFound
+	 */
+	public function getChats(): ChatCollection {
+		if ( isset( $this->chats ) ) {
+			return $this->chats;
+		}
+
+		$wpConnections = $this->client
+			->getBot2ChatRelation()
+			->findConnections( new Query\Connection( $this->getPost()->ID ) );
+
+		$this->chats = new ChatCollection();
+		return $this->chats->createByConnections( $wpConnections );
+	}
+
+
+	public function connectChat( Chat $chat ): self {
+		try {
+			$this->client
+				->getBot2ChatRelation()
+				->createConnection( new Query\Connection( $this->getPost()->ID, $chat->getPost()->ID ) );
+		} catch ( Exception $e ) {
+			$this->logger->write( $e->getMessage(), 'Can not connect the chat.', Logger::LEVEL_CRITICAL );
+		}
 
 		return $this;
 	}
@@ -209,5 +243,60 @@ class Bot extends Entity implements wpPostAble{
 		);
 
 		return false;
+	}
+
+	/**
+	 * @throws BotApiNotInitialized
+	 */
+	public function fetchUpdates() {
+		try {
+			$updates = $this->getAPI()->getUpdates( [
+				'offset'  => $this->getLastUpdateID() + 1,
+				'limit'   => 10,
+				'timeout' => 0,
+			] );
+		} catch ( TelegramSDKException $e ) {
+			$this->logger->write(
+				[
+					'botTitle'          => $this->getTitle(),
+					'wpPostID'          => $this->getPost()->ID,
+					'botTokenFirst13'   => substr( $this->getToken(), 0, 13 ),
+					'error'             => $e->getMessage(),
+				],
+				'Bot has failed to fetch updates'
+			);
+		}
+
+		if ( empty( $updates ) ) {
+			return [];
+		}
+
+		$upd = [];
+		$update_ids = [];
+
+		foreach ( $updates as $update ) {
+			$update_ids []= $update->update_id;
+
+			if ( is_array( @ $update->message->entities ) )
+				foreach( $update->message->entities as $ent ) :
+					$cmd = substr( $update->message->text, $ent->offset, $ent->length );
+
+					$maybeFound = $this->chats->filter( function ( $chat ) use ( $update ) {
+						return $chat->getChatID() === $update->message->chat->id;
+					} );
+
+					if ( 'bot_command' == $ent->type && '/' . CF7::CMD === $cmd && $maybeFound->isEmpty() ) :
+						$chat = new Chat();
+						$upd[ $update->message->chat->id ] = ( array ) $update->message->chat;
+						$upd[ $update->message->chat->id ]['date'] = $update->message->date;
+						$upd[ $update->message->chat->id ]['status'] = 'pending';
+					endif;
+				endforeach;
+
+			if ( false === strpos( $update->message->text, 'cf7_start' ) ) continue;
+		}
+
+//		$this->setLastUpdateID();
+		return $updates;
 	}
 }
