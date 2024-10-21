@@ -2,11 +2,13 @@
 
 namespace iTRON\cf7Telegram;
 
+use iTRON\wpConnections\Connection;
+use iTRON\wpConnections\Exceptions\ConnectionNotFound;
 use iTRON\wpConnections\Exceptions\RelationNotFound;
+use iTRON\wpConnections\Meta;
 use iTRON\wpConnections\Query;
 use iTRON\wpConnections\Exceptions\ConnectionWrongData;
 use iTRON\wpConnections\Exceptions\MissingParameters;
-use iTRON\wpPostAble\Exceptions\wppaSavePostException;
 use iTRON\wpPostAble\wpPostAble;
 use iTRON\wpPostAble\wpPostAbleTrait;
 use iTRON\wpPostAble\Exceptions\wppaCreatePostException;
@@ -14,6 +16,11 @@ use iTRON\wpPostAble\Exceptions\wppaLoadPostException;
 
 class Chat extends Entity implements WPPostAble{
 	use WPPostAbleTrait;
+
+	public const STATUS_KEY = 'status';
+	public const STATUS_ACTIVE = 'active';
+	public const STATUS_PENDING = 'pending';
+	public const STATUS_MUTED = 'muted';
 
 	/**
 	 * @throws wppaLoadPostException
@@ -25,12 +32,8 @@ class Chat extends Entity implements WPPostAble{
 		$this->wpPostAble( Client::CPT_CHAT, $chat_id );
 	}
 
-	/**
-	 * @throws wppaSavePostException
-	 */
 	public function setChatID( string $chatID ): Chat {
 		$this->setParam( 'chatID', trim( $chatID ) );
-		$this->savePost();
 		return $this;
 	}
 
@@ -44,7 +47,7 @@ class Chat extends Entity implements WPPostAble{
      * @throws RelationNotFound
      */
 	public function connectChannel( Channel $channel ): Entity {
-		$channel->addChat( $this );
+		$channel->connectChat( $this );
 		return $this;
 	}
 
@@ -58,5 +61,85 @@ class Chat extends Entity implements WPPostAble{
 			->detachConnections( new Query\Connection( $this->getPost()->ID, $channelID ) );
 
 		return $this;
+	}
+
+	public function setDate( string $timestamp ): Chat {
+		$this->setParam( 'timestamp_connected', $timestamp );
+		return $this;
+	}
+
+	public function getDate(): string {
+		$timestamp = $this->getParam( 'timestamp_connected' );
+
+		// Return pretty date.
+		return date( 'd.m.Y H:i', strtotime( $timestamp ) );
+	}
+
+	/**
+	 * @throws ConnectionWrongData
+	 * @throws ConnectionNotFound
+	 * @throws RelationNotFound
+	 */
+	public function setActive( Channel $channel ): Chat {
+		$this->setConnectionStatus( $channel, self::STATUS_ACTIVE );
+		return $this;
+	}
+
+	/**
+	 * @throws ConnectionWrongData
+	 * @throws ConnectionNotFound
+	 * @throws RelationNotFound
+	 */
+	public function setPending( Channel $channel ): Chat {
+		$this->setConnectionStatus( $channel, self::STATUS_PENDING );
+		return $this;
+	}
+
+	/**
+	 * @throws ConnectionWrongData
+	 * @throws ConnectionNotFound
+	 * @throws RelationNotFound
+	 */
+	public function setMuted( Channel $channel ): Chat {
+		$this->setConnectionStatus( $channel, self::STATUS_MUTED );
+		return $this;
+	}
+
+	/**
+	 * @throws ConnectionWrongData
+	 * @throws ConnectionNotFound
+	 * @throws RelationNotFound
+	 */
+	private function setConnectionStatus( Channel $channel, string $status ): Chat {
+		$connection = $this->getConnection( $channel );
+		$connection->meta->where( 'key', self::STATUS_KEY )->clear();
+		$connection->meta->add( new Meta( self::STATUS_KEY, $status ) );
+		$connection->update();
+		return $this;
+	}
+
+	/**
+	 * @throws ConnectionNotFound
+	 * @throws RelationNotFound
+	 */
+	public function getConnectionStatus( Channel $channel ): string {
+		$connection = $this->getConnection( $channel );
+		$meta = $connection->meta->where( 'key', self::STATUS_KEY )->first();
+		return $meta ? $meta->value : self::STATUS_PENDING;
+	}
+
+	/**
+	 * @throws ConnectionNotFound
+	 * @throws RelationNotFound
+	 */
+	private function getConnection( Channel $channel ): Connection {
+		// Check if connection exists.
+		$connections = $this->client->getChat2ChannelRelation()->findConnections( new Query\Connection( $this->getPost()->ID, $channel->getPost()->ID ) );
+
+		if ( $connections->isEmpty() ) {
+			throw new ConnectionNotFound();
+		}
+
+		return $connections->first();
 	}
 }
