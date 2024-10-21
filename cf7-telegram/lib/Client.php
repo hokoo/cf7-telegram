@@ -26,6 +26,7 @@ class Client {
 	const CHAT2CHANNEL = 'chat2channel';
 	const FORM2CHANNEL = 'form2channel';
 	const BOT2CHANNEL = 'bot2channel';
+	const BOT2CHAT = 'bot2chat';
 
 	/**
 	 * Use get_instance() method for instance creating.
@@ -84,10 +85,19 @@ class Client {
 			->set( 'cardinality', 'm-m' )
 			->set( 'duplicatable', false );
 
+		$bot2chat = new Query\Relation();
+		$bot2chat
+			->set( 'name', self::BOT2CHAT )
+			->set( 'from', self::CPT_BOT )
+			->set( 'to', self::CPT_CHAT )
+			->set( 'cardinality', 'm-m' )
+			->set( 'duplicatable', false );
+
 		try {
 			$this->getConnectionsClient()->registerRelation( $chat2channel );
 			$this->getConnectionsClient()->registerRelation( $bot2channel );
 			$this->getConnectionsClient()->registerRelation( $form2channel );
+			$this->getConnectionsClient()->registerRelation( $bot2chat );
 		} catch ( wpConnections\Exceptions\Exception $e ) {
 			$this->logger->write( $e->getMessage(), 'Can not register the relations.', Logger::LEVEL_CRITICAL );
 		}
@@ -135,5 +145,12 @@ class Client {
      */
     public function getForm2ChannelRelation(): wpConnections\Relation {
 		return $this->getConnectionsClient()->getRelation( self::FORM2CHANNEL );
+	}
+
+	/**
+	 * @throws RelationNotFound
+	 */
+	public function getBot2ChatRelation(): wpConnections\Relation {
+		return $this->getConnectionsClient()->getRelation( self::BOT2CHAT );
 	}
 }

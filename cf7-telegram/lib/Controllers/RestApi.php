@@ -16,7 +16,7 @@ class RestApi {
 		register_rest_field( Client::CPT_BOT, 'token', array(
 			'get_callback' => function( $object ) {
 				$bot = new Bot( $object['id'] );
-				return $bot->getToken();
+				return empty( $bot->getToken() ) ? 'empty' : 'set';
 			},
 			'update_callback' => function( $updatedValue, $wp_post, $field, $request, $cpt ) {
 				$chat = new Bot( $wp_post->ID );
