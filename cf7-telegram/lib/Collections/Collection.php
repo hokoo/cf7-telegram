@@ -37,4 +37,9 @@ abstract class Collection extends \Ramsey\Collection\Collection {
 			return in_array( $collectionItem->getPost()->ID, $ids, false );
 		} );
 	}
+
+	public function contains( $element, bool $strict = true ): bool {
+		/** @var wpPostAble $element */
+		return ! $this->filterByIDs( [ $element->getPost()->ID ] )->isEmpty();
+	}
 }
