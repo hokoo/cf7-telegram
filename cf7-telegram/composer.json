@@ -22,7 +22,7 @@
   ],
   "require": {
     "ramsey/collection": "*",
-    "hokoo/wppostable": "dev-dev",
+    "hokoo/wppostable": "dev-master",
     "hokoo/wpconnections": "dev-master",
     "ext-json": "*",
     "php": ">=8.0",

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "2c233ee0d155c0dd355467716cc8f53b",
+    "content-hash": "3ca7c964d14ee7f08f567d72cf48cca7",
     "packages": [
         {
             "name": "carbonphp/carbon-doctrine-types",
@@ -551,21 +551,22 @@
         },
         {
             "name": "hokoo/wppostable",
-            "version": "dev-dev",
+            "version": "dev-master",
             "source": {
                 "type": "git",
                 "url": "https://github.com/hokoo/wpPostAble.git",
-                "reference": "c3006763613565f059c1f2455f8755fcbc857862"
+                "reference": "88c9ea55879a0399787b2e198299438e372c1e78"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/hokoo/wpPostAble/zipball/c3006763613565f059c1f2455f8755fcbc857862",
-                "reference": "c3006763613565f059c1f2455f8755fcbc857862",
+                "url": "https://api.github.com/repos/hokoo/wpPostAble/zipball/88c9ea55879a0399787b2e198299438e372c1e78",
+                "reference": "88c9ea55879a0399787b2e198299438e372c1e78",
                 "shasum": ""
             },
             "require": {
                 "ext-json": "*"
             },
+            "default-branch": true,
             "type": "library",
             "autoload": {
                 "psr-4": {
@@ -583,10 +584,10 @@
             ],
             "description": "Library provides a functionality for associating your classes with WordPress class WP_Post.",
             "support": {
-                "source": "https://github.com/hokoo/wpPostAble/tree/0.5",
+                "source": "https://github.com/hokoo/wpPostAble/tree/0.6.2",
                 "issues": "https://github.com/hokoo/wpPostAble/issues"
             },
-            "time": "2023-02-04T20:21:32+00:00"
+            "time": "2024-09-12T14:15:18+00:00"
         },
         {
             "name": "illuminate/collections",
