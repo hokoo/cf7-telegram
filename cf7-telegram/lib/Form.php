@@ -30,7 +30,7 @@ class Form extends Entity implements WPPostAble{
      * @throws RelationNotFound
      */
 	public function connectChannel( Channel $channel ): Entity {
-		$channel->addForm( $this );
+		$channel->connectForm( $this );
 		return $this;
 	}
 
