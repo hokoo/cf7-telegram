@@ -3,7 +3,7 @@ Contributors: hokku
 Donate link: https://www.paypal.me/igortron
 Tags: contact form telegram,contact form 7,telegram
 Requires at least: 4.7
-Tested up to: 6.5
+Tested up to: 6.7
 Requires PHP: 7.2
 Stable tag: 0.8.6
 License: GPLv2 or later
