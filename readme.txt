@@ -50,8 +50,7 @@ You can see your Chat ID by typing anything to Telegram-Bot <code>@wpcf7Bot</cod
 
 == Changelog ==
 = 0.8.6 =
-* CVE-2024-9629 got fixed.
-* New filter (`wpcf7tg_manage_chats_cap`) added for setting the user capability to manage chats.
+* Security issue CVE-2024-9629 got fixed.
 
 = 0.8.5 =
 * PHP 7.2 compatibility fixed.
