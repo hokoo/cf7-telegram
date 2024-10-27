@@ -56,9 +56,9 @@ class wpcf7_Telegram{
 		add_action( 'wpcf7_init', array( $this, 'tg_shortcode' ) );
 		add_action( 'wpcf7_before_send_mail', array( $this, 'send' ), 99999, 3 );
 		add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts' ) );
-		add_action( 'wp_ajax_wpcf7_tg', array( $this, 'ajax' ) );	
+		add_action( 'wp_ajax_wpcf7_tg', array( $this, 'ajax' ) );
 	}
-	
+
 	public static function get_instance(){
 		if ( empty( self::$instance ) ) :
 			self::$instance = new self;
@@ -537,6 +537,11 @@ class wpcf7_Telegram{
 	function ajax(){
 		$me = self::get_instance();
 		check_ajax_referer( 'wpcf7_telegram_nonce' );
+
+		if ( ! current_user_can( 'wpcf7_read_contact_forms' ) ) {
+			wp_die( json_encode( new \WP_Error( 'no_permission', 'You have no permission to do this', array( 'status' => 403 ) ) ) );
+		}
+
 		$chat_id = @ $_POST['chat'];
 		if ( empty( $chat_id ) ) wp_die( json_encode( new \WP_Error( 'empty_chat_id', 'There is no chat_id in request', array( 'status' => 400 ) ) ) );
 		
