@@ -1,9 +1,9 @@
 === Contact Form 7 + Telegram ===
 Contributors: hokku
-Donate link: https://www.paypal.me/hokku
+Donate link: https://www.paypal.me/igortron
 Tags: contact form telegram,contact form 7,telegram
-Requires at least: 5.3
-Tested up to: 6.7
+Requires at least: 5.6
+Tested up to: 7.0
 Requires PHP: 8.0
 Stable tag: 1.0
 License: GPLv2 or later
