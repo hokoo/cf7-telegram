@@ -454,6 +454,7 @@ class wpcf7_Telegram{
 
 	public function api_request( $method, $parameters = null, $headers = null ) {
 		if ( ! is_string( $method ) ) :
+			do_action( 'logger', "[TELEGRAM] Method name must be a string\n" );
 			error_log( "[TELEGRAM] Method name must be a string\n" );
 			return false;
 		endif;
@@ -480,28 +481,40 @@ class wpcf7_Telegram{
 	private function request( $url, $args ) {
 		$response = wp_remote_post( $url, $args );
 		if ( is_wp_error( $response ) ) :
-			error_log( "wp_remote_post returned error : ". $response->get_error_code() . ': ' . $response->get_error_message() . ' : ' . $response->get_error_data() ."\n");
+			$message = "[TELEGRAM] wp_remote_post has returned an error : ".
+					   $response->get_error_code() . ': ' .
+					   $response->get_error_message() . ' : ' .
+					   $response->get_error_data() ."\n";
+
+			do_action( 'logger', [ $message, $response ] );
+			error_log( $message );
 			return false;
 		endif;
+
+
 		$http_code = intval( $response['response']['code'] );
 		if ( $http_code >= 500 ) :
+
 			// do not to DDOS server if something goes wrong
-			error_log( "[TELEGRAM] Server return status {$http_code}" ."\n" );
-			sleep( 3 );
-			return false;
+			$message = "[TELEGRAM] Server return status {$http_code} : " . $response['response']['message'] ."\n";
 		elseif ( $http_code == 401 ) :
-			//throw new Exception( 'Invalid access token provided' );
-			error_log( "[TELEGRAM] Wrong token \n" );
-			return json_decode( $response['body'] );
+			$message = "[TELEGRAM] Wrong token\n";
+
 		elseif ( $http_code != 200 ) :
-			error_log( "[TELEGRAM] Request has failed with error {$response['response']['code']}: {$response['response']['message']}\n" );
-			return false;
+			$message = "[TELEGRAM] Request has failed with error {$response['response']['code']}: {$response['response']['message']}\n";
+
 		elseif ( empty( $response['body'] ) ) :
-			error_log( "[TELEGRAM] Server return empty body" );
-			return false;
+
+			$message = "[TELEGRAM] Server return empty body\n";
 		else :
+
 			return json_decode( $response['body'] );
 		endif;
+
+		do_action( 'logger', [ $message, $response['response'] ?? [] ] );
+		error_log( $message );
+
+		return false;
 	}
 	
 	public function has_token_constant(){
@@ -557,7 +570,7 @@ class wpcf7_Telegram{
 		echo '<h2>'. __( 'Extensions', 'cf7-telegram' ) .'</h2>';
 		
 		foreach ( $this->addons as $slug => $name ) :
-			$attachment_addon_link = "https://nebster.net/product/contact-form-7-telegram-attachments/";
+			$attachment_addon_link = "https://store.itron.pro/product/contact-form-7-telegram-attachments/";
 			echo class_exists( $slug ) ?
 				'<p>' . __( 'Uses addon:', WPCF7TG_DOMAIN ) . ' ' . $name . '</p>' :
 				/* translators: 1. File sending extension link, 2. end sale date, 3. "Get it now!" link  */
