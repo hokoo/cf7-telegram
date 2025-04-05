@@ -24,6 +24,21 @@ body.contact-1_page_wpcf7_tg #settings-content {
     border: 1px dotted #00a32a;
     padding: 10px;
 }
+.cf7-tg-channels-container .cf7-tg-channel-list .channel .cf7tg-channel-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
 .cf7-tg-channels-container .cf7-tg-channel-list .channel > h4{}
-.cf7-tg-channels-container .cf7-tg-channel-list .channel .bots{}
-.cf7-tg-channels-container .cf7-tg-channel-list .channel .forms{}
+.cf7-tg-channels-container .cf7-tg-channel-list .channel .bots{
+    border: 1px dotted #37465d;
+    padding: 10px;
+}
+.cf7-tg-channels-container .cf7-tg-channel-list .channel .chats{
+    border: 1px dotted #505145;
+    padding: 10px;
+}
+.cf7-tg-channels-container .cf7-tg-channel-list .channel .forms{
+    border: 1px dotted #797083;
+    padding: 10px;
+}

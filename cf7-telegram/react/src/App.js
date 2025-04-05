@@ -180,43 +180,47 @@ const Channel = ({ channel, forms, formsRelations, bots, botsRelations, chats, c
         <div className="cf7tg-channel-wrapper">
             <h4>{channel.title.rendered}</h4>
 
+
             {/* Отображение бота */}
-            {botForChannel ? (
-                <div className="bots">
-                    <p>{botForChannel.title.rendered}</p>
-                    <span className="bot-token">token: {botForChannel.token}</span>
-                </div>
-            ) : (
-                <p>No bot assigned to this channel</p>
-            )}
+            <div className="bots">
+                <h5>Bot</h5>
+                {botForChannel ? (
+                    <div id={botForChannel.id} className="bot-for-channel">
+                        <p>{botForChannel.title.rendered}</p>
+                        <span className="bot-token">token: {botForChannel.token}</span>
+                    </div>
+                ) : (
+                    <p>No bot assigned to this channel</p>
+                )}
+            </div>
 
             {/* Отображение чатов */}
-            {chatsForChannel.length > 0 ? (
-                <div className="chats">
-                    <h5>Chats</h5>
+            <div className="chats">
+                <h5>Chats</h5>
+                {chatsForChannel.length > 0 ? (
                     <ul>
                         {chatsForChannel.map(chat => (
                             <li key={chat.id}>{chat.title.rendered}</li>
                         ))}
                     </ul>
-                </div>
-            ) : (
-                <p>No chats assigned to this channel</p>
-            )}
+                ) : (
+                    <p>No chats assigned to this channel</p>
+                )}
+            </div>
 
             {/* Отображение форм */}
-            {formsForChannel.length > 0 ? (
-                <div className="forms">
-                    <h5>Forms</h5>
+            <div className="forms">
+                <h5>Forms</h5>
+                {formsForChannel.length > 0 ? (
                     <ul>
                         {formsForChannel.map(form => (
                             <li key={form.id}>{form.title}</li>
                         ))}
                     </ul>
-                </div>
-            ) : (
-                <p>No forms assigned to this channel</p>
-            )}
+                ) : (
+                    <p>No forms assigned to this channel</p>
+                )}
+            </div>
         </div>
     );
 };
