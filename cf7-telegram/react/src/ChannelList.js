@@ -60,7 +60,13 @@ const ChannelList = () => {
                 <div className="bot-list">
                     {bots.map(bot => (
                         <div className="bot" key={bot.id} id={`bot-${bot.id}`}>
-                            <Bot bot={bot} chats={chats} botsChatRelations={botsChatRelations} />
+                            <Bot
+                                bot={bot}
+                                chats={chats}
+                                botsChatRelations={botsChatRelations}
+                                setBots={setBots}
+                            />
+
                         </div>
                     ))}
                 </div>

@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import BotView from './BotView';
 
-const Bot = ({ bot, chats, botsChatRelations }) => {
+const Bot = ({ bot, chats, botsChatRelations, setBots }) => {
     const [isEditingName, setIsEditingName] = useState(false);
     const [isEditingToken, setIsEditingToken] = useState(false);
     const [nameValue, setNameValue] = useState(bot.title.rendered);
@@ -53,6 +53,11 @@ const Bot = ({ bot, chats, botsChatRelations }) => {
             });
 
             if (!response.ok) throw new Error('Failed to update bot');
+
+            // Обновляем глобальное состояние с ботами
+            setBots(prev => prev.map(b => (
+                b.id === bot.id ? { ...b, title: { ...b.title, rendered: nameValue }, token: tokenValue } : b
+            )));
 
             setIsEditingName(false);
             setIsEditingToken(false);
