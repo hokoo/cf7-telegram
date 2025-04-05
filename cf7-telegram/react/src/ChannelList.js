@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import Channel from './components/Channel';
 import Bot from './components/Bot';
+import NewBotButton from './components/NewBotButton';
+
 import {
     fetchClient,
     fetchForms,
@@ -56,7 +58,11 @@ const ChannelList = () => {
     return (
         <div className="cf7-tg-container">
             <div className="bots-container">
-                <h3>Bots</h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h3>Bots</h3>
+                    <NewBotButton setBots={setBots} />
+                </div>
+
                 <div className="bot-list">
                     {bots.map(bot => (
                         <div className="bot" key={bot.id} id={`bot-${bot.id}`}>

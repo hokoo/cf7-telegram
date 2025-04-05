@@ -54,7 +54,6 @@ const Bot = ({ bot, chats, botsChatRelations, setBots }) => {
 
             if (!response.ok) throw new Error('Failed to update bot');
 
-            // Обновляем глобальное состояние с ботами
             setBots(prev => prev.map(b => (
                 b.id === bot.id ? { ...b, title: { ...b.title, rendered: nameValue }, token: tokenValue } : b
             )));
@@ -64,6 +63,31 @@ const Bot = ({ bot, chats, botsChatRelations, setBots }) => {
         } catch (err) {
             console.error(err);
             setError('Failed to update bot');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const deleteBot = async () => {
+        if (!window.confirm('Are you sure you want to delete this bot?')) return;
+
+        setSaving(true);
+        setError(null);
+
+        try {
+            const response = await fetch(`${cf7TelegramData.routes.bots}${bot.id}/?force=true`, {
+                method: 'DELETE',
+                headers: {
+                    'X-WP-Nonce': cf7TelegramData?.nonce,
+                }
+            });
+
+            if (!response.ok) throw new Error('Failed to delete bot');
+
+            setBots(prev => prev.filter(b => b.id !== bot.id));
+        } catch (err) {
+            console.error(err);
+            setError('Failed to delete bot');
         } finally {
             setSaving(false);
         }
@@ -88,6 +112,7 @@ const Bot = ({ bot, chats, botsChatRelations, setBots }) => {
             handleEditToken={handleEditToken}
             cancelEdit={cancelEdit}
             saveBot={saveBot}
+            deleteBot={deleteBot}
             handleKeyDown={handleKeyDown}
             setNameValue={setNameValue}
             setTokenValue={setTokenValue}

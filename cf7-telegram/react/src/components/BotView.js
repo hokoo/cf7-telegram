@@ -15,6 +15,7 @@ const BotView = ({
                      handleEditToken,
                      cancelEdit,
                      saveBot,
+                     deleteBot,
                      handleKeyDown,
                      setNameValue,
                      setTokenValue
@@ -78,6 +79,12 @@ const BotView = ({
             ) : (
                 <p>No chats assigned to this bot</p>
             )}
+
+            <div className="bot-actions">
+                <button onClick={deleteBot} disabled={saving} style={{ marginTop: '1em', color: 'red' }}>
+                    🗑️ Delete bot
+                </button>
+            </div>
         </div>
     );
 };
