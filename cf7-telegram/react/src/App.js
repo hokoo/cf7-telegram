@@ -139,9 +139,9 @@ const ChannelList = () => {
     return (
         <div className="cf7-tg-container">
 
-            <div className="cf7tg-bot-container">
+            <div className="bots-container">
                 <h3>Bots</h3>
-                <div className="cf7tg-bot-list">
+                <div className="bot-list">
                     {bots.map(bot => (
                         <div className="bot" key={bot.id} id={`bot-${bot.id}`}>
                             <Bot bot={bot} chats={chats} botsChatRelations={botsChatRelations}/>
@@ -150,9 +150,9 @@ const ChannelList = () => {
                 </div>
             </div>
 
-            <div className="cf7-tg-channels-container">
+            <div className="channels-container">
                 <h3>Channels</h3>
-                <div className="cf7-tg-channel-list">
+                <div className="channel-list">
                     {channels.map(channel => (
                         <div className="channel" id={`channel-${channel.id}`} key={channel.id}>
                             <Channel
