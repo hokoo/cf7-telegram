@@ -21,7 +21,7 @@ body.contact-1_page_wpcf7_tg #settings-content {
 .cf7-tg-channels-container .cf7-tg-channel-list .channel {
     flex-basis: 360px;
     flex-shrink: 0;
-    border: 1px dotted #00a32a;
+    border: 1px dashed #2f4f37;
     padding: 10px;
 }
 .cf7-tg-channels-container .cf7-tg-channel-list .channel .cf7tg-channel-wrapper {
