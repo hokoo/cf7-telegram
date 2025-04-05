@@ -141,10 +141,13 @@ const Channel = ({ channel, forms, formsRelations, bots, botsRelations, chats, c
     const [formsForChannel, setFormsForChannel] = useState([]); // Состояние для хранения отфильтрованных форм
     const [botForChannel, setBotForChannel] = useState(null); // Состояние для хранения бота, связанного с каналом
     const [chatsForChannel, setChatsForChannel] = useState([]); // Состояние для хранения отфильтрованных чатов
+    const [isEditingTitle, setIsEditingTitle] = useState(false);
+    const [titleValue, setTitleValue] = useState(channel.title.rendered);
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState(null);
 
     // Фильтруем формы по ID, когда канал обновляется
     useEffect(() => {
-        // Извлекаем все ID форм, которые относятся к этому каналу
         const relatedFormsIds = formsRelations
             .filter(relation => relation.data.to === channel.id)
             .map(relation => relation.data.from); // Получаем ID форм, связанных с этим каналом
@@ -176,12 +179,85 @@ const Channel = ({ channel, forms, formsRelations, bots, botsRelations, chats, c
         }
     }, [channel.id, chats, chatsRelations]);
 
+    // === Обработка редактирования названия ===
+    const handleTitleClick = () => {
+        setError(null);
+        setIsEditingTitle(true);
+    };
+
+    const handleTitleChange = (e) => setTitleValue(e.target.value);
+
+    const handleCancelEdit = () => {
+        setTitleValue(channel.title.rendered);
+        setIsEditingTitle(false);
+        setError(null);
+    };
+
+    const saveTitle = async () => {
+        if (titleValue.trim() === '' || titleValue === channel.title.rendered) {
+            setIsEditingTitle(false);
+            return;
+        }
+
+        setSaving(true);
+        setError(null);
+
+        try {
+            const response = await fetch(`${cf7TelegramData.routes.channels}${channel.id}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-WP-Nonce': cf7TelegramData?.nonce,
+                },
+                body: JSON.stringify({
+                    title: titleValue,
+                }),
+            });
+
+            if (!response.ok) throw new Error('Failed to update title');
+
+            setIsEditingTitle(false);
+        } catch (err) {
+            console.error(err);
+            setError('Failed to update title');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter') saveTitle();
+        if (e.key === 'Escape') handleCancelEdit();
+    };
+
+    // === Рендер ===
     return (
         <div className="cf7tg-channel-wrapper">
-            <h4>{channel.title.rendered}</h4>
+            <div className="channel-title">
+                {isEditingTitle ? (
+                    <div className="edit-title">
+                        <input
+                            type="text"
+                            value={titleValue}
+                            onChange={handleTitleChange}
+                            onKeyDown={handleKeyDown}
+                            onBlur={() => {}}
+                            disabled={saving}
+                            autoFocus
+                        />
+                        <button onClick={saveTitle} disabled={saving}>💾</button>
+                        <button onClick={handleCancelEdit} disabled={saving}>❌</button>
+                        {saving && <span>⏳ Saving...</span>}
+                        {error && <p style={{ color: 'red' }}>{error}</p>}
+                    </div>
+                ) : (
+                    <h4 onClick={handleTitleClick} style={{ cursor: 'pointer' }}>
+                        {titleValue} <span style={{ marginLeft: 6, fontSize: '0.9em' }}>✏️</span>
+                    </h4>
+                )}
+            </div>
 
-
-            {/* Отображение бота */}
+            {/* Бот */}
             <div className="bots">
                 <h5>Bot</h5>
                 {botForChannel ? (
@@ -194,7 +270,7 @@ const Channel = ({ channel, forms, formsRelations, bots, botsRelations, chats, c
                 )}
             </div>
 
-            {/* Отображение чатов */}
+            {/* Чаты */}
             <div className="chats">
                 <h5>Chats</h5>
                 {chatsForChannel.length > 0 ? (
@@ -208,7 +284,7 @@ const Channel = ({ channel, forms, formsRelations, bots, botsRelations, chats, c
                 )}
             </div>
 
-            {/* Отображение форм */}
+            {/* Формы */}
             <div className="forms">
                 <h5>Forms</h5>
                 {formsForChannel.length > 0 ? (
