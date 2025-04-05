@@ -90,6 +90,7 @@ const ChannelList = () => {
     const [channels, setChannels] = useState([]);
     const [formsRelations, setFormsRelations] = useState([]); // Хранит все отношения form2channel
     const [botsRelations, setBotsRelations] = useState([]); // Хранит все отношения bot2channel
+    const [chatsRelations, setChatsRelations] = useState([]); // Хранит все отношения chat2channel
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -99,6 +100,7 @@ const ChannelList = () => {
         fetchChats().then(data => setChats(data));
         fetchFormsForChannels().then(data => setFormsRelations(data)); // Загружаем отношения form2channel один раз
         fetchBotsForChannels().then(data => setBotsRelations(data)); // Загружаем отношения bot2channel один раз
+        fetchChatsForChannels().then(data => setChatsRelations(data));
     }, []);
 
     useEffect(() => {
@@ -122,22 +124,23 @@ const ChannelList = () => {
     }
 
     return (
-        <div>
+        <div className="cf7-tg-channels-container">
             <h3>Channels</h3>
-            <ul>
+            <div className="cf7-tg-channel-list">
                 {channels.map(channel => (
-                    <li key={channel.id}>
-                        <Channel channel={channel} forms={forms} formsRelations={formsRelations} bots={bots} botsRelations={botsRelations} />
-                    </li>
+                    <div className="channel" id={`channel-${channel.id}`} key={channel.id}>
+                        <Channel channel={channel} forms={forms} formsRelations={formsRelations} bots={bots} botsRelations={botsRelations} chats={chats} chatsRelations={chatsRelations} />
+                    </div>
                 ))}
-            </ul>
+            </div>
         </div>
     );
 };
 
-const Channel = ({ channel, forms, formsRelations, bots, botsRelations }) => {
+const Channel = ({ channel, forms, formsRelations, bots, botsRelations, chats, chatsRelations }) => {
     const [formsForChannel, setFormsForChannel] = useState([]); // Состояние для хранения отфильтрованных форм
     const [botForChannel, setBotForChannel] = useState(null); // Состояние для хранения бота, связанного с каналом
+    const [chatsForChannel, setChatsForChannel] = useState([]); // Состояние для хранения отфильтрованных чатов
 
     // Фильтруем формы по ID, когда канал обновляется
     useEffect(() => {
@@ -162,23 +165,48 @@ const Channel = ({ channel, forms, formsRelations, bots, botsRelations }) => {
         }
     }, [channel.id, bots, botsRelations]);
 
+    // Фильтруем чаты
+    useEffect(() => {
+        const relatedChats = chatsRelations.filter(relation => relation.data.to === channel.id); // Находим все отношения чат-канал
+        if (relatedChats.length > 0) {
+            const chatsForChannel = relatedChats.map(relation => chats.find(chat => chat.id === relation.data.from)); // Находим чаты по ID
+            setChatsForChannel(chatsForChannel);
+        } else {
+            setChatsForChannel([]);
+        }
+    }, [channel.id, chats, chatsRelations]);
+
     return (
-        <div className="cf7tg-channel" id={`channel-${channel.id}`}>
+        <div className="cf7tg-channel-wrapper">
             <h4>{channel.title.rendered}</h4>
 
             {/* Отображение бота */}
             {botForChannel ? (
-                <div>
-                    <h5>Bot</h5>
-                    <p>{botForChannel.name}</p>
+                <div className="bots">
+                    <p>{botForChannel.title.rendered}</p>
+                    <span className="bot-token">token: {botForChannel.token}</span>
                 </div>
             ) : (
                 <p>No bot assigned to this channel</p>
             )}
 
+            {/* Отображение чатов */}
+            {chatsForChannel.length > 0 ? (
+                <div className="chats">
+                    <h5>Chats</h5>
+                    <ul>
+                        {chatsForChannel.map(chat => (
+                            <li key={chat.id}>{chat.title.rendered}</li>
+                        ))}
+                    </ul>
+                </div>
+            ) : (
+                <p>No chats assigned to this channel</p>
+            )}
+
             {/* Отображение форм */}
             {formsForChannel.length > 0 ? (
-                <div>
+                <div className="forms">
                     <h5>Forms</h5>
                     <ul>
                         {formsForChannel.map(form => (
