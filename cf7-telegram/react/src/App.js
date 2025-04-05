@@ -72,6 +72,16 @@ const fetchBotsForChannels = async () => {
     return await response.json(); // Returns all bot-to-channel relations
 };
 
+const fetchBotsForChats = async () => {
+    const response = await fetch(cf7TelegramData.routes.relations.bot2chat, {
+        method: 'GET',
+        headers: {
+            'X-WP-Nonce': cf7TelegramData?.nonce,
+        },
+    });
+    return await response.json(); // Returns all bot-to-chat relations
+};
+
 const fetchChatsForChannels = async () => {
     const response = await fetch(cf7TelegramData.routes.relations.chat2channel, {
         method: 'GET',
@@ -92,6 +102,7 @@ const ChannelList = () => {
     const [botsRelations, setBotsRelations] = useState([]); // Stores all bot-to-channel relations
     const [chatsRelations, setChatsRelations] = useState([]); // Stores all chat-to-channel relations
     const [loading, setLoading] = useState(true);
+    const [botsChatRelations, setBotsChatRelations] = useState([]);
 
     useEffect(() => {
         fetchClient().then(data => setClient(data));
@@ -101,6 +112,8 @@ const ChannelList = () => {
         fetchFormsForChannels().then(data => setFormsRelations(data)); // Load form-to-channel relations once
         fetchBotsForChannels().then(data => setBotsRelations(data)); // Load bot-to-channel relations once
         fetchChatsForChannels().then(data => setChatsRelations(data)); // Load chat-to-channel relations once
+        fetchBotsForChats().then(data => setBotsChatRelations(data));
+
     }, []);
 
     useEffect(() => {
@@ -124,22 +137,36 @@ const ChannelList = () => {
     }
 
     return (
-        <div className="cf7-tg-channels-container">
-            <h3>Channels</h3>
-            <div className="cf7-tg-channel-list">
-                {channels.map(channel => (
-                    <div className="channel" id={`channel-${channel.id}`} key={channel.id}>
-                        <Channel
-                            channel={channel}
-                            forms={forms}
-                            formsRelations={formsRelations}
-                            bots={bots}
-                            botsRelations={botsRelations}
-                            chats={chats}
-                            chatsRelations={chatsRelations}
-                        />
-                    </div>
-                ))}
+        <div className="cf7-tg-container">
+
+            <div className="cf7tg-bot-container">
+                <h3>Bots</h3>
+                <div className="cf7tg-bot-list">
+                    {bots.map(bot => (
+                        <div className="bot" key={bot.id} id={`bot-${bot.id}`}>
+                            <Bot bot={bot} chats={chats} botsChatRelations={botsChatRelations}/>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            <div className="cf7-tg-channels-container">
+                <h3>Channels</h3>
+                <div className="cf7-tg-channel-list">
+                    {channels.map(channel => (
+                        <div className="channel" id={`channel-${channel.id}`} key={channel.id}>
+                            <Channel
+                                channel={channel}
+                                forms={forms}
+                                formsRelations={formsRelations}
+                                bots={bots}
+                                botsRelations={botsRelations}
+                                chats={chats}
+                                chatsRelations={chatsRelations}
+                            />
+                        </div>
+                    ))}
+                </div>
             </div>
         </div>
     );
@@ -305,5 +332,34 @@ const Channel = ({ channel, forms, formsRelations, bots, botsRelations, chats, c
         </div>
     );
 };
+
+const Bot = ({ bot, chats, botsChatRelations }) => {
+    const relatedChatIds = botsChatRelations
+        .filter(relation => relation.data.from === bot.id)
+        .map(relation => relation.data.to);
+
+    const chatsForBot = chats.filter(chat => relatedChatIds.includes(chat.id));
+
+    return (
+        <div className="cf7tg-bot-wrapper">
+            <h4>{bot.title.rendered}</h4>
+            <span className="bot-token">token: {bot.token}</span>
+
+            {chatsForBot.length > 0 ? (
+                <div className="chats-for-bot">
+                    <h5>Chats</h5>
+                    <ul>
+                        {chatsForBot.map(chat => (
+                            <li key={chat.id}>{chat.title.rendered}</li>
+                        ))}
+                    </ul>
+                </div>
+            ) : (
+                <p>No chats assigned to this bot</p>
+            )}
+        </div>
+    );
+};
+
 
 export default ChannelList;

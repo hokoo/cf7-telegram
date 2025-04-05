@@ -12,6 +12,20 @@ body.contact-1_page_wpcf7_tg h6 {
 body.contact-1_page_wpcf7_tg #settings-content {
     color: #fff;
 }
+.cf7-tg-bot-container {}
+.cf7tg-bot-container .cf7tg-bot-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.cf7tg-bot-container .cf7tg-bot-list .bot {
+    flex-basis: 360px;
+    flex-shrink: 0;
+    border: 1px dashed #2f4f37;
+    padding: 10px;
+}
+
 .cf7-tg-channels-container {}
 .cf7-tg-channels-container .cf7-tg-channel-list {
     display: flex;
