@@ -1,0 +1,29 @@
+body.contact-1_page_wpcf7_tg {
+    background-color: #101021;
+}
+body.contact-1_page_wpcf7_tg h1,
+body.contact-1_page_wpcf7_tg h2,
+body.contact-1_page_wpcf7_tg h3,
+body.contact-1_page_wpcf7_tg h4,
+body.contact-1_page_wpcf7_tg h5,
+body.contact-1_page_wpcf7_tg h6 {
+    color: #b5b5b5;
+}
+body.contact-1_page_wpcf7_tg #settings-content {
+    color: #fff;
+}
+.cf7-tg-channels-container {}
+.cf7-tg-channels-container .cf7-tg-channel-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.cf7-tg-channels-container .cf7-tg-channel-list .channel {
+    flex-basis: 360px;
+    flex-shrink: 0;
+    border: 1px dotted #00a32a;
+    padding: 10px;
+}
+.cf7-tg-channels-container .cf7-tg-channel-list .channel > h4{}
+.cf7-tg-channels-container .cf7-tg-channel-list .channel .bots{}
+.cf7-tg-channels-container .cf7-tg-channel-list .channel .forms{}
