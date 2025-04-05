@@ -45,7 +45,6 @@ const ChannelView = ({
                 {botForChannel ? (
                     <div id={botForChannel.id} className="bot-for-channel">
                         <p>{botForChannel.title.rendered}</p>
-                        <span className="bot-token">token: {botForChannel.token}</span>
                     </div>
                 ) : (
                     <p>No bot assigned to this channel</p>

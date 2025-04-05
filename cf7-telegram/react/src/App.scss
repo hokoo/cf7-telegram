@@ -1,87 +1,96 @@
 body.contact-1_page_wpcf7_tg {
-    background-color: #101021;
+  background-color: #101021;
 
-    h1,
-    h2,
-    h3,
-    h4,
-    h5,
-    h6 {
-        color: #b5b5b5;
-    }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    color: #b5b5b5;
+  }
 
-    #settings-content {
-        color: #fff;
-    }
+  #settings-content {
+    color: #fff;
+  }
 }
 
 .cf7-tg-container {
-    .bots-container {
-        .bot-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
+  .bots-container {
+    .bot-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
 
-            .bot {
-                flex-basis: 360px;
-                flex-shrink: 0;
-                border: 1px dashed #2f4f37;
-                padding: 10px;
-            }
+      .bot {
+        flex-basis: 360px;
+        flex-shrink: 0;
+        border: 1px dashed #2f4f37;
+        padding: 10px;
+
+        .bot-token {
+          .token-value {
+            font-family: Monospace, serif;
+            padding: 2px 5px;
+            background-color: #2f2f2f;
+          }
         }
+      }
     }
+  }
 
-    .channels-container {
-        .channel-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
+  .channels-container {
+    .channel-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
 
-            .channel {
-                flex-basis: 360px;
-                flex-shrink: 0;
-                border: 1px dashed #2f4f37;
-                padding: 10px;
+      .channel {
+        flex-basis: 360px;
+        flex-shrink: 0;
+        border: 1px dashed #2f4f37;
+        padding: 10px;
 
-                > h4 {}
-
-                .cf7tg-channel-wrapper {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 10px;
-                }
-
-                .bots {
-                    border: 1px dotted #37465d;
-                    padding: 10px;
-                }
-
-                .chats {
-                    border: 1px dotted #505145;
-                    padding: 10px;
-                }
-
-                .forms {
-                    border: 1px dotted #797083;
-                    padding: 10px;
-                }
-
-                .edit-title {
-                    display: flex;
-                    gap: 0.5em;
-                    align-items: center;
-
-                    input {
-                        padding: 4px;
-                        font-size: 1em;
-                    }
-
-                    button {
-                        cursor: pointer;
-                        padding: 4px 8px;
-                    }
-                }
-            }
+        > h4 {
         }
+
+        .cf7tg-channel-wrapper {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+
+        .bots {
+          border: 1px dotted #37465d;
+          padding: 10px;
+        }
+
+        .chats {
+          border: 1px dotted #505145;
+          padding: 10px;
+        }
+
+        .forms {
+          border: 1px dotted #797083;
+          padding: 10px;
+        }
+
+        .edit-title {
+          display: flex;
+          gap: 0.5em;
+          align-items: center;
+
+          input {
+            padding: 4px;
+            font-size: 1em;
+          }
+
+          button {
+            cursor: pointer;
+            padding: 4px 8px;
+          }
+        }
+      }
     }
+  }
 }
