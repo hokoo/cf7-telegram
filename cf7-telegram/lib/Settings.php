@@ -40,8 +40,7 @@ HTML;
 
 		$manifest = json_decode( file_get_contents( $json_manifest ), true );
 
-//		wp_enqueue_style( 'wpcf7telegram-admin-styles', self::pluginUrl() . '/assets/css/index.css', null, WPCF7TG_VERSION );
-//		wp_enqueue_script( 'wpcf7telegram-admin', self::pluginUrl() . '/assets/js/index.js', null, WPCF7TG_VERSION );
+		wp_enqueue_style( 'wpcf7telegram-admin-styles', self::pluginUrl() . '/react/build/' . $manifest['files']['main.css'], null, WPCF7TG_VERSION );
 		wp_enqueue_script( 'wpcf7telegram-admin', self::pluginUrl() . '/react/build/' . $manifest['files']['main.js'], null, WPCF7TG_VERSION, true );
 		wp_localize_script( 'wpcf7telegram-admin', 'cf7TelegramData', array(
 			'routes' => [
