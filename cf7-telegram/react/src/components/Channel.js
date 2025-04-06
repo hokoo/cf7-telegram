@@ -3,44 +3,112 @@
 import React, { useState, useEffect } from 'react';
 import ChannelView from './ChannelView';
 
-const Channel = ({ channel, forms, formsRelations, bots, botsRelations, chats, chatsRelations }) => {
-    const [formsForChannel, setFormsForChannel] = useState([]);
+const Channel = ({
+                     channel,
+                     forms,
+                     formsRelations,
+                     setFormsRelations,
+                     bots,
+                     botsRelations,
+                     chats,
+                     chatsRelations,
+                 }) => {
     const [botForChannel, setBotForChannel] = useState(null);
     const [chatsForChannel, setChatsForChannel] = useState([]);
+    const [formsForChannel, setFormsForChannel] = useState([]);
+    const [availableForms, setAvailableForms] = useState([]);
+    const [showFormSelector, setShowFormSelector] = useState(false);
+
     const [isEditingTitle, setIsEditingTitle] = useState(false);
     const [titleValue, setTitleValue] = useState(channel.title.rendered);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        const relatedFormsIds = formsRelations
-            .filter(r => r.data.to === channel.id)
-            .map(r => r.data.from);
-        setFormsForChannel(forms.filter(form => relatedFormsIds.includes(form.id)));
-    }, [channel.id, forms, formsRelations]);
-
-    useEffect(() => {
-        const relation = botsRelations.find(r => r.data.to === channel.id);
-        setBotForChannel(relation ? bots.find(b => b.id === relation.data.from) : null);
+        const botRelation = botsRelations.find(r => r.data.to === channel.id);
+        if (!botRelation) return setBotForChannel(null);
+        const bot = bots.find(b => b.id === botRelation.data.from);
+        setBotForChannel(bot);
     }, [channel.id, bots, botsRelations]);
 
     useEffect(() => {
         const related = chatsRelations.filter(r => r.data.to === channel.id);
-        const matched = related.map(r => chats.find(chat => chat.id === r.data.from)).filter(Boolean);
-        setChatsForChannel(matched);
+        const resolved = related.map(r => chats.find(c => c.id === r.data.from)).filter(Boolean);
+        setChatsForChannel(resolved);
     }, [channel.id, chats, chatsRelations]);
+
+    useEffect(() => {
+        const relatedIds = formsRelations.filter(r => r.data?.to === channel.id).map(r => r.data.from);
+        const linked = forms.filter(f => relatedIds.includes(f.id));
+        const unlinked = forms.filter(f => !relatedIds.includes(f.id));
+        setFormsForChannel(linked);
+        setAvailableForms(unlinked);
+    }, [forms, formsRelations, channel.id]);
+
+    const handleAddForm = () => {
+        setShowFormSelector(prev => !prev);
+    };
+
+    const handleFormSelect = async (event) => {
+        const formId = parseInt(event.target.value, 10);
+        try {
+            const response = await fetch(cf7TelegramData.routes.relations.form2channel, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-WP-Nonce': cf7TelegramData?.nonce,
+                },
+                body: JSON.stringify({ from: formId, to: channel.id }),
+            });
+
+            if (response.status !== 200) throw new Error('Failed to assign form');
+            const newRelation = await response.json();
+            setFormsRelations(prev => [...prev, { data: newRelation }]);
+            setShowFormSelector(false);
+        } catch (err) {
+            console.error(err);
+            alert('Something went wrong while assigning the form');
+        }
+    };
+
+    const handleRemoveForm = async (formId) => {
+        const relation = formsRelations.find(r => r.data.from === formId && r.data.to === channel.id);
+        if (!relation) return;
+
+        const confirmDelete = window.confirm('Are you sure you want to remove this form from the channel?');
+        if (!confirmDelete) return;
+
+        try {
+            const response = await fetch(`${cf7TelegramData.routes.relations.form2channel}${relation.data.id}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-WP-Nonce': cf7TelegramData?.nonce,
+                },
+            });
+            if (response.status !== 200) throw new Error('Failed to remove form');
+            setFormsRelations(prev => prev.filter(r => r.data.id !== relation.data.id));
+        } catch (err) {
+            console.error(err);
+            alert('Failed to remove form');
+        }
+    };
 
     const handleTitleClick = () => {
         setError(null);
         setIsEditingTitle(true);
     };
 
-    const handleTitleChange = e => setTitleValue(e.target.value);
+    const handleTitleChange = (e) => setTitleValue(e.target.value);
 
     const handleCancelEdit = () => {
         setTitleValue(channel.title.rendered);
         setIsEditingTitle(false);
         setError(null);
+    };
+
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter') saveTitle();
+        if (e.key === 'Escape') handleCancelEdit();
     };
 
     const saveTitle = async () => {
@@ -62,7 +130,7 @@ const Channel = ({ channel, forms, formsRelations, bots, botsRelations, chats, c
                 body: JSON.stringify({ title: titleValue }),
             });
 
-            if (!response.ok) throw new Error('Failed to update title');
+            if (response.status !== 200) throw new Error('Failed to update title');
             setIsEditingTitle(false);
         } catch (err) {
             console.error(err);
@@ -70,11 +138,6 @@ const Channel = ({ channel, forms, formsRelations, bots, botsRelations, chats, c
         } finally {
             setSaving(false);
         }
-    };
-
-    const handleKeyDown = e => {
-        if (e.key === 'Enter') saveTitle();
-        if (e.key === 'Escape') handleCancelEdit();
     };
 
     return (
@@ -91,6 +154,11 @@ const Channel = ({ channel, forms, formsRelations, bots, botsRelations, chats, c
             botForChannel={botForChannel}
             chatsForChannel={chatsForChannel}
             formsForChannel={formsForChannel}
+            availableForms={availableForms}
+            showFormSelector={showFormSelector}
+            handleAddForm={handleAddForm}
+            handleFormSelect={handleFormSelect}
+            handleRemoveForm={handleRemoveForm}
         />
     );
 };

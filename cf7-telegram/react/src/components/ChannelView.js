@@ -12,7 +12,12 @@ const ChannelView = ({
                          saveTitle,
                          botForChannel,
                          chatsForChannel = [],
-                         formsForChannel = []
+                         formsForChannel = [],
+                         availableForms = [],
+                         showFormSelector,
+                         handleAddForm,
+                         handleFormSelect,
+                         handleRemoveForm
                      }) => {
     return (
         <div className="entity-wrapper channel-wrapper">
@@ -66,10 +71,22 @@ const ChannelView = ({
 
             <div className="frame forms">
                 <h5>Forms</h5>
+                <button onClick={handleAddForm}>➕ Add Form</button>
+                {showFormSelector && (
+                    <select onChange={handleFormSelect} defaultValue="">
+                        <option value="" disabled>Select form</option>
+                        {availableForms.map(form => (
+                            <option key={form.id} value={form.id}>{form.title}</option>
+                        ))}
+                    </select>
+                )}
+
                 {formsForChannel.length > 0 ? (
                     <ul>
                         {formsForChannel.map(form => (
-                            <li key={form.id}>{form.title}</li>
+                            <li key={form.id}>
+                                {form.title} <button onClick={() => handleRemoveForm(form.id)}>❌</button>
+                            </li>
                         ))}
                     </ul>
                 ) : (

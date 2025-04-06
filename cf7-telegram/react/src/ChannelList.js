@@ -72,7 +72,6 @@ const ChannelList = () => {
                                 botsChatRelations={botsChatRelations}
                                 setBots={setBots}
                             />
-
                         </div>
                     ))}
                 </div>
@@ -87,6 +86,7 @@ const ChannelList = () => {
                                 channel={channel}
                                 forms={forms}
                                 formsRelations={formsRelations}
+                                setFormsRelations={setFormsRelations}
                                 bots={bots}
                                 botsRelations={botsRelations}
                                 chats={chats}
