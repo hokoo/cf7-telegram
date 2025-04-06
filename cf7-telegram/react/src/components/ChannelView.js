@@ -22,6 +22,15 @@ const ChannelView = ({
                          handleBotSelect,
                          handleRemoveBot
                      }) => {
+    // Determine chat status: Active if linked to channel, otherwise Paused
+    const renderedChats = botForChannel?.chats?.map(chat => {
+        const isLinked = chatsForChannel.some(c => c.id === chat.id);
+        return {
+            ...chat,
+            status: isLinked ? 'Active' : 'Paused'
+        };
+    }) || [];
+
     return (
         <div className="entity-wrapper channel-wrapper">
             <div className="channel-title">
@@ -72,14 +81,16 @@ const ChannelView = ({
 
             <div className="frame chats">
                 <h5>Chats</h5>
-                {chatsForChannel.length > 0 ? (
+                {renderedChats.length > 0 ? (
                     <ul>
-                        {chatsForChannel.map(chat => (
-                            <li key={chat.id}>{chat.title.rendered}</li>
+                        {renderedChats.map(chat => (
+                            <li key={chat.id}>
+                                {chat.title.rendered} <span style={{ color: chat.status === 'Active' ? 'green' : 'gray' }}>({chat.status})</span>
+                            </li>
                         ))}
                     </ul>
                 ) : (
-                    <p>No chats assigned to this channel</p>
+                    <p>No chats available</p>
                 )}
             </div>
 

@@ -13,6 +13,7 @@ const Channel = ({
                      setBotsRelations,
                      chats,
                      chatsRelations,
+                     botsChatRelations
                  }) => {
     const [botForChannel, setBotForChannel] = useState(null);
     const [chatsForChannel, setChatsForChannel] = useState([]);
@@ -30,8 +31,16 @@ const Channel = ({
         const botRelation = botsRelations.find(r => r.data.to === channel.id);
         if (!botRelation) return setBotForChannel(null);
         const bot = bots.find(b => b.id === botRelation.data.from);
-        setBotForChannel(bot);
-    }, [channel.id, bots, botsRelations]);
+        if (!bot) return setBotForChannel(null);
+
+        const botChatIds = botsChatRelations
+            .filter(r => r.data.from === bot.id)
+            .map(r => r.data.to);
+
+        const botChats = chats.filter(chat => botChatIds.includes(chat.id));
+
+        setBotForChannel({ ...bot, chats: botChats });
+    }, [channel.id, bots, botsRelations, botsChatRelations, chats]);
 
     useEffect(() => {
         const related = chatsRelations.filter(r => r.data.to === channel.id);
@@ -54,9 +63,7 @@ const Channel = ({
         setAvailableBots(unlinkedBots);
     }, [bots, botsRelations, channel.id]);
 
-    const handleAddForm = () => {
-        setShowFormSelector(prev => !prev);
-    };
+    const handleAddForm = () => setShowFormSelector(prev => !prev);
 
     const handleFormSelect = async (event) => {
         const formId = parseInt(event.target.value, 10);
