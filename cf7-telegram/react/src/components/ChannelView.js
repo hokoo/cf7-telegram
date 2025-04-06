@@ -15,7 +15,7 @@ const ChannelView = ({
                          formsForChannel = []
                      }) => {
     return (
-        <div className="cf7tg-channel-wrapper">
+        <div className="entity-wrapper channel-wrapper">
             <div className="channel-title">
                 {isEditingTitle ? (
                     <div className="edit-title">
@@ -40,7 +40,7 @@ const ChannelView = ({
                 )}
             </div>
 
-            <div className="bots">
+            <div className="frame bots">
                 <h5>Bot</h5>
                 {botForChannel ? (
                     <div id={botForChannel.id} className="bot-for-channel">
@@ -51,7 +51,7 @@ const ChannelView = ({
                 )}
             </div>
 
-            <div className="chats">
+            <div className="frame chats">
                 <h5>Chats</h5>
                 {chatsForChannel.length > 0 ? (
                     <ul>
@@ -64,7 +64,7 @@ const ChannelView = ({
                 )}
             </div>
 
-            <div className="forms">
+            <div className="frame forms">
                 <h5>Forms</h5>
                 {formsForChannel.length > 0 ? (
                     <ul>

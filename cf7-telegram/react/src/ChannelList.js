@@ -65,7 +65,7 @@ const ChannelList = () => {
 
                 <div className="bot-list">
                     {bots.map(bot => (
-                        <div className="bot" key={bot.id} id={`bot-${bot.id}`}>
+                        <div className="entity-container bot" key={bot.id} id={`bot-${bot.id}`}>
                             <Bot
                                 bot={bot}
                                 chats={chats}
@@ -82,7 +82,7 @@ const ChannelList = () => {
                 <h3>Channels</h3>
                 <div className="channel-list">
                     {channels.map(channel => (
-                        <div className="channel" key={channel.id} id={`channel-${channel.id}`}>
+                        <div className="entity-container channel" key={channel.id} id={`channel-${channel.id}`}>
                             <Channel
                                 channel={channel}
                                 forms={forms}

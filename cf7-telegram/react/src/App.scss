@@ -1,5 +1,5 @@
 body.contact-1_page_wpcf7_tg {
-  background-color: #101021;
+  background-color: #0e1621;
 
   h1,
   h2,
@@ -16,6 +16,29 @@ body.contact-1_page_wpcf7_tg {
 }
 
 .cf7-tg-container {
+
+  .entity-container {
+    flex-basis: 360px;
+    flex-shrink: 0;
+    border-width: 4px;
+    border-style: dashed;
+    border-radius: 12px;
+    padding: 10px;
+
+    .entity-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+  }
+
+  .frame {
+    border-width: 2px;
+    border-style: dotted;
+    border-radius: 8px;
+    padding: 10px;
+  }
+
   .bots-container {
     .bot-list {
       display: flex;
@@ -23,10 +46,14 @@ body.contact-1_page_wpcf7_tg {
       gap: 10px;
 
       .bot {
-        flex-basis: 360px;
-        flex-shrink: 0;
-        border: 1px dashed #2f4f37;
-        padding: 10px;
+        border-color: #0c88b4;
+
+        .bot-summary {
+          border-color: #0a4b78;
+        }
+        .chats-for-bot {
+            border-color: #1d1f2c;
+        }
 
         .bot-token {
           .token-value {
@@ -46,33 +73,23 @@ body.contact-1_page_wpcf7_tg {
       gap: 10px;
 
       .channel {
-        flex-basis: 360px;
-        flex-shrink: 0;
-        border: 1px dashed #2f4f37;
-        padding: 10px;
+        border-color: #2f4f37;
 
         > h4 {
         }
 
-        .cf7tg-channel-wrapper {
-          display: flex;
-          flex-direction: column;
-          gap: 10px;
-        }
+        .channel-wrapper {}
 
         .bots {
-          border: 1px dotted #37465d;
-          padding: 10px;
+          border-color: #37465d;
         }
 
         .chats {
-          border: 1px dotted #505145;
-          padding: 10px;
+          border-color: #505145;
         }
 
         .forms {
-          border: 1px dotted #797083;
-          padding: 10px;
+          border-color: #797083;
         }
 
         .edit-title {
