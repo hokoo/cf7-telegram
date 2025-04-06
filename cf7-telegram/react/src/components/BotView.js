@@ -20,7 +20,8 @@ const BotView = ({
                      handleKeyDown,
                      setNameValue,
                      setTokenValue,
-                     handleToggleChatStatus
+                     handleToggleChatStatus,
+                     online
                  }) => {
     return (
         <div className="entity-wrapper bot-wrapper">
@@ -65,6 +66,10 @@ const BotView = ({
                             token: <span className="token-value">{tokenValue}</span> <span style={{ marginLeft: 6 }}>✏️</span>
                         </span>
                     )}
+                </div>
+
+                <div className={`bot-status ${online === true ? 'online' : online === false ? 'offline' : 'unknown'}`}>
+                    Status: {online === true ? 'Online' : online === false ? 'Offline' : 'Unknown'}
                 </div>
             </div>
 

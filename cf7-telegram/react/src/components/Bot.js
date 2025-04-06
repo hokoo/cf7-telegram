@@ -1,6 +1,6 @@
 /* global cf7TelegramData */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import BotView from './BotView';
 import { getChatStatus } from '../utils/chatStatus';
 
@@ -12,12 +12,19 @@ const Bot = ({ bot, chats, botsChatRelations, setBots, setBotsChatRelations }) =
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState(null);
     const [updatingStatusIds, setUpdatingStatusIds] = useState([]);
+    const [online, setOnline] = useState(null);
 
     const relatedChatIds = botsChatRelations
         .filter(relation => relation.data.from === bot.id)
         .map(relation => relation.data.to);
 
     const chatsForBot = chats.filter(chat => relatedChatIds.includes(chat.id));
+
+    useEffect(() => {
+        if (online === null) {
+            pingBot();
+        }
+    }, [online]);
 
     const handleEditName = () => {
         setError(null);
@@ -37,8 +44,26 @@ const Bot = ({ bot, chats, botsChatRelations, setBots, setBotsChatRelations }) =
         setError(null);
     };
 
+    const pingBot = async () => {
+        try {
+            const res = await fetch(`${cf7TelegramData.routes.bots}${bot.id}/ping`, {
+                method: 'GET',
+                headers: {
+                    'X-WP-Nonce': cf7TelegramData?.nonce,
+                }
+            });
+            if (!res.ok) throw new Error('Ping failed');
+            const json = await res.json();
+            setOnline(json.online);
+        } catch (err) {
+            console.error('Ping failed', err);
+            setOnline(false);
+        }
+    };
+
     const saveBot = async () => {
         setSaving(true);
+        setOnline(null);
         setError(null);
 
         try {
@@ -62,6 +87,9 @@ const Bot = ({ bot, chats, botsChatRelations, setBots, setBotsChatRelations }) =
 
             setIsEditingName(false);
             setIsEditingToken(false);
+
+            await pingBot();
+
         } catch (err) {
             console.error(err);
             setError('Failed to update bot');
@@ -170,6 +198,7 @@ const Bot = ({ bot, chats, botsChatRelations, setBots, setBotsChatRelations }) =
             setNameValue={setNameValue}
             setTokenValue={setTokenValue}
             handleToggleChatStatus={handleToggleChatStatus}
+            online={online}
         />
     );
 };
