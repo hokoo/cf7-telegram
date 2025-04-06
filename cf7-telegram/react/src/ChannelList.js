@@ -37,8 +37,17 @@ const ChannelList = () => {
         fetchFormsForChannels().then(setFormsRelations);
         fetchBotsForChannels().then(setBotsRelations);
         fetchChatsForChannels().then(setChatsRelations);
+        loadBotsChatRelations();
+
+        const interval = setInterval(() => {
+            loadBotsChatRelations();
+        }, 10000); // refresh every 10 seconds
+
+        return () => clearInterval(interval);
+    }, []);
+
+    const loadBotsChatRelations = () => {
         fetchBotsForChats().then((relations) => {
-            // Map muted status for UI usage
             const mapped = relations.map(rel => {
                 const status = rel.data?.meta?.status?.[0];
                 return {
@@ -51,7 +60,7 @@ const ChannelList = () => {
             });
             setBotsChatRelations(mapped);
         });
-    }, []);
+    };
 
     useEffect(() => {
         fetchChannels()
