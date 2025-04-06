@@ -63,7 +63,6 @@ const Bot = ({ bot, chats, botsChatRelations, setBots, setBotsChatRelations }) =
 
     const saveBot = async () => {
         setSaving(true);
-        setOnline(null);
         setError(null);
 
         try {
@@ -177,6 +176,13 @@ const Bot = ({ bot, chats, botsChatRelations, setBots, setBotsChatRelations }) =
         }
     };
 
+    const handleTokenChange = (e) => {
+        setTokenValue(e.target.value);
+    };
+
+    // Trimmed token for display (only last 4 characters)
+    const trimmedToken = tokenValue.length > 7 ? `***${tokenValue.slice(-4)}` : tokenValue;
+
     return (
         <BotView
             bot={bot}
@@ -187,6 +193,7 @@ const Bot = ({ bot, chats, botsChatRelations, setBots, setBotsChatRelations }) =
             isEditingToken={isEditingToken}
             nameValue={nameValue}
             tokenValue={tokenValue}
+            trimmedToken={trimmedToken}
             saving={saving}
             error={error}
             handleEditName={handleEditName}

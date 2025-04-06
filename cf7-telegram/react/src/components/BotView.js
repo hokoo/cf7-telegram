@@ -10,6 +10,7 @@ const BotView = ({
                      isEditingToken,
                      nameValue,
                      tokenValue,
+                     trimmedToken,
                      saving,
                      error,
                      handleEditName,
@@ -63,7 +64,7 @@ const BotView = ({
                         </div>
                     ) : (
                         <span onClick={handleEditToken} style={{ cursor: 'pointer' }}>
-                            token: <span className="token-value">{tokenValue}</span> <span style={{ marginLeft: 6 }}>✏️</span>
+                            token: <span className="token-value">{trimmedToken}</span> <span style={{ marginLeft: 6 }}>✏️</span>
                         </span>
                     )}
                 </div>
