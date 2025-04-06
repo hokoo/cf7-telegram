@@ -33,18 +33,24 @@ const Channel = ({
         const bot = bots.find(b => b.id === botRelation.data.from);
         if (!bot) return setBotForChannel(null);
 
-        const botChatIds = botsChatRelations
-            .filter(r => r.data.from === bot.id)
-            .map(r => r.data.to);
-
-        const botChats = chats.filter(chat => botChatIds.includes(chat.id));
+        const botChatRelations = botsChatRelations.filter(r => r.data.from === bot.id);
+        const botChats = chats
+            .map(chat => {
+                const relation = botChatRelations.find(r => r.data.to === chat.id);
+                if (!relation) return null;
+                return {
+                    ...chat,
+                    muted: !!relation.data.muted
+                };
+            })
+            .filter(Boolean);
 
         setBotForChannel({ ...bot, chats: botChats });
     }, [channel.id, bots, botsRelations, botsChatRelations, chats]);
 
     useEffect(() => {
-        const related = chatsRelations.filter(r => r.data.to === channel.id);
-        const resolved = related.map(r => chats.find(c => c.id === r.data.from)).filter(Boolean);
+        const relatedChats = chatsRelations.filter(r => r.data.to === channel.id);
+        const resolved = relatedChats.map(r => chats.find(c => c.id === r.data.from)).filter(Boolean);
         setChatsForChannel(resolved);
     }, [channel.id, chats, chatsRelations]);
 
@@ -222,6 +228,7 @@ const Channel = ({
             availableBots={availableBots}
             handleBotSelect={handleBotSelect}
             handleRemoveBot={handleRemoveBot}
+            botsChatRelations={botsChatRelations}
         />
     );
 };

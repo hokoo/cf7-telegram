@@ -20,16 +20,30 @@ const ChannelView = ({
                          handleRemoveForm,
                          availableBots = [],
                          handleBotSelect,
-                         handleRemoveBot
+                         handleRemoveBot,
+                         botsChatRelations = [],
+                         channelId
                      }) => {
-    // Determine chat status: Active if linked to channel, otherwise Paused
-    const renderedChats = botForChannel?.chats?.map(chat => {
-        const isLinked = chatsForChannel.some(c => c.id === chat.id);
-        return {
-            ...chat,
-            status: isLinked ? 'Active' : 'Paused'
-        };
-    }) || [];
+    const renderedChats = (botForChannel?.chats || [])
+        .map(chat => {
+            const relation = botsChatRelations.find(rel => rel.data.from === botForChannel.id && rel.data.to === chat.id);
+            const statusMeta = relation?.data?.meta?.status?.[0] || null;
+
+            if (statusMeta === 'pending') return null;
+
+            const isLinkedToChannel = chatsForChannel.some(c => c.id === chat.id);
+
+            let status = isLinkedToChannel ? 'Active' : 'Paused';
+            if (statusMeta === 'muted') {
+                status = 'Muted';
+            }
+
+            return {
+                ...chat,
+                status: status
+            };
+        })
+        .filter(Boolean);
 
     return (
         <div className="entity-wrapper channel-wrapper">
@@ -85,7 +99,7 @@ const ChannelView = ({
                     <ul>
                         {renderedChats.map(chat => (
                             <li key={chat.id}>
-                                {chat.title.rendered} <span style={{ color: chat.status === 'Active' ? 'green' : 'gray' }}>({chat.status})</span>
+                                {chat.title.rendered} <span className={`chat-status ${chat.status.toLowerCase()}`}>({chat.status})</span>
                             </li>
                         ))}
                     </ul>

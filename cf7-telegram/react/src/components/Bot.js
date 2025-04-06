@@ -102,6 +102,7 @@ const Bot = ({ bot, chats, botsChatRelations, setBots }) => {
         <BotView
             bot={bot}
             chatsForBot={chatsForBot}
+            botsChatRelations={botsChatRelations}
             isEditingName={isEditingName}
             isEditingToken={isEditingToken}
             nameValue={nameValue}

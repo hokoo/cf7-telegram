@@ -5,6 +5,7 @@ import React from 'react';
 const BotView = ({
                      bot,
                      chatsForBot = [],
+                     botsChatRelations = [],
                      isEditingName,
                      isEditingToken,
                      nameValue,
@@ -20,6 +21,14 @@ const BotView = ({
                      setNameValue,
                      setTokenValue
                  }) => {
+    const renderChatStatus = (chat) => {
+        const relation = botsChatRelations.find(rel => rel.data.from === bot.id && rel.data.to === chat.id);
+        const statusMeta = relation?.data?.meta?.status?.[0] || null;
+        if (statusMeta === 'pending') return 'Pending';
+        if (statusMeta === 'muted') return 'Muted';
+        return 'Active';
+    };
+
     return (
         <div className="entity-wrapper bot-wrapper">
             <div className="frame bot-summary">
@@ -60,8 +69,8 @@ const BotView = ({
                         </div>
                     ) : (
                         <span onClick={handleEditToken} style={{cursor: 'pointer'}}>
-            token: <span className="token-value">{tokenValue}</span> <span style={{marginLeft: 6}}>✏️</span>
-          </span>
+                            token: <span className="token-value">{tokenValue}</span> <span style={{marginLeft: 6}}>✏️</span>
+                        </span>
                     )}
                 </div>
             </div>
@@ -74,7 +83,9 @@ const BotView = ({
                 {chatsForBot.length > 0 ? (
                     <ul>
                         {chatsForBot.map(chat => (
-                            <li key={chat.id}>{chat.title.rendered}</li>
+                            <li key={chat.id}>
+                                {chat.title.rendered} <span className={`chat-status ${renderChatStatus(chat).toLowerCase()}`}>({renderChatStatus(chat)})</span>
+                            </li>
                         ))}
                     </ul>
                 ) : (

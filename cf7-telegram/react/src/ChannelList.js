@@ -37,7 +37,20 @@ const ChannelList = () => {
         fetchFormsForChannels().then(setFormsRelations);
         fetchBotsForChannels().then(setBotsRelations);
         fetchChatsForChannels().then(setChatsRelations);
-        fetchBotsForChats().then(setBotsChatRelations);
+        fetchBotsForChats().then((relations) => {
+            // Map muted status for UI usage
+            const mapped = relations.map(rel => {
+                const status = rel.data?.meta?.status?.[0];
+                return {
+                    ...rel,
+                    data: {
+                        ...rel.data,
+                        muted: status === 'muted'
+                    }
+                };
+            });
+            setBotsChatRelations(mapped);
+        });
     }, []);
 
     useEffect(() => {
