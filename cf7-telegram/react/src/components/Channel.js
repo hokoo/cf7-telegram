@@ -13,7 +13,8 @@ const Channel = ({
                      setBotsRelations,
                      chats,
                      chatsRelations,
-                     botsChatRelations
+                     botsChatRelations,
+                     setChatsRelations
                  }) => {
     const [botForChannel, setBotForChannel] = useState(null);
     const [chatsForChannel, setChatsForChannel] = useState([]);
@@ -38,21 +39,20 @@ const Channel = ({
             .map(chat => {
                 const relation = botChatRelations.find(r => r.data.to === chat.id);
                 if (!relation) return null;
+
+                const hasChannelRelation = chatsRelations.some(r => r.data.from === chat.id && r.data.to === channel.id);
+
                 return {
                     ...chat,
-                    muted: !!relation.data.muted
+                    muted: !!relation.data.muted,
+                    status: hasChannelRelation ? 'active' : 'paused'
                 };
             })
             .filter(Boolean);
 
         setBotForChannel({ ...bot, chats: botChats });
-    }, [channel.id, bots, botsRelations, botsChatRelations, chats]);
-
-    useEffect(() => {
-        const relatedChats = chatsRelations.filter(r => r.data.to === channel.id);
-        const resolved = relatedChats.map(r => chats.find(c => c.id === r.data.from)).filter(Boolean);
-        setChatsForChannel(resolved);
-    }, [channel.id, chats, chatsRelations]);
+        setChatsForChannel(botChats.filter(chat => chat.status === 'active'));
+    }, [channel.id, bots, botsRelations, botsChatRelations, chats, chatsRelations]);
 
     useEffect(() => {
         const relatedIds = formsRelations.filter(r => r.data?.to === channel.id).map(r => r.data.from);
@@ -112,6 +112,47 @@ const Channel = ({
         } catch (err) {
             console.error(err);
             alert('Failed to remove form');
+        }
+    };
+
+    const handleToggleChat = async (chatId) => {
+        const relation = chatsRelations.find(r => r.data.from === chatId && r.data.to === channel.id);
+
+        if (!relation) {
+            try {
+                const response = await fetch(cf7TelegramData.routes.relations.chat2channel, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-WP-Nonce': cf7TelegramData?.nonce,
+                    },
+                    body: JSON.stringify({ from: chatId, to: channel.id })
+                });
+
+                if (!response.ok) throw new Error('Failed to assign chat');
+
+                const newRelation = await response.json();
+                setChatsRelations(prev => [...prev, { data: newRelation }]);
+            } catch (err) {
+                console.error(err);
+                alert('Failed to assign chat');
+            }
+        } else {
+            try {
+                const response = await fetch(`${cf7TelegramData.routes.relations.chat2channel}${relation.data.id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-WP-Nonce': cf7TelegramData?.nonce,
+                    },
+                });
+
+                if (!response.ok) throw new Error('Failed to remove chat');
+
+                setChatsRelations(prev => prev.filter(r => r.data.id !== relation.data.id));
+            } catch (err) {
+                console.error(err);
+                alert('Failed to remove chat');
+            }
         }
     };
 
@@ -229,6 +270,7 @@ const Channel = ({
             handleBotSelect={handleBotSelect}
             handleRemoveBot={handleRemoveBot}
             botsChatRelations={botsChatRelations}
+            handleToggleChat={handleToggleChat}
         />
     );
 };

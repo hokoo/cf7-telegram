@@ -116,6 +116,7 @@ const ChannelList = () => {
                                 chats={chats}
                                 chatsRelations={chatsRelations}
                                 botsChatRelations={botsChatRelations}
+                                setChatsRelations={setChatsRelations}
                             />
                         </div>
                     ))}

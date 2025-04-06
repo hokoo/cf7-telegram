@@ -22,7 +22,7 @@ const ChannelView = ({
                          handleBotSelect,
                          handleRemoveBot,
                          botsChatRelations = [],
-                         channelId
+                         handleToggleChat
                      }) => {
     const renderedChats = (botForChannel?.chats || [])
         .map(chat => {
@@ -99,12 +99,15 @@ const ChannelView = ({
                     <ul>
                         {renderedChats.map(chat => (
                             <li key={chat.id}>
-                                {chat.title.rendered} <span className={`chat-status ${chat.status.toLowerCase()}`}>({chat.status})</span>
+                                {chat.title.rendered} ({chat.status})
+                                <button onClick={() => handleToggleChat(chat.id)} style={{ marginLeft: '0.5em' }}>
+                                    {chat.status === 'Active' ? 'Pause' : 'Activate'}
+                                </button>
                             </li>
                         ))}
                     </ul>
                 ) : (
-                    <p>No chats available</p>
+                    <p>No chats assigned to this channel</p>
                 )}
             </div>
 
