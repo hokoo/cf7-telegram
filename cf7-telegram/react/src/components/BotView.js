@@ -25,57 +25,47 @@ const BotView = ({
                      online
                  }) => {
     return (
-        <div className="entity-wrapper bot-wrapper">
-            <div className="frame bot-summary">
+        <div className={`entity-wrapper bot-wrapper ${saving ? 'saving' : ''} ${online === true ? 'online' : online === false ? 'offline' : 'unknown'}`}>
+        <div className="frame bot-summary">
                 <div className="bot-title">
-                    {isEditingName ? (
-                        <div className="edit-title">
-                            <input
-                                type="text"
-                                value={nameValue}
-                                onChange={e => setNameValue(e.target.value)}
-                                onKeyDown={handleKeyDown}
-                                autoFocus
-                                disabled={saving}
-                            />
-                            <button onClick={saveBot} disabled={saving}>💾</button>
-                            <button onClick={cancelEdit} disabled={saving}>❌</button>
-                        </div>
-                    ) : (
-                        <h4 onClick={handleEditName} style={{ cursor: 'pointer' }}>
-                            {nameValue} <span style={{ marginLeft: 6 }}>✏️</span>
-                        </h4>
-                    )}
+                    <div className="bot-name" onClick={handleEditName} style={{ cursor: 'pointer' }}>
+                        {nameValue}
+
+                        {isEditingName && (
+                                <input
+                                    className="edit-name"
+                                    type="text"
+                                    value={nameValue}
+                                    onChange={e => setNameValue(e.target.value)}
+                                    onKeyDown={handleKeyDown}
+                                    autoFocus
+                                    disabled={saving}
+                                />
+                            )
+                        }
+                    </div>
                 </div>
 
                 <div className="bot-token">
-                    {isEditingToken ? (
-                        <div className="edit-token">
-                            <input
-                                type="text"
-                                value={tokenValue}
-                                onChange={e => setTokenValue(e.target.value)}
-                                onKeyDown={handleKeyDown}
-                                autoFocus
-                                disabled={saving}
-                            />
-                            <button onClick={saveBot} disabled={saving}>💾</button>
-                            <button onClick={cancelEdit} disabled={saving}>❌</button>
-                        </div>
-                    ) : (
-                        <span onClick={handleEditToken} style={{ cursor: 'pointer' }}>
-                            token: <span className="token-value">{trimmedToken}</span> <span style={{ marginLeft: 6 }}>✏️</span>
-                        </span>
-                    )}
-                </div>
+                    <span onClick={handleEditToken} style={{ cursor: 'pointer' }}>
+                        token: <span className="token-value">{trimmedToken}</span>
+                    </span>
 
-                <div className={`bot-status ${online === true ? 'online' : online === false ? 'offline' : 'unknown'}`}>
-                    Status: {online === true ? 'Online' : online === false ? 'Offline' : 'Unknown'}
+                    {isEditingToken && (
+                        <input
+                            className="edit-token"
+                            type="text"
+                            value={tokenValue}
+                            onChange={e => setTokenValue(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            autoFocus
+                            disabled={saving}
+                        />
+                    )}
                 </div>
             </div>
 
             {error && <p style={{ color: 'red' }}>{error}</p>}
-            {saving && <p>Saving...</p>}
 
             <div className="frame chats-for-bot">
                 <h5>Chats</h5>
@@ -85,14 +75,14 @@ const BotView = ({
                             const status = getChatStatus(bot.id, chat.id, botsChatRelations);
                             const isUpdating = updatingStatusIds.includes(chat.id);
                             return (
-                                <li key={chat.id}>
+                                <li key={chat.id} className={`chat-item ${status.toLowerCase()}`}>
                                     {chat.title.rendered}
-                                    <span className={`chat-status ${status.toLowerCase()}`}> ({status})</span>
-                                    <button
+
+                                    <span
                                         onClick={() => handleToggleChatStatus(chat.id, status.toLowerCase())}
                                         style={{ marginLeft: '0.5em' }}
                                         disabled={isUpdating}
-                                    >{isUpdating ? '⏳ Updating...' : getToggleButtonLabel(status)}</button>
+                                    >{isUpdating ? 'Updating...' : getToggleButtonLabel(status)}</span>
                                 </li>
                             );
                         })}

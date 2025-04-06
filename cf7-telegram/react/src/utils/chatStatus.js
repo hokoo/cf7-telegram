@@ -10,5 +10,5 @@ export function getChatStatus(botId, chatId, relations = []) {
 }
 
 export function getToggleButtonLabel(status) {
-    return status === 'Muted' ? '▶️ Activate' : '⏹️ Mute';
+    return status === 'Muted' ? 'Activate' : 'Mute';
 }

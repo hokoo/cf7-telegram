@@ -16,19 +16,28 @@ body.contact-1_page_wpcf7_tg {
 }
 
 .cf7-tg-container {
+  display: flex;
+  width: 100%;
 
   .entity-container {
     flex-basis: 360px;
     flex-shrink: 0;
-    border-width: 4px;
-    border-style: dashed;
-    border-radius: 12px;
-    padding: 10px;
 
     .entity-wrapper {
       display: flex;
       flex-direction: column;
       gap: 10px;
+
+      border-width: 4px;
+      border-style: dashed;
+      border-radius: 12px;
+      padding: 10px;
+
+      transition: all .4s ease;
+
+      &.saving {
+        opacity: .5;
+      }
     }
   }
 
@@ -40,26 +49,111 @@ body.contact-1_page_wpcf7_tg {
   }
 
   .bots-container {
+    width: 400px;
+
     .bot-list {
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
 
-      .bot {
-        border-color: #0c88b4;
+      .bot-wrapper {
+        border-color: rgba(12, 136, 180, 0.09);
+
+        &.offline {
+          border-color: #432929;
+        }
+
+        &.online {
+          border-color: #0c88b4;
+          box-shadow: inset 0 0 20px 0px #0c88b452;
+        }
 
         .bot-summary {
           border-color: #0a4b78;
+          border: none;
+          font-family: monospace;
+
+          .bot-title {
+
+            .bot-name {
+              position: relative;
+              margin: 0;
+              padding: 10px 20px;
+              background-color: #09090c;
+              color: #246b9d;
+              border-radius: 5px;
+              text-align: center;
+              font-weight: 100;
+              font-size: 15px;
+
+              .edit-name {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                padding: inherit;
+                background-color: inherit;
+                text-align: inherit;
+                color: inherit;
+              }
+            }
+          }
         }
         .chats-for-bot {
-            border-color: #1d1f2c;
+          border-color: #1d1f2c;
+          border: none;
+
+          h5 {
+            margin: 0;
+            text-align: center;
+            text-transform: uppercase;
+            color: #375885;
+            font-size: 11px;
+          }
+
+          .chat-item {
+
+            &.active {
+              color : #35894c;
+            }
+
+            &.pending {
+              color: #898735;
+            }
+
+            &.muted {
+              color: #893535;
+            }
+
+            span {
+              cursor: pointer;
+              padding: 0 5px;
+            }
+          }
         }
 
         .bot-token {
-          .token-value {
+          position: relative;
+          text-align: center;
+          color: #465b79;
+          margin-top: 5px;
+
+          .token-value,
+          .edit-token {
             font-family: Monospace, serif;
             padding: 2px 5px;
-            background-color: #2f2f2f;
+            background-color: #09090c;
+          }
+
+          .edit-token {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            text-align: inherit;
+            color: inherit;
           }
         }
       }
@@ -67,18 +161,21 @@ body.contact-1_page_wpcf7_tg {
   }
 
   .channels-container {
+    flex: 1;
+
     .channel-list {
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
 
       .channel {
-        border-color: #2f4f37;
 
         > h4 {
         }
 
-        .channel-wrapper {}
+        .channel-wrapper {
+          border-color: #2f4f37;
+        }
 
         .bots {
           border-color: #37465d;
