@@ -17,7 +17,10 @@ const ChannelView = ({
                          showFormSelector,
                          handleAddForm,
                          handleFormSelect,
-                         handleRemoveForm
+                         handleRemoveForm,
+                         availableBots = [],
+                         handleBotSelect,
+                         handleRemoveBot
                      }) => {
     return (
         <div className="entity-wrapper channel-wrapper">
@@ -50,9 +53,20 @@ const ChannelView = ({
                 {botForChannel ? (
                     <div id={botForChannel.id} className="bot-for-channel">
                         <p>{botForChannel.title.rendered}</p>
+                        <button onClick={handleRemoveBot}>❌ Remove Bot</button>
                     </div>
                 ) : (
-                    <p>No bot assigned to this channel</p>
+                    <>
+                        <p>No bot assigned to this channel</p>
+                        {availableBots.length > 0 && (
+                            <select onChange={handleBotSelect} defaultValue="">
+                                <option value="" disabled>Select bot</option>
+                                {availableBots.map(bot => (
+                                    <option key={bot.id} value={bot.id}>{bot.title.rendered}</option>
+                                ))}
+                            </select>
+                        )}
+                    </>
                 )}
             </div>
 

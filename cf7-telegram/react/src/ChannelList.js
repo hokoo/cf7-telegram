@@ -89,6 +89,7 @@ const ChannelList = () => {
                                 setFormsRelations={setFormsRelations}
                                 bots={bots}
                                 botsRelations={botsRelations}
+                                setBotsRelations={setBotsRelations}
                                 chats={chats}
                                 chatsRelations={chatsRelations}
                             />
