@@ -1,11 +1,11 @@
-/* global cf7TelegramData */
-
 import React from 'react';
+import { getChatStatus, getToggleButtonLabel } from '../utils/chatStatus';
 
 const BotView = ({
                      bot,
                      chatsForBot = [],
                      botsChatRelations = [],
+                     updatingStatusIds = [],
                      isEditingName,
                      isEditingToken,
                      nameValue,
@@ -19,16 +19,9 @@ const BotView = ({
                      deleteBot,
                      handleKeyDown,
                      setNameValue,
-                     setTokenValue
+                     setTokenValue,
+                     handleToggleChatStatus
                  }) => {
-    const renderChatStatus = (chat) => {
-        const relation = botsChatRelations.find(rel => rel.data.from === bot.id && rel.data.to === chat.id);
-        const statusMeta = relation?.data?.meta?.status?.[0] || null;
-        if (statusMeta === 'pending') return 'Pending';
-        if (statusMeta === 'muted') return 'Muted';
-        return 'Active';
-    };
-
     return (
         <div className="entity-wrapper bot-wrapper">
             <div className="frame bot-summary">
@@ -47,8 +40,8 @@ const BotView = ({
                             <button onClick={cancelEdit} disabled={saving}>❌</button>
                         </div>
                     ) : (
-                        <h4 onClick={handleEditName} style={{cursor: 'pointer'}}>
-                            {nameValue} <span style={{marginLeft: 6}}>✏️</span>
+                        <h4 onClick={handleEditName} style={{ cursor: 'pointer' }}>
+                            {nameValue} <span style={{ marginLeft: 6 }}>✏️</span>
                         </h4>
                     )}
                 </div>
@@ -68,8 +61,8 @@ const BotView = ({
                             <button onClick={cancelEdit} disabled={saving}>❌</button>
                         </div>
                     ) : (
-                        <span onClick={handleEditToken} style={{cursor: 'pointer'}}>
-                            token: <span className="token-value">{tokenValue}</span> <span style={{marginLeft: 6}}>✏️</span>
+                        <span onClick={handleEditToken} style={{ cursor: 'pointer' }}>
+                            token: <span className="token-value">{tokenValue}</span> <span style={{ marginLeft: 6 }}>✏️</span>
                         </span>
                     )}
                 </div>
@@ -82,11 +75,21 @@ const BotView = ({
                 <h5>Chats</h5>
                 {chatsForBot.length > 0 ? (
                     <ul>
-                        {chatsForBot.map(chat => (
-                            <li key={chat.id}>
-                                {chat.title.rendered} <span className={`chat-status ${renderChatStatus(chat).toLowerCase()}`}>({renderChatStatus(chat)})</span>
-                            </li>
-                        ))}
+                        {chatsForBot.map(chat => {
+                            const status = getChatStatus(bot.id, chat.id, botsChatRelations);
+                            const isUpdating = updatingStatusIds.includes(chat.id);
+                            return (
+                                <li key={chat.id}>
+                                    {chat.title.rendered}
+                                    <span className={`chat-status ${status.toLowerCase()}`}> ({status})</span>
+                                    <button
+                                        onClick={() => handleToggleChatStatus(chat.id, status.toLowerCase())}
+                                        style={{ marginLeft: '0.5em' }}
+                                        disabled={isUpdating}
+                                    >{isUpdating ? '⏳ Updating...' : getToggleButtonLabel(status)}</button>
+                                </li>
+                            );
+                        })}
                     </ul>
                 ) : (
                     <p>No chats assigned to this bot</p>

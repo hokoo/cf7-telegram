@@ -2,14 +2,16 @@
 
 import React, { useState } from 'react';
 import BotView from './BotView';
+import { getChatStatus } from '../utils/chatStatus';
 
-const Bot = ({ bot, chats, botsChatRelations, setBots }) => {
+const Bot = ({ bot, chats, botsChatRelations, setBots, setBotsChatRelations }) => {
     const [isEditingName, setIsEditingName] = useState(false);
     const [isEditingToken, setIsEditingToken] = useState(false);
     const [nameValue, setNameValue] = useState(bot.title.rendered);
     const [tokenValue, setTokenValue] = useState(bot.token);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState(null);
+    const [updatingStatusIds, setUpdatingStatusIds] = useState([]);
 
     const relatedChatIds = botsChatRelations
         .filter(relation => relation.data.from === bot.id)
@@ -98,11 +100,61 @@ const Bot = ({ bot, chats, botsChatRelations, setBots }) => {
         if (e.key === 'Escape') cancelEdit();
     };
 
+    const handleToggleChatStatus = async (chatId, currentStatus) => {
+        const relationIndex = botsChatRelations.findIndex(rel => rel.data.from === bot.id && rel.data.to === chatId);
+        if (relationIndex === -1) return;
+
+        const relation = botsChatRelations[relationIndex];
+
+        let newStatus;
+        if (currentStatus === 'active') newStatus = 'muted';
+        else if (currentStatus === 'muted') newStatus = 'active';
+        else if (currentStatus === 'pending') newStatus = 'active';
+        else return;
+
+        setUpdatingStatusIds(prev => [...prev, chatId]);
+
+        try {
+            const response = await fetch(`${cf7TelegramData.routes.relations.bot2chat}${relation.data.id}/meta`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-WP-Nonce': cf7TelegramData?.nonce,
+                },
+                body: JSON.stringify({
+                    meta: [{ key: 'status', value: newStatus }]
+                })
+            });
+
+            if (response.ok) {
+                const updatedRelations = [...botsChatRelations];
+                updatedRelations[relationIndex] = {
+                    ...relation,
+                    data: {
+                        ...relation.data,
+                        meta: {
+                            ...relation.data.meta,
+                            status: [newStatus]
+                        }
+                    }
+                };
+                setBotsChatRelations(updatedRelations);
+            } else {
+                console.error('Failed to update chat status');
+            }
+        } catch (err) {
+            console.error('Failed to update chat status', err);
+        } finally {
+            setUpdatingStatusIds(prev => prev.filter(id => id !== chatId));
+        }
+    };
+
     return (
         <BotView
             bot={bot}
             chatsForBot={chatsForBot}
             botsChatRelations={botsChatRelations}
+            updatingStatusIds={updatingStatusIds}
             isEditingName={isEditingName}
             isEditingToken={isEditingToken}
             nameValue={nameValue}
@@ -117,6 +169,7 @@ const Bot = ({ bot, chats, botsChatRelations, setBots }) => {
             handleKeyDown={handleKeyDown}
             setNameValue={setNameValue}
             setTokenValue={setTokenValue}
+            handleToggleChatStatus={handleToggleChatStatus}
         />
     );
 };
