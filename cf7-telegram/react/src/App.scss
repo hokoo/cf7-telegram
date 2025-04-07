@@ -65,39 +65,66 @@ body.contact-1_page_wpcf7_tg {
 
         &.online {
           border-color: #0c88b4;
-          box-shadow: inset 0 0 20px 0px #0c88b452;
         }
 
         .bot-summary {
+          position: relative;
           border-color: #0a4b78;
           border: none;
           font-family: monospace;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
 
           .bot-title {
 
             .bot-name {
-              position: relative;
               margin: 0;
-              padding: 10px 20px;
+              padding: 2px 8px;
               background-color: #09090c;
               color: #246b9d;
               border-radius: 5px;
               text-align: center;
               font-weight: 100;
               font-size: 15px;
-
-              .edit-name {
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                padding: inherit;
-                background-color: inherit;
-                text-align: inherit;
-                color: inherit;
-              }
             }
+          }
+
+          .bot-token {
+            text-align: center;
+            color: #465b79;
+
+            .token-value,
+            .edit-token {
+              font-family: Monospace, serif;
+              padding: 2px 5px;
+              background-color: #09090c;
+            }
+
+            .edit-token {
+              position: absolute;
+              top: 50%;
+              transform: translateY(-50%);
+              left: 0;
+              width: 100%;
+              text-align: inherit;
+              color: inherit;
+              line-height: 100%;
+            }
+          }
+        }
+
+
+        &.offline {
+          .bot-name {
+            color: #573535 !important;
+          }
+        }
+
+        &.online {
+          .bot-name {
+            box-shadow: 0 0 20px 0 #0c88b452;
+            text-shadow: 0 0 5px #0c88b4;
           }
         }
         .chats-for-bot {
@@ -130,30 +157,6 @@ body.contact-1_page_wpcf7_tg {
               cursor: pointer;
               padding: 0 5px;
             }
-          }
-        }
-
-        .bot-token {
-          position: relative;
-          text-align: center;
-          color: #465b79;
-          margin-top: 5px;
-
-          .token-value,
-          .edit-token {
-            font-family: Monospace, serif;
-            padding: 2px 5px;
-            background-color: #09090c;
-          }
-
-          .edit-token {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            text-align: inherit;
-            color: inherit;
           }
         }
       }
