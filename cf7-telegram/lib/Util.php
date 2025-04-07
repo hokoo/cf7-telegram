@@ -65,10 +65,9 @@ class Util {
 
 	/**
 	 * @throws wppaLoadPostException
-	 * @throws wppaSavePostException
 	 * @throws wppaCreatePostException
 	 */
-	static function getChatByTelegramID( $chatID ): Chat {
+	static function getChatByTelegramID( $chatID ): ?Chat {
 		$chats = get_posts( [
 			'post_type'      => Client::CPT_CHAT,
 			'posts_per_page' => - 1,
@@ -83,9 +82,17 @@ class Util {
 			}
 		}
 
+		return null;
+	}
+
+	/**
+	 * @throws wppaSavePostException
+	 */
+	static function createChat( \Telegram\Bot\Objects\Chat $tg_chat ): Chat {
 		$chat = new Chat();
 		$chat
-			->setChatID( $chatID )
+			->setChatID( $tg_chat->get( 'id' ) )
+			->setChatType( $tg_chat->get( 'type' ) )
 			->publish();
 
 		return $chat;

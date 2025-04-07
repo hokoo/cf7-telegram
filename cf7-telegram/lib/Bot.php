@@ -319,7 +319,15 @@ class Bot extends Entity implements wpPostAble{
 				continue;
 			}
 
-			$chat = Util::getChatByTelegramID( $update->getChat()->get( 'id' ) );
+			try {
+				/** @var \Telegram\Bot\Objects\Update $update */
+				$chat = Util::getChatByTelegramID( $update->getChat()->get( 'id' ) ) ?? Util::createChat( $update->getChat() );
+			}
+			// Incompatible argument type for Util::createChat().
+			catch ( \TypeError $error ) {
+				continue;
+			}
+
 
 			// Try to find out if the chat is already connected to the bot.
 			if ( ! $this->getChats()->contains( $chat ) ) {
