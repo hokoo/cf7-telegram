@@ -69,7 +69,7 @@ class BotController extends Controller {
 			);
 		}
 
-		return rest_ensure_response( [ 'online' => $bot->ping() ] );
+		return rest_ensure_response( [ 'online' => $bot->ping(), 'botName' => $bot->getTitle() ] );
 	}
 
 	/**

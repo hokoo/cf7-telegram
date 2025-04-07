@@ -40,7 +40,7 @@ const BotView = ({
                             className="edit-token"
                             type="text"
                             value={tokenValue}
-                            onChange={e => setTokenValue(e.target.value)}
+                            onChange={e => setTokenValue(e)}
                             onKeyDown={handleKeyDown}
                             autoFocus
                             disabled={saving}

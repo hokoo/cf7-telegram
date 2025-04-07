@@ -5,7 +5,6 @@ import BotView from './BotView';
 import { getChatStatus } from '../utils/chatStatus';
 
 const Bot = ({ bot, chats, botsChatRelations, setBots, setBotsChatRelations }) => {
-    const [isEditingName, setIsEditingName] = useState(false);
     const [isEditingToken, setIsEditingToken] = useState(false);
     const [nameValue, setNameValue] = useState(bot.title.rendered);
     const [tokenValue, setTokenValue] = useState(bot.token);
@@ -48,6 +47,12 @@ const Bot = ({ bot, chats, botsChatRelations, setBots, setBotsChatRelations }) =
             if (!res.ok) throw new Error('Ping failed');
             const json = await res.json();
             setOnline(json.online);
+            if (json.botName) {
+                setNameValue(json.botName);
+                setBots(prev => prev.map(b => (
+                    b.id === bot.id ? { ...b, title: { ...b.title, rendered: json.botName } } : b
+                )));
+            }
         } catch (err) {
             console.error('Ping failed', err);
             setOnline(false);
@@ -77,7 +82,6 @@ const Bot = ({ bot, chats, botsChatRelations, setBots, setBotsChatRelations }) =
                 b.id === bot.id ? { ...b, title: { ...b.title, rendered: nameValue }, token: tokenValue } : b
             )));
 
-            setIsEditingName(false);
             setIsEditingToken(false);
 
             await pingBot();
@@ -193,7 +197,7 @@ const Bot = ({ bot, chats, botsChatRelations, setBots, setBotsChatRelations }) =
             saveBot={saveBot}
             deleteBot={deleteBot}
             handleKeyDown={handleKeyDown}
-            setTokenValue={setTokenValue}
+            setTokenValue={handleTokenChange}
             handleToggleChatStatus={handleToggleChatStatus}
             online={online}
         />
