@@ -247,6 +247,8 @@ class Bot extends Entity implements wpPostAble{
 
 		if ( $res instanceof User ) {
 			$this->setBotStatus( self::STATUS_ONLINE );
+			$this->setTitle( $res->get( 'username' ) );
+			$this->savePost();
 			return true;
 		}
 
