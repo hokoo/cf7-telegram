@@ -50,6 +50,37 @@ class Chat extends Entity implements WPPostAble{
 		return $this->getParam( 'chatType' );
 	}
 
+	public function setUsername( string $username ): Chat {
+		$this->setParam( 'username', trim( $username ) );
+		return $this;
+	}
+
+	public function getUsername() {
+		return $this->getParam( 'username' );
+	}
+
+	public function setFirstName( string $firstName ): Chat {
+		$this->setParam( 'firstName', trim( $firstName ) );
+		return $this;
+	}
+
+	public function getFirstName() {
+		return $this->getParam( 'firstName' );
+	}
+
+	public function setLastName( string $lastName ): Chat {
+		$this->setParam( 'lastName', trim( $lastName ) );
+		return $this;
+	}
+
+	public function getLastName() {
+		return $this->getParam( 'lastName' );
+	}
+
+	public function getName(): string {
+		return trim( $this->getTitle() ?? $this->getFirstName() . ' ' . $this->getLastName() );
+	}
+
 	public function isPrivateChat(): bool {
 		return 'private' === $this->getChatType();
 	}
