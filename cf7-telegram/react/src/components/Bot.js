@@ -26,20 +26,13 @@ const Bot = ({ bot, chats, botsChatRelations, setBots, setBotsChatRelations }) =
         }
     }, [online]);
 
-    const handleEditName = () => {
-        setError(null);
-        setIsEditingName(true);
-    };
-
     const handleEditToken = () => {
         setError(null);
         setIsEditingToken(true);
     };
 
     const cancelEdit = () => {
-        setNameValue(bot.title.rendered);
         setTokenValue(bot.token);
-        setIsEditingName(false);
         setIsEditingToken(false);
         setError(null);
     };
@@ -189,20 +182,17 @@ const Bot = ({ bot, chats, botsChatRelations, setBots, setBotsChatRelations }) =
             chatsForBot={chatsForBot}
             botsChatRelations={botsChatRelations}
             updatingStatusIds={updatingStatusIds}
-            isEditingName={isEditingName}
             isEditingToken={isEditingToken}
             nameValue={nameValue}
             tokenValue={tokenValue}
             trimmedToken={trimmedToken}
             saving={saving}
             error={error}
-            handleEditName={handleEditName}
             handleEditToken={handleEditToken}
             cancelEdit={cancelEdit}
             saveBot={saveBot}
             deleteBot={deleteBot}
             handleKeyDown={handleKeyDown}
-            setNameValue={setNameValue}
             setTokenValue={setTokenValue}
             handleToggleChatStatus={handleToggleChatStatus}
             online={online}

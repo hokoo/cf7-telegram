@@ -6,20 +6,17 @@ const BotView = ({
                      chatsForBot = [],
                      botsChatRelations = [],
                      updatingStatusIds = [],
-                     isEditingName,
                      isEditingToken,
                      nameValue,
                      tokenValue,
                      trimmedToken,
                      saving,
                      error,
-                     handleEditName,
                      handleEditToken,
                      cancelEdit,
                      saveBot,
                      deleteBot,
                      handleKeyDown,
-                     setNameValue,
                      setTokenValue,
                      handleToggleChatStatus,
                      online
@@ -28,21 +25,8 @@ const BotView = ({
         <div className={`entity-wrapper bot-wrapper ${saving ? 'saving' : ''} ${online === true ? 'online' : online === false ? 'offline' : 'unknown'}`}>
         <div className="frame bot-summary">
                 <div className="bot-title">
-                    <div className="bot-name" onClick={handleEditName} style={{ cursor: 'pointer' }}>
+                    <div className="bot-name">
                         {nameValue}
-
-                        {isEditingName && (
-                                <input
-                                    className="edit-name"
-                                    type="text"
-                                    value={nameValue}
-                                    onChange={e => setNameValue(e.target.value)}
-                                    onKeyDown={handleKeyDown}
-                                    autoFocus
-                                    disabled={saving}
-                                />
-                            )
-                        }
                     </div>
                 </div>
 
