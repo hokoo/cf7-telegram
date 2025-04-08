@@ -28,7 +28,7 @@ const BotView = ({
         <div className="frame bot-summary">
                 <div className="bot-title">
                     <div className="bot-name">
-                        {nameValue}
+                        <a href={`https://t.me/${nameValue}?cf7tg_start`} target="_blank">@{nameValue}</a>
                     </div>
                 </div>
 
@@ -84,11 +84,16 @@ const BotView = ({
                 )}
             </div>
 
-            <div className="bot-actions">
-                <button onClick={deleteBot} disabled={saving} style={{ marginTop: '1em', color: 'red' }}>
-                    🗑️ Delete bot
+            <div className="status-bar">
+                <button
+                    className="remove-bot-button"
+                    onClick={deleteBot}
+                    disabled={saving} >
+                    Remove Bot
                 </button>
+                <div className={`bot-status ${status}`}>{status}</div>
             </div>
+
         </div>
     );
 };
