@@ -19,10 +19,12 @@ const BotView = ({
                      handleKeyDown,
                      setTokenValue,
                      handleToggleChatStatus,
+                     handleDisconnectChat,
                      online
                  }) => {
+    let status = online === true ? 'online' : online === false ? 'offline' : 'unknown';
     return (
-        <div className={`entity-wrapper bot-wrapper ${saving ? 'saving' : ''} ${online === true ? 'online' : online === false ? 'offline' : 'unknown'}`}>
+        <div className={`entity-wrapper bot-wrapper ${saving ? 'saving' : ''} ${status}`}>
         <div className="frame bot-summary">
                 <div className="bot-title">
                     <div className="bot-name">
@@ -52,7 +54,6 @@ const BotView = ({
             {error && <p style={{ color: 'red' }}>{error}</p>}
 
             <div className="frame chats-for-bot">
-                <h5>Chats</h5>
                 {chatsForBot.length > 0 ? (
                     <ul>
                         {chatsForBot.map(chat => {
@@ -60,19 +61,26 @@ const BotView = ({
                             const isUpdating = updatingStatusIds.includes(chat.id);
                             return (
                                 <li key={chat.id} className={`chat-item ${status.toLowerCase()}`}>
-                                    {chat.title.rendered}
+                                    <span className="chat-name"
+                                          title={status.toWellFormed()}
+                                    >{chat.title.rendered}</span>
 
                                     <span
+                                        className="action toggle-status"
                                         onClick={() => handleToggleChatStatus(chat.id, status.toLowerCase())}
-                                        style={{ marginLeft: '0.5em' }}
                                         disabled={isUpdating}
                                     >{isUpdating ? 'Updating...' : getToggleButtonLabel(status)}</span>
+
+                                    <span
+                                        className="action remove-chat"
+                                        onClick={() => handleDisconnectChat(chat.id, bot.id)}
+                                    >Remove</span>
                                 </li>
                             );
                         })}
                     </ul>
                 ) : (
-                    <p>No chats assigned to this bot</p>
+                    <span className="no-chats-found">Waiting for chats to join...</span>
                 )}
             </div>
 

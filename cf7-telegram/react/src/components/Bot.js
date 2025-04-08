@@ -173,6 +173,59 @@ const Bot = ({ bot, chats, botsChatRelations, setBots, setBotsChatRelations }) =
         }
     };
 
+    const handleDisconnectChat = async (chatId, botID) => {
+        const relationIndex = botsChatRelations.findIndex(rel => rel.data.from === botID && rel.data.to === chatId);
+        if (relationIndex === -1) return;
+
+        const relation = botsChatRelations[relationIndex];
+
+        setUpdatingStatusIds(prev => [...prev, chatId]);
+
+        try {
+            const response = await fetch(`${cf7TelegramData.routes.relations.bot2chat}${relation.data.id}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-WP-Nonce': cf7TelegramData?.nonce,
+                }
+            });
+
+            if (response.ok) {
+                const updatedRelations = botsChatRelations.filter(rel => rel.data.id !== relation.data.id);
+                setBotsChatRelations(updatedRelations);
+
+                // If the chat has no connections left, remove the chat as entity.
+                const remainingRelations = updatedRelations.filter(rel => rel.data.to === chatId);
+                if (remainingRelations.length === 0) {
+                    try {
+                        const chatResponse = await fetch(`${cf7TelegramData.routes.chats}${chatId}/?force=true`, {
+                            method: 'DELETE',
+                            headers: {
+                                'X-WP-Nonce': cf7TelegramData?.nonce,
+                            }
+                        });
+
+                        if (chatResponse.ok) {
+                            // Optionally, you can remove the chat from the UI or perform any other action.
+                        } else {
+                            console.error('Failed to delete chat');
+                        }
+                    }
+                    catch (err) {
+                        console.error('Failed to delete chat', err);
+                    }
+                }
+
+
+            } else {
+                console.error('Failed to disconnect chat');
+            }
+        } catch (err) {
+            console.error('Something went wrong while disconnecting chat', err);
+        } finally {
+            setUpdatingStatusIds(prev => prev.filter(id => id !== chatId));
+        }
+    }
+
     const handleTokenChange = (e) => {
         setTokenValue(e.target.value);
     };
@@ -199,6 +252,7 @@ const Bot = ({ bot, chats, botsChatRelations, setBots, setBotsChatRelations }) =
             handleKeyDown={handleKeyDown}
             setTokenValue={handleTokenChange}
             handleToggleChatStatus={handleToggleChatStatus}
+            handleDisconnectChat={handleDisconnectChat}
             online={online}
         />
     );
