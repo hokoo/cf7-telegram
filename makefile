@@ -16,6 +16,9 @@ git.wpc:
 clear.all:
 	bash ./install/clear.sh
 
+npm.build:
+	docker-compose -p cf7tg exec node bash -c "cd ./cf7-telegram/react && npm run build"
+
 php.connect:
 	docker-compose -p cf7tg exec php bash
 
