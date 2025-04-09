@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import Channel from './components/Channel';
 import Bot from './components/Bot';
-import NewBotButton from './components/NewBotButton';
+import NewBot from './components/NewBot';
+import NewChannel from './components/NewChannel';
 
 import {
     fetchClient,
@@ -103,6 +104,7 @@ const ChannelList = () => {
             <div className="list-container channels-container">
                 <div className="title-container">
                     <h3 className="title">Channels</h3>
+                    <NewChannel setChannels={setChannels} />
                 </div>
                 <div className="channel-list">
                     {channels.map(channel => (

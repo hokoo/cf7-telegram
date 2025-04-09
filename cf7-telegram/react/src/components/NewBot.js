@@ -2,8 +2,8 @@
 
 import React from 'react';
 
-const NewBotButton = ({ setBots }) => {
-    const handleCreate = async () => {
+const NewBot = ({ setBots }) => {
+    const handleCreateBot = async () => {
         const newBotData = {
             title: 'Bot Name',
             token: '[empty]',
@@ -31,10 +31,10 @@ const NewBotButton = ({ setBots }) => {
     };
 
     return (
-        <button className="add-button add-bot-button" onClick={handleCreate}>
+        <button className="add-button add-bot-button" onClick={handleCreateBot}>
             Create Bot
         </button>
     );
 };
 
-export default NewBotButton;
+export default NewBot;
