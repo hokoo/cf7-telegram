@@ -15,6 +15,10 @@ body.contact-1_page_wpcf7_tg {
   }
 }
 
+ul#adminmenu a.wp-has-current-submenu:after, ul#adminmenu>li.current>a.current:after {
+  border-right-color: #0e1621;
+}
+
 .cf7-tg-container {
   display: flex;
   width: 100%;
