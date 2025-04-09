@@ -18,6 +18,39 @@ body.contact-1_page_wpcf7_tg {
 .cf7-tg-container {
   display: flex;
   width: 100%;
+  gap: 32px;
+
+  .list-container {
+    width: 375px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .title-container {
+    display: flex;
+    justify-content: start;
+    align-items: center;
+    padding: 15px 0;
+
+    .title {
+      margin: 0;
+    }
+
+    .add-button {
+      background: none;
+      border: none;
+      border-radius: 5px;
+      color: #1f3047;
+      cursor: pointer;
+      font-size: 12px;
+      text-align: center;
+
+      &:hover {
+        color: #0c87b3;
+      }
+    }
+  }
 
   .entity-container {
     flex-basis: 360px;
@@ -49,12 +82,17 @@ body.contact-1_page_wpcf7_tg {
   }
 
   .bots-container {
-    width: 400px;
 
     .bot-list {
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
+
+      .bot {
+        width: 100%;
+        flex-basis: unset;
+      }
+
 
       .bot-wrapper {
         border-color: rgba(12, 136, 180, 0.09);
@@ -194,6 +232,7 @@ body.contact-1_page_wpcf7_tg {
             cursor: pointer;
             font-size: 12px;
             text-align: center;
+            padding: 0;
 
             &:hover {
               color: #873d3d;

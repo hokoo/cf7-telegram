@@ -31,8 +31,8 @@ const NewBotButton = ({ setBots }) => {
     };
 
     return (
-        <button className="cf7tg-add-bot-button" onClick={handleCreate}>
-            ➕ Add Bot
+        <button className="add-button add-bot-button" onClick={handleCreate}>
+            Create Bot
         </button>
     );
 };

@@ -79,10 +79,10 @@ const ChannelList = () => {
 
     return (
         <div className="cf7-tg-container">
-            <div className="bots-container">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h3>Bots</h3>
-                    <NewBotButton setBots={setBots} />
+            <div className="list-container bots-container">
+                <div className="title-container">
+                    <h3 className="title">Bots</h3>
+                    <NewBot setBots={setBots} />
                 </div>
 
                 <div className="bot-list">
@@ -100,8 +100,10 @@ const ChannelList = () => {
                 </div>
             </div>
 
-            <div className="channels-container">
-                <h3>Channels</h3>
+            <div className="list-container channels-container">
+                <div className="title-container">
+                    <h3 className="title">Channels</h3>
+                </div>
                 <div className="channel-list">
                     {channels.map(channel => (
                         <div className="entity-container channel" key={channel.id} id={`channel-${channel.id}`}>
