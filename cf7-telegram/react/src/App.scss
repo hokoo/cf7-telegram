@@ -72,6 +72,20 @@ body.contact-1_page_wpcf7_tg {
         opacity: .5;
       }
     }
+
+    .add-button {
+      background: none;
+      border: none;
+      border-radius: 5px;
+      color: #1f3047;
+      cursor: pointer;
+      font-size: 12px;
+      text-align: center;
+
+      &:hover {
+        color: #0c87b3;
+      }
+    }
   }
 
   .frame {
@@ -172,6 +186,7 @@ body.contact-1_page_wpcf7_tg {
             box-shadow: 0 0 20px 0 #0c88b452;
           }
         }
+
         .chats-for-bot {
           border-color: #1d1f2c;
           border: none;
@@ -194,7 +209,7 @@ body.contact-1_page_wpcf7_tg {
             }
 
             &.active {
-              color : #35894c;
+              color: #35894c;
             }
 
             &.pending {
@@ -301,6 +316,21 @@ body.contact-1_page_wpcf7_tg {
           button {
             cursor: pointer;
             padding: 4px 8px;
+          }
+        }
+
+        .detach-button {
+          background: none;
+          border: none;
+          border-radius: 5px;
+          color: #1f3047;
+          cursor: pointer;
+          font-size: 12px;
+          text-align: center;
+          padding: 0;
+
+          &:hover {
+            color: #873d3d;
           }
         }
       }

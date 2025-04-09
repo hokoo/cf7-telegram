@@ -76,7 +76,9 @@ const ChannelView = ({
                 {botForChannel ? (
                     <div id={botForChannel.id} className="bot-for-channel">
                         <p>{botForChannel.title.rendered}</p>
-                        <button onClick={handleRemoveBot}>❌ Remove Bot</button>
+                        <button
+                            className="detach-button detach-bot-button"
+                            onClick={handleRemoveBot}>Detach Bot</button>
                     </div>
                 ) : (
                     <>
@@ -113,7 +115,10 @@ const ChannelView = ({
 
             <div className="frame forms">
                 <h5>Forms</h5>
-                <button onClick={handleAddForm}>➕ Add Form</button>
+                <button
+                    className="add-button add-form-button"
+                    onClick={handleAddForm}>Add Form
+                </button>
                 {showFormSelector && (
                     <select onChange={handleFormSelect} defaultValue="">
                         <option value="" disabled>Select form</option>
@@ -127,7 +132,11 @@ const ChannelView = ({
                     <ul>
                         {formsForChannel.map(form => (
                             <li key={form.id}>
-                                {form.title} <button onClick={() => handleRemoveForm(form.id)}>❌</button>
+                                {form.title}
+                                <button
+                                    className="detach-button detach-form-button"
+                                    onClick={() => handleRemoveForm(form.id)}
+                                >Detach Form</button>
                             </li>
                         ))}
                     </ul>
