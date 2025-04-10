@@ -17,7 +17,7 @@ import chat2ChannelRelations from "../App";
 export const connectBot2Channel = async (botId, channelId, setBot2ChannelConnections) => {
     const result = await apiConnectBot2Channel(botId, channelId);
     if (result) {
-        setBot2ChannelConnections(prev => [...prev, { data: result }]);
+        setBot2ChannelConnections(prev => [...prev, {data: result}]);
     }
 }
 
@@ -31,7 +31,7 @@ export const disconnectConnectionBot2Channel = async (connectionId, setBot2Chann
 export const connectForm2Channel = async (formId, channelId, setForm2ChannelConnections) => {
     const result = await apiConnectForm2Channel(formId, channelId);
     if (result) {
-        setForm2ChannelConnections(prev => [...prev, { data: result }]);
+        setForm2ChannelConnections(prev => [...prev, {data: result}]);
     }
 }
 
@@ -45,7 +45,7 @@ export const disconnectConnectionForm2Channel = async (connectionId, setForm2Cha
 export const connectChat2Channel = async (chatId, channelId, setChat2ChannelConnections) => {
     const result = await apiConnectChat2Channel(chatId, channelId);
     if (result) {
-        setChat2ChannelConnections(prev => [...prev, { data: result }]);
+        setChat2ChannelConnections(prev => [...prev, {data: result}]);
     }
 };
 

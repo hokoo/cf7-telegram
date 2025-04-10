@@ -63,11 +63,11 @@ const ChannelView = ({
                         <button onClick={saveTitle} disabled={saving}>💾</button>
                         <button onClick={handleCancelEdit} disabled={saving}>❌</button>
                         {saving && <span>⏳ Saving...</span>}
-                        {error && <p style={{ color: 'red' }}>{error}</p>}
+                        {error && <p style={{color: 'red'}}>{error}</p>}
                     </div>
                 ) : (
-                    <h4 onClick={handleTitleClick} style={{ cursor: 'pointer' }}>
-                        {titleValue} <span style={{ marginLeft: 6, fontSize: '0.9em' }}>✏️</span>
+                    <h4 onClick={handleTitleClick} style={{cursor: 'pointer'}}>
+                        {titleValue} <span style={{marginLeft: 6, fontSize: '0.9em'}}>✏️</span>
                     </h4>
                 )}
             </div>
@@ -79,7 +79,10 @@ const ChannelView = ({
                         <p>{botForChannel.title.rendered}</p>
                         <button
                             className="detach-button detach-bot-button"
-                            onClick={handleRemoveBot}>Detach Bot</button>
+                            onClick={handleRemoveBot}
+                        >
+                            Detach Bot
+                        </button>
                     </div>
                 ) : (
                     <>
@@ -103,7 +106,7 @@ const ChannelView = ({
                         {renderedChats.map(chat => (
                             <li key={chat.id}>
                                 {chat.title.rendered} ({chat.status})
-                                <button onClick={() => handleToggleChat(chat.id)} >
+                                <button onClick={() => handleToggleChat(chat.id)}>
                                     {chat.status === 'Active' ? 'Pause' : 'Activate'}
                                 </button>
                             </li>
@@ -118,7 +121,9 @@ const ChannelView = ({
                 <h5>Forms</h5>
                 <button
                     className="add-button add-form-button"
-                    onClick={handleAddForm}>Add Form
+                    onClick={handleAddForm}
+                >
+                    Add Form
                 </button>
                 {showFormSelector && (
                     <select onChange={handleFormSelect} defaultValue="">
@@ -137,7 +142,9 @@ const ChannelView = ({
                                 <button
                                     className="detach-button detach-form-button"
                                     onClick={() => handleRemoveForm(form.id)}
-                                >Detach Form</button>
+                                >
+                                    Detach Form
+                                </button>
                             </li>
                         ))}
                     </ul>
@@ -151,7 +158,7 @@ const ChannelView = ({
                 <button
                     className="remove-channel-button"
                     onClick={deleteChannel}
-                    disabled={saving} >
+                    disabled={saving}>
                     Remove Channel
                 </button>
             </div>

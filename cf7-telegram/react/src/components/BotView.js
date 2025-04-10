@@ -1,5 +1,5 @@
 import React from 'react';
-import { getChatStatus, getToggleButtonLabel } from '../utils/chatStatus';
+import {getChatStatus, getToggleButtonLabel} from '../utils/chatStatus';
 
 const BotView = ({
     bot,
@@ -23,7 +23,7 @@ const BotView = ({
     let status = online === true ? 'online' : online === false ? 'offline' : 'unknown';
     return (
         <div className={`entity-wrapper bot-wrapper ${saving ? 'saving' : ''} ${status}`}>
-        <div className="frame bot-summary">
+            <div className="frame bot-summary">
                 <div className="bot-title">
                     <div className="bot-name">
                         <a href={`https://t.me/${nameValue}?cf7tg_start`} target="_blank">@{nameValue}</a>
@@ -31,7 +31,7 @@ const BotView = ({
                 </div>
 
                 <div className="bot-token">
-                    <span onClick={handleEditToken} style={{ cursor: 'pointer' }}>
+                    <span onClick={handleEditToken} style={{cursor: 'pointer'}}>
                         token: <span className="token-value">{trimmedToken}</span>
                     </span>
 
@@ -49,7 +49,7 @@ const BotView = ({
                 </div>
             </div>
 
-            {error && <p style={{ color: 'red' }}>{error}</p>}
+            {error && <p style={{color: 'red'}}>{error}</p>}
 
             <div className="frame chats-for-bot">
                 {chatsForBot.length > 0 ? (
@@ -86,7 +86,7 @@ const BotView = ({
                 <button
                     className="remove-bot-button"
                     onClick={deleteBot}
-                    disabled={saving} >
+                    disabled={saving}>
                     Remove Bot
                 </button>
                 <div className={`bot-status ${status}`}>{status}</div>

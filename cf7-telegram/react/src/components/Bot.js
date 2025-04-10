@@ -1,16 +1,12 @@
 /* global cf7TelegramData */
 
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect} from 'react';
 import BotView from './BotView';
 import {
-    connectChat2Channel,
-    disconnectConnectionBot2Chat,
-    setBot2ChatConnectionStatus
+    connectChat2Channel, disconnectConnectionBot2Chat, setBot2ChatConnectionStatus
 } from "../utils/main";
 import {
-    apiDeleteBot,
-    apiPingBot,
-    apiSaveBot
+    apiDeleteBot, apiPingBot, apiSaveBot
 } from "../utils/api";
 
 const Bot = ({
@@ -56,14 +52,14 @@ const Bot = ({
 
     const pingBot = async () => {
         try {
-            let pingedBot = await apiPingBot( bot.id );
+            let pingedBot = await apiPingBot(bot.id);
 
             setOnline(pingedBot.online);
             if (pingedBot.botName) {
                 setNameValue(pingedBot.botName);
-                setBots(prev => prev.map(b => (
-                    b.id === bot.id ? { ...b, title: { ...b.title, rendered: pingedBot.botName } } : b
-                )));
+                setBots(prev => prev.map(b => (b.id === bot.id ? {
+                    ...b, title: {...b.title, rendered: pingedBot.botName}
+                } : b)));
             }
         } catch (err) {
             console.error('Ping failed', err);
@@ -80,9 +76,9 @@ const Bot = ({
 
             if (!response) return;
 
-            setBots(prev => prev.map(b => (
-                b.id === bot.id ? { ...b, title: { ...b.title, rendered: nameValue }, token: tokenValue } : b
-            )));
+            setBots(prev => prev.map(b => (b.id === bot.id ? {
+                ...b, title: {...b.title, rendered: nameValue}, token: tokenValue
+            } : b)));
 
             setIsEditingToken(false);
 
@@ -128,10 +124,13 @@ const Bot = ({
         const connection = bot2ChatConnections[connectionIndex];
 
         let newStatus;
-        if (currentStatus === 'active') newStatus = 'muted';
-        else if (currentStatus === 'muted') newStatus = 'active';
-        else if (currentStatus === 'pending') newStatus = 'active';
-        else return;
+        if (currentStatus === 'active') {
+            newStatus = 'muted'
+        } else if (currentStatus === 'muted') {
+            newStatus = 'active';
+        } else if (currentStatus === 'pending') {
+            newStatus = 'active';
+        } else return;
 
         setUpdatingStatusIds(prev => [...prev, chatId]);
 
@@ -155,10 +154,7 @@ const Bot = ({
 
     const handleDisconnectChat = async (chatId, botID) => {
         const connectionIndex = bot2ChatConnections.findIndex(c => c.data.from === botID && c.data.to === chatId);
-        if (
-            connectionIndex === -1 ||
-            ! window.confirm('Are you sure you want to delete this chat?')
-        ) return;
+        if (connectionIndex === -1 || !window.confirm('Are you sure you want to delete this chat?')) return;
 
         const connection = bot2ChatConnections[connectionIndex];
 
@@ -180,27 +176,25 @@ const Bot = ({
     // Trimmed token for display (only last 4 characters)
     const trimmedToken = tokenValue.length > 7 ? `***${tokenValue.slice(-4)}` : tokenValue;
 
-    return (
-        <BotView
-            bot={bot}
-            chatsForBot={chatsForBot}
-            bot2ChatConnections={bot2ChatConnections}
-            updatingStatusIds={updatingStatusIds}
-            isEditingToken={isEditingToken}
-            nameValue={nameValue}
-            tokenValue={tokenValue}
-            trimmedToken={trimmedToken}
-            saving={saving}
-            error={error}
-            handleEditToken={handleEditToken}
-            deleteBot={deleteBot}
-            handleKeyDown={handleKeyDown}
-            setTokenValue={handleTokenChange}
-            handleToggleChatStatus={handleToggleChatStatus}
-            handleDisconnectChat={handleDisconnectChat}
-            online={online}
-        />
-    );
+    return (<BotView
+        bot={bot}
+        chatsForBot={chatsForBot}
+        bot2ChatConnections={bot2ChatConnections}
+        updatingStatusIds={updatingStatusIds}
+        isEditingToken={isEditingToken}
+        nameValue={nameValue}
+        tokenValue={tokenValue}
+        trimmedToken={trimmedToken}
+        saving={saving}
+        error={error}
+        handleEditToken={handleEditToken}
+        deleteBot={deleteBot}
+        handleKeyDown={handleKeyDown}
+        setTokenValue={handleTokenChange}
+        handleToggleChatStatus={handleToggleChatStatus}
+        handleDisconnectChat={handleDisconnectChat}
+        online={online}
+    />);
 };
 
 export default Bot;

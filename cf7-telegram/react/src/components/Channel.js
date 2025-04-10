@@ -1,16 +1,17 @@
 /* global cf7TelegramData */
 
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect} from 'react';
 import ChannelView from './ChannelView';
 import {
     connectBot2Channel,
     connectChat2Channel,
     connectForm2Channel,
-    deleteChannel, disconnectConnectionBot2Channel,
+    deleteChannel,
+    disconnectConnectionBot2Channel,
     disconnectConnectionChat2Channel,
     disconnectConnectionForm2Channel
 } from "../utils/main";
-import {apiConnectBot2Channel, apiDisconnectBot2Channel, apiSaveChannel} from "../utils/api";
+import {apiSaveChannel} from "../utils/api";
 
 const Channel = ({
     channel,
@@ -60,7 +61,7 @@ const Channel = ({
             })
             .filter(Boolean);
 
-        setBotForChannel({ ...bot, chats: botChats });
+        setBotForChannel({...bot, chats: botChats});
         setChatsForChannel(botChats.filter(chat => chat.status === 'active'));
     }, [channel.id, bots, bot2ChannelConnections, bot2ChatConnections, chats, chat2ChannelConnections]);
 

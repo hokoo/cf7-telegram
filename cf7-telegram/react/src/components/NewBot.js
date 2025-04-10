@@ -3,7 +3,7 @@
 import React from 'react';
 import {apiCreateBot} from "../utils/api";
 
-const NewBot = ({ setBots }) => {
+const NewBot = ({setBots}) => {
     const handleCreateBot = async () => {
         try {
             let bot = await apiCreateBot('Bot Name', '[empty]')

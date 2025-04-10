@@ -3,7 +3,7 @@
 import React from 'react';
 import {createChannel} from "../utils/main";
 
-const NewChannel = ({ setChannels }) => {
+const NewChannel = ({setChannels}) => {
     const handleCreateChannel = async () => {
         try {
             await createChannel('Channel Name', setChannels);

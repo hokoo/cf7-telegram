@@ -1,6 +1,6 @@
 /* global cf7TelegramData */
 
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect} from 'react';
 import Channel from './components/Channel';
 import Bot from './components/Bot';
 import NewBot from './components/NewBot';
@@ -15,7 +15,7 @@ import {
     fetchFormsForChannels,
     fetchBotsForChannels,
     fetchBotsForChats,
-    fetchChatsForChannels, 
+    fetchChatsForChannels,
     apiDeleteChat
 } from './utils/api';
 
@@ -54,10 +54,8 @@ const App = () => {
             const mapped = connections.map(rel => {
                 const status = rel.data?.meta?.status?.[0];
                 return {
-                    ...rel,
-                    data: {
-                        ...rel.data,
-                        muted: status === 'muted'
+                    ...rel, data: {
+                        ...rel.data, muted: status === 'muted'
                     }
                 };
             });
@@ -78,7 +76,7 @@ const App = () => {
     }, []);
 
     // When chats has a chat that is not in bot2ChatConnections, destroy it.
-    useEffect( () => {
+    useEffect(() => {
         const chatIdsInBot2ChatConnections = bot2ChatConnections.map(rel => rel.data.to);
         const chatsToRemove = chats.filter(chat => !chatIdsInBot2ChatConnections.includes(chat.id));
         const chatIdsToRemove = chatsToRemove.map(chat => chat.id);
@@ -93,24 +91,20 @@ const App = () => {
             .catch(error => {
                 console.error("Error deleting chats:", error);
             });
-        },
-        [chats, bot2ChatConnections]
-    )
+    }, [chats, bot2ChatConnections])
 
     if (loading) return <div>Loading channels...</div>;
     if (channels.length === 0) return <div>No channels found</div>;
 
-    return (
-        <div className="cf7-tg-container">
+    return (<div className="cf7-tg-container">
             <div className="list-container bots-container">
                 <div className="title-container">
                     <h3 className="title">Bots</h3>
-                    <NewBot setBots={setBots} />
+                    <NewBot setBots={setBots}/>
                 </div>
 
                 <div className="bot-list">
-                    {bots.map(bot => (
-                        <div className="entity-container bot" key={bot.id} id={`bot-${bot.id}`}>
+                    {bots.map(bot => (<div className="entity-container bot" key={bot.id} id={`bot-${bot.id}`}>
                             <Bot
                                 bot={bot}
                                 chats={chats}
@@ -120,15 +114,14 @@ const App = () => {
                                 bot2ChannelConnections={bot2ChannelConnections}
                                 setChat2ChannelConnections={setChat2ChannelConnections}
                             />
-                        </div>
-                    ))}
+                        </div>))}
                 </div>
             </div>
 
             <div className="list-container channels-container">
                 <div className="title-container">
                     <h3 className="title">Channels</h3>
-                    <NewChannel setChannels={setChannels} />
+                    <NewChannel setChannels={setChannels}/>
                 </div>
                 <div className="channel-list">
                     {channels.map(channel => (
@@ -147,12 +140,10 @@ const App = () => {
                                 setChat2ChannelConnections={setChat2ChannelConnections}
                                 bot2ChatConnections={bot2ChatConnections}
                             />
-                        </div>
-                    ))}
+                        </div>))}
                 </div>
             </div>
-        </div>
-    );
+        </div>);
 };
 
 export default App;

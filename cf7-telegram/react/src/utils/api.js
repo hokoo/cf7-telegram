@@ -66,7 +66,7 @@ export const apiConnectBot2Channel = async (botId, channelId) => {
     return await apiRequest(
         cf7TelegramData.routes.relations.bot2channel,
         'POST',
-        { from: botId, to: channelId }
+        {from: botId, to: channelId}
     )
 }
 
@@ -81,7 +81,7 @@ export const apiConnectChat2Channel = async (chatId, channelId) => {
     return await apiRequest(
         cf7TelegramData.routes.relations.chat2channel,
         'POST',
-        { from: chatId, to: channelId }
+        {from: chatId, to: channelId}
     )
 };
 
@@ -89,7 +89,7 @@ export const apiConnectForm2Channel = async (formId, channelId) => {
     return await apiRequest(
         cf7TelegramData.routes.relations.form2channel,
         'POST',
-        { from: formId, to: channelId }
+        {from: formId, to: channelId}
     )
 }
 
@@ -102,30 +102,30 @@ export const apiDisconnectChat2Channel = async (connectionId) => {
 
 export const apiDisconnectBot2Chat = async (connectionID) => {
     return await apiRequest(
-    `${cf7TelegramData.routes.relations.bot2chat}${connectionID}`,
-    'DELETE'
+        `${cf7TelegramData.routes.relations.bot2chat}${connectionID}`,
+        'DELETE'
     );
 }
 
 export const apiDisconnectForm2Channel = async (connectionID) => {
     return await apiRequest(
-    `${cf7TelegramData.routes.relations.form2channel}${connectionID}`,
-    'DELETE'
+        `${cf7TelegramData.routes.relations.form2channel}${connectionID}`,
+        'DELETE'
     );
 }
 
 export const apiSetBot2ChatConnectionStatus = async (connectionID, status) => {
     return await apiRequest(
-    `${cf7TelegramData.routes.relations.bot2chat}${connectionID}/meta`,
+        `${cf7TelegramData.routes.relations.bot2chat}${connectionID}/meta`,
         'PATCH',
-        {meta: [{ key: 'status', value: status }]}
+        {meta: [{key: 'status', value: status}]}
     )
 }
 
 export const apiDeleteChat = async (chatId) => {
     return await apiRequest(
-    `${cf7TelegramData.routes.chats}${chatId}/?force=true`,
-    'DELETE'
+        `${cf7TelegramData.routes.chats}${chatId}/?force=true`,
+        'DELETE'
     );
 }
 
@@ -133,7 +133,7 @@ export const apiCreateChannel = async (title) => {
     return await apiRequest(
         cf7TelegramData.routes.channels,
         'POST',
-        { title }
+        {title}
     );
 };
 
@@ -151,8 +151,8 @@ export const apiSaveChannel = async (channelId, title) => {
 
 export const apiDeleteChannel = async (channelId) => {
     return await apiRequest(
-    `${cf7TelegramData.routes.channels}${channelId}/?force=true`,
-    'DELETE'
+        `${cf7TelegramData.routes.channels}${channelId}/?force=true`,
+        'DELETE'
     );
 }
 
@@ -172,8 +172,8 @@ export const apiCreateBot = async (title, token) => {
 
 export const apiDeleteBot = async (botId) => {
     return await apiRequest(
-    `${cf7TelegramData.routes.bots}${botId}/?force=true`,
-    'DELETE'
+        `${cf7TelegramData.routes.bots}${botId}/?force=true`,
+        'DELETE'
     );
 }
 
