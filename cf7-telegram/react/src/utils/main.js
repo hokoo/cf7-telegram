@@ -4,7 +4,7 @@ import {
     apiConnectBot2Channel,
     apiConnectChat2Channel,
     apiConnectForm2Channel,
-    apiCreateChannel,
+    apiCreateChannel, apiDeleteChannel,
     apiDisconnectBot2Channel,
     apiDisconnectBot2Chat,
     apiDisconnectChat2Channel,
@@ -91,5 +91,12 @@ export const createChannel = async (name, setChannels) => {
     let createdChannel = await apiCreateChannel(name);
     if (createdChannel) {
         setChannels(prev => [...prev, createdChannel]);
+    }
+}
+
+export const deleteChannel = async (channelId, setChannels) => {
+    const success = await apiDeleteChannel(channelId);
+    if (success) {
+        setChannels(prev => prev.filter(channel => channel.id !== channelId));
     }
 }

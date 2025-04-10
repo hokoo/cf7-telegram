@@ -293,6 +293,27 @@ ul#adminmenu a.wp-has-current-submenu:after, ul#adminmenu>li.current>a.current:a
 
         .channel-wrapper {
           border-color: #2f4f37;
+
+          .status-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            .remove-channel-button {
+              background: none;
+              border: none;
+              border-radius: 5px;
+              color: #1f3047;
+              cursor: pointer;
+              font-size: 12px;
+              text-align: center;
+              padding: 0;
+
+              &:hover {
+                color: #873d3d;
+              }
+            }
+          }
         }
 
         .bots {

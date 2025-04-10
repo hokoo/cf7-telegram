@@ -132,6 +132,7 @@ const App = () => {
                             <Channel
                                 channel={channel}
                                 forms={forms}
+                                setChannels={setChannels}
                                 form2ChannelRelations={form2ChannelRelations}
                                 setForm2ChannelRelations={setForm2ChannelRelations}
                                 bots={bots}

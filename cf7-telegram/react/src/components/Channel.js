@@ -5,7 +5,7 @@ import ChannelView from './ChannelView';
 import {
     connectBot2Channel,
     connectChat2Channel,
-    connectForm2Channel, disconnectConnectionBot2Channel,
+    connectForm2Channel, deleteChannel, disconnectConnectionBot2Channel,
     disconnectConnectionChat2Channel,
     disconnectConnectionForm2Channel
 } from "../utils/main";
@@ -14,6 +14,7 @@ import { apiSaveChannel} from "../utils/api";
 const Channel = ({
     channel,
     forms,
+    setChannels,
     form2ChannelRelations,
     setForm2ChannelRelations,
     bots,
@@ -180,6 +181,21 @@ const Channel = ({
         }
     };
 
+    const handleDeleteChannel = async () => {
+        if (!window.confirm('Are you sure you want to delete this channel?')) return;
+
+        setSaving(true);
+        setError(null);
+        try {
+            await deleteChannel(channel.id, setChannels);
+        } catch (err) {
+            console.error(err);
+            setError('Failed to delete channel');
+        } finally {
+            setSaving(false);
+        }
+    }
+
     return (
         <ChannelView
             isEditingTitle={isEditingTitle}
@@ -204,6 +220,7 @@ const Channel = ({
             handleRemoveBot={handleRemoveBot}
             bot2ChatConnections={bot2ChatConnections}
             handleToggleChat={handleToggleChat}
+            deleteChannel={handleDeleteChannel}
         />
     );
 };

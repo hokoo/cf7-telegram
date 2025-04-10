@@ -22,7 +22,8 @@ const ChannelView = ({
     handleBotSelect,
     handleRemoveBot,
     bot2ChatConnections = [],
-    handleToggleChat
+    handleToggleChat,
+    deleteChannel
 }) => {
     const renderedChats = (botForChannel?.chats || [])
         .map(chat => {
@@ -143,6 +144,16 @@ const ChannelView = ({
                 ) : (
                     <p>No forms assigned to this channel</p>
                 )}
+            </div>
+
+
+            <div className="status-bar">
+                <button
+                    className="remove-channel-button"
+                    onClick={deleteChannel}
+                    disabled={saving} >
+                    Remove Channel
+                </button>
             </div>
         </div>
     );
