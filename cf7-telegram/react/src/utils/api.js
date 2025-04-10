@@ -114,7 +114,7 @@ export const apiDisconnectForm2Channel = async (connectionID) => {
     );
 }
 
-export const apiSetBot2ChatRelationStatus = async (connectionID, status) => {
+export const apiSetBot2ChatConnectionStatus = async (connectionID, status) => {
     return await apiRequest(
     `${cf7TelegramData.routes.relations.bot2chat}${connectionID}/meta`,
         'PATCH',

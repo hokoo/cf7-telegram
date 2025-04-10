@@ -5,7 +5,7 @@ import BotView from './BotView';
 import {
     connectChat2Channel,
     disconnectConnectionBot2Chat,
-    setBot2ChatRelationStatus
+    setBot2ChatConnectionStatus
 } from "../utils/main";
 import {
     apiDeleteBot,
@@ -19,8 +19,8 @@ const Bot = ({
     bot2ChatConnections,
     setBots,
     setBot2ChatConnections,
-    bot2ChannelRelations,
-    setChat2ChannelRelations
+    bot2ChannelConnections,
+    setChat2ChannelConnections
 }) => {
     const [isEditingToken, setIsEditingToken] = useState(false);
     const [nameValue, setNameValue] = useState(bot.title.rendered);
@@ -31,8 +31,8 @@ const Bot = ({
     const [online, setOnline] = useState(null);
 
     const relatedChatIds = bot2ChatConnections
-        .filter(relation => relation.data.from === bot.id)
-        .map(relation => relation.data.to);
+        .filter(connection => connection.data.from === bot.id)
+        .map(connection => connection.data.to);
 
     const chatsForBot = chats.filter(chat => relatedChatIds.includes(chat.id));
 
@@ -122,10 +122,10 @@ const Bot = ({
     };
 
     const handleToggleChatStatus = async (chatId, currentStatus) => {
-        const relationIndex = bot2ChatConnections.findIndex(rel => rel.data.from === bot.id && rel.data.to === chatId);
-        if (relationIndex === -1) return;
+        const connectionIndex = bot2ChatConnections.findIndex(c => c.data.from === bot.id && c.data.to === chatId);
+        if (connectionIndex === -1) return;
 
-        const relation = bot2ChatConnections[relationIndex];
+        const connection = bot2ChatConnections[connectionIndex];
 
         let newStatus;
         if (currentStatus === 'active') newStatus = 'muted';
@@ -136,13 +136,13 @@ const Bot = ({
         setUpdatingStatusIds(prev => [...prev, chatId]);
 
         try {
-            let res = setBot2ChatRelationStatus(relation.data.id, newStatus, setBot2ChatConnections);
+            let res = setBot2ChatConnectionStatus(connection.data.id, newStatus, setBot2ChatConnections);
 
             // If the status was 'pending', we need to connect the chat to the all channels this bot is connected to.
             if (res && currentStatus === 'pending') {
-                const channels = bot2ChannelRelations.filter(rel => rel.data.from === bot.id);
+                const channels = bot2ChannelConnections.filter(c => c.data.from === bot.id);
                 for (const channel of channels) {
-                    await connectChat2Channel(chatId, channel.data.to, setChat2ChannelRelations)
+                    await connectChat2Channel(chatId, channel.data.to, setChat2ChannelConnections)
                 }
             }
 
@@ -154,13 +154,13 @@ const Bot = ({
     };
 
     const handleDisconnectChat = async (chatId, botID) => {
-        const relationIndex = bot2ChatConnections.findIndex(rel => rel.data.from === botID && rel.data.to === chatId);
+        const connectionIndex = bot2ChatConnections.findIndex(c => c.data.from === botID && c.data.to === chatId);
         if (
-            relationIndex === -1 ||
+            connectionIndex === -1 ||
             ! window.confirm('Are you sure you want to delete this chat?')
         ) return;
 
-        const connection = bot2ChatConnections[relationIndex];
+        const connection = bot2ChatConnections[connectionIndex];
 
         setUpdatingStatusIds(prev => [...prev, chatId]);
 

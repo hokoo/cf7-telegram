@@ -133,13 +133,13 @@ const App = () => {
                                 channel={channel}
                                 forms={forms}
                                 setChannels={setChannels}
-                                form2ChannelRelations={form2ChannelRelations}
-                                setForm2ChannelRelations={setForm2ChannelRelations}
+                                form2ChannelConnections={form2ChannelRelations}
+                                setForm2ChannelConnections={setForm2ChannelRelations}
                                 bots={bots}
-                                bot2ChannelRelations={bot2ChannelRelations}
+                                bot2ChannelConnections={bot2ChannelRelations}
                                 chats={chats}
-                                chat2ChannelRelations={chat2ChannelRelations}
-                                setChat2ChannelRelations={setChat2ChannelRelations}
+                                chat2ChannelConnections={chat2ChannelRelations}
+                                setChat2ChannelConnections={setChat2ChannelRelations}
                                 bot2ChatConnections={bot2ChatConnections}
                             />
                         </div>

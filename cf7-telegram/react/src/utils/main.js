@@ -9,71 +9,71 @@ import {
     apiDisconnectBot2Chat,
     apiDisconnectChat2Channel,
     apiDisconnectForm2Channel,
-    apiSetBot2ChatRelationStatus,
+    apiSetBot2ChatConnectionStatus,
 } from './api';
 
 import chat2ChannelRelations from "../App";
 
-export const connectBot2Channel = async (botId, channelId, setBot2ChannelRelations) => {
+export const connectBot2Channel = async (botId, channelId, setBot2ChannelConnections) => {
     const result = await apiConnectBot2Channel(botId, channelId);
     if (result) {
-        setBot2ChannelRelations(prev => [...prev, { data: result }]);
+        setBot2ChannelConnections(prev => [...prev, { data: result }]);
     }
 }
 
-export const disconnectConnectionBot2Channel = async (connectionId, setBot2ChannelRelations) => {
+export const disconnectConnectionBot2Channel = async (connectionId, setBot2ChannelConnections) => {
     const success = await apiDisconnectBot2Channel(connectionId);
     if (success) {
-        setBot2ChannelRelations(prev => prev.filter(r => r.data.id !== connectionId));
+        setBot2ChannelConnections(prev => prev.filter(c => c.data.id !== connectionId));
     }
 }
 
-export const connectForm2Channel = async (formId, channelId, setForm2ChannelRelations) => {
+export const connectForm2Channel = async (formId, channelId, setForm2ChannelConnections) => {
     const result = await apiConnectForm2Channel(formId, channelId);
     if (result) {
-        setForm2ChannelRelations(prev => [...prev, { data: result }]);
+        setForm2ChannelConnections(prev => [...prev, { data: result }]);
     }
 }
 
-export const disconnectConnectionForm2Channel = async (connectionId, setForm2ChannelRelations) => {
+export const disconnectConnectionForm2Channel = async (connectionId, setForm2ChannelConnections) => {
     const success = await apiDisconnectForm2Channel(connectionId);
     if (success) {
-        setForm2ChannelRelations(prev => prev.filter(r => r.data.id !== connectionId));
+        setForm2ChannelConnections(prev => prev.filter(c => c.data.id !== connectionId));
     }
 }
 
-export const connectChat2Channel = async (chatId, channelId, setChat2ChannelRelations) => {
+export const connectChat2Channel = async (chatId, channelId, setChat2ChannelConnections) => {
     const result = await apiConnectChat2Channel(chatId, channelId);
     if (result) {
-        setChat2ChannelRelations(prev => [...prev, { data: result }]);
+        setChat2ChannelConnections(prev => [...prev, result]);
     }
 };
 
-export const disconnectChat2Channel = async (chatId, channelId, setChat2ChannelRelations) => {
-    const connection = chat2ChannelRelations.find(r => r.data.from === chatId && r.data.to === channelId);
+export const disconnectChat2Channel = async (chatId, channelId, setChat2ChannelConnections) => {
+    const connection = chat2ChannelRelations.find(c => c.data.from === chatId && c.data.to === channelId);
 
     if (connection) {
-        await disconnectConnectionChat2Channel(connection.id, setChat2ChannelRelations)
+        await disconnectConnectionChat2Channel(connection.id, setChat2ChannelConnections)
     }
 }
 
-export const disconnectConnectionChat2Channel = async (connectionId, setChat2ChannelRelations) => {
+export const disconnectConnectionChat2Channel = async (connectionId, setChat2ChannelConnections) => {
     const success = await apiDisconnectChat2Channel(connectionId);
     if (success) {
-        setChat2ChannelRelations(prev => prev.filter(r => r.data.id !== connectionId));
+        setChat2ChannelConnections(prev => prev.filter(c => c.data.id !== connectionId));
     }
 };
 
-export const setBot2ChatRelationStatus = async (connectionId, status, setBot2ChatConnections) => {
-    const result = await apiSetBot2ChatRelationStatus(connectionId, status);
+export const setBot2ChatConnectionStatus = async (connectionId, status, setBot2ChatConnections) => {
+    const result = await apiSetBot2ChatConnectionStatus(connectionId, status);
     if (result) {
         setBot2ChatConnections(prev => {
-            const updatedRelations = [...prev];
-            const index = updatedRelations.findIndex(r => r.data.id === connectionId);
+            const updatedConnections = [...prev];
+            const index = updatedConnections.findIndex(c => c.data.id === connectionId);
             if (index !== -1) {
-                updatedRelations[index].data.meta.status[0] = status;
+                updatedConnections[index].data.meta.status[0] = status;
             }
-            return updatedRelations;
+            return updatedConnections;
         });
     }
 
@@ -83,7 +83,7 @@ export const setBot2ChatRelationStatus = async (connectionId, status, setBot2Cha
 export const disconnectConnectionBot2Chat = async (connectionId, setBot2ChatConnections) => {
     const success = await apiDisconnectBot2Chat(connectionId);
     if (success) {
-        setBot2ChatConnections(prev => prev.filter(r => r.data.id !== connectionId));
+        setBot2ChatConnections(prev => prev.filter(c => c.data.id !== connectionId));
     }
 }
 

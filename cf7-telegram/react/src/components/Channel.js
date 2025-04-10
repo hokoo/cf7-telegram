@@ -5,7 +5,9 @@ import ChannelView from './ChannelView';
 import {
     connectBot2Channel,
     connectChat2Channel,
-    connectForm2Channel, deleteChannel, disconnectConnectionBot2Channel,
+    connectForm2Channel,
+    deleteChannel,
+    disconnectConnectionBot2Channel,
     disconnectConnectionChat2Channel,
     disconnectConnectionForm2Channel
 } from "../utils/main";
@@ -15,13 +17,13 @@ const Channel = ({
     channel,
     forms,
     setChannels,
-    form2ChannelRelations,
-    setForm2ChannelRelations,
+    form2ChannelConnections,
+    setForm2ChannelConnections,
     bots,
-    bot2ChannelRelations,
+    bot2ChannelConnections,
     chats,
-    chat2ChannelRelations,
-    setChat2ChannelRelations,
+    chat2ChannelConnections,
+    setChat2ChannelConnections,
     bot2ChatConnections
 }) => {
     const [botForChannel, setBotForChannel] = useState(null);
@@ -37,45 +39,45 @@ const Channel = ({
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        const botRelation = bot2ChannelRelations.find(r => r.data.to === channel.id);
-        if (!botRelation) return setBotForChannel(null);
-        const bot = bots.find(b => b.id === botRelation.data.from);
+        const botConnection = bot2ChannelConnections.find(c => c.data.to === channel.id);
+        if (!botConnection) return setBotForChannel(null);
+        const bot = bots.find(b => b.id === botConnection.data.from);
         if (!bot) return setBotForChannel(null);
 
-        const botChatRelations = bot2ChatConnections.filter(r => r.data.from === bot.id);
+        const botChatConnections = bot2ChatConnections.filter(c => c.data.from === bot.id);
         const botChats = chats
             .map(chat => {
-                const relation = botChatRelations.find(r => r.data.to === chat.id);
-                if (!relation) return null;
+                const connection = botChatConnections.find(c => c.data.to === chat.id);
+                if (!connection) return null;
 
-                const hasChannelRelation = chat2ChannelRelations.some(r => r.data.from === chat.id && r.data.to === channel.id);
+                const hasChannelConnection = chat2ChannelConnections.some(c => c.data.from === chat.id && c.data.to === channel.id);
 
                 return {
                     ...chat,
-                    muted: !!relation.data.muted,
-                    status: hasChannelRelation ? 'active' : 'paused'
+                    muted: !!connection.data.muted,
+                    status: hasChannelConnection ? 'active' : 'paused'
                 };
             })
             .filter(Boolean);
 
         setBotForChannel({ ...bot, chats: botChats });
         setChatsForChannel(botChats.filter(chat => chat.status === 'active'));
-    }, [channel.id, bots, bot2ChannelRelations, bot2ChatConnections, chats, chat2ChannelRelations]);
+    }, [channel.id, bots, bot2ChannelConnections, bot2ChatConnections, chats, chat2ChannelConnections]);
 
     useEffect(() => {
-        const relatedIds = form2ChannelRelations.filter(r => r.data?.to === channel.id).map(r => r.data.from);
+        const relatedIds = form2ChannelConnections.filter(c => c.data?.to === channel.id).map(r => r.data.from);
         const linked = forms.filter(f => relatedIds.includes(f.id));
         const unlinked = forms.filter(f => !relatedIds.includes(f.id));
         setFormsForChannel(linked);
         setAvailableForms(unlinked);
-    }, [forms, form2ChannelRelations, channel.id]);
+    }, [forms, form2ChannelConnections, channel.id]);
 
     useEffect(() => {
-        const currentBotRelation = bot2ChannelRelations.find(r => r.data.to === channel.id);
-        const usedBotId = currentBotRelation?.data.from;
+        const currentBotConnection = bot2ChannelConnections.find(c => c.data.to === channel.id);
+        const usedBotId = currentBotConnection?.data.from;
         const unlinkedBots = bots.filter(bot => bot.id !== usedBotId);
         setAvailableBots(unlinkedBots);
-    }, [bots, bot2ChannelRelations, channel.id]);
+    }, [bots, bot2ChannelConnections, channel.id]);
 
     const handleAddForm = () => setShowFormSelector(prev => !prev);
 
@@ -83,7 +85,7 @@ const Channel = ({
         const formId = parseInt(event.target.value, 10);
 
         try {
-            await connectForm2Channel(formId, channel.id, setForm2ChannelRelations)
+            await connectForm2Channel(formId, channel.id, setForm2ChannelConnections)
         } catch (err) {
             console.error(err);
             alert('Something went wrong while assigning the form');
@@ -93,7 +95,7 @@ const Channel = ({
     };
 
     const handleRemoveForm = async (formId) => {
-        const connection = form2ChannelRelations.find(r => r.data.from === formId && r.data.to === channel.id);
+        const connection = form2ChannelConnections.find(c => c.data.from === formId && c.data.to === channel.id);
 
         if (
             !connection ||
@@ -102,7 +104,7 @@ const Channel = ({
             return;
 
         try {
-            await disconnectConnectionForm2Channel(connection.data.id, setForm2ChannelRelations)
+            await disconnectConnectionForm2Channel(connection.data.id, setForm2ChannelConnections)
         } catch (err) {
             console.error(err);
             alert('Failed to remove form');
@@ -110,12 +112,12 @@ const Channel = ({
     };
 
     const handleToggleChat = async (chatId) => {
-        let connection = chat2ChannelRelations.find(r => r.data.from === chatId && r.data.to === channel.id);
+        let connection = chat2ChannelConnections.find(c => c.data.from === chatId && c.data.to === channel.id);
 
         if (!connection) {
-            await connectChat2Channel(chatId, channel.id, setChat2ChannelRelations);
+            await connectChat2Channel(chatId, channel.id, setChat2ChannelConnections);
         } else {
-            await disconnectConnectionChat2Channel(connection.data.id, setChat2ChannelRelations);
+            await disconnectConnectionChat2Channel(connection.data.id, setChat2ChannelConnections);
         }
     };
 
@@ -131,12 +133,12 @@ const Channel = ({
     };
 
     const handleRemoveBot = async () => {
-        const relation = bot2ChannelRelations.find(r => r.data.to === channel.id);
+        const connection = bot2ChannelConnections.find(c => c.data.to === channel.id);
 
-        if (!relation) return;
+        if (!connection) return;
 
         try {
-            await disconnectConnectionBot2Channel(relation.data.id);
+            await disconnectConnectionBot2Channel(connection.data.id);
         } catch (err) {
             console.error(err);
             alert('Failed to remove bot');
