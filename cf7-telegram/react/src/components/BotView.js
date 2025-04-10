@@ -2,26 +2,24 @@ import React from 'react';
 import { getChatStatus, getToggleButtonLabel } from '../utils/chatStatus';
 
 const BotView = ({
-                     bot,
-                     chatsForBot = [],
-                     botsChatRelations = [],
-                     updatingStatusIds = [],
-                     isEditingToken,
-                     nameValue,
-                     tokenValue,
-                     trimmedToken,
-                     saving,
-                     error,
-                     handleEditToken,
-                     cancelEdit,
-                     saveBot,
-                     deleteBot,
-                     handleKeyDown,
-                     setTokenValue,
-                     handleToggleChatStatus,
-                     handleDisconnectChat,
-                     online
-                 }) => {
+    bot,
+    chatsForBot = [],
+    bot2ChatConnections = [],
+    updatingStatusIds = [],
+    isEditingToken,
+    nameValue,
+    tokenValue,
+    trimmedToken,
+    saving,
+    error,
+    handleEditToken,
+    deleteBot,
+    handleKeyDown,
+    setTokenValue,
+    handleToggleChatStatus,
+    handleDisconnectChat,
+    online
+}) => {
     let status = online === true ? 'online' : online === false ? 'offline' : 'unknown';
     return (
         <div className={`entity-wrapper bot-wrapper ${saving ? 'saving' : ''} ${status}`}>
@@ -57,7 +55,7 @@ const BotView = ({
                 {chatsForBot.length > 0 ? (
                     <ul>
                         {chatsForBot.map(chat => {
-                            const status = getChatStatus(bot.id, chat.id, botsChatRelations);
+                            const status = getChatStatus(bot.id, chat.id, bot2ChatConnections);
                             const isUpdating = updatingStatusIds.includes(chat.id);
                             return (
                                 <li key={chat.id} className={`chat-item ${status.toLowerCase()}`}>

@@ -2,9 +2,26 @@
 
 import React, { useState, useEffect } from 'react';
 import BotView from './BotView';
-import { getChatStatus } from '../utils/chatStatus';
+import {
+    connectChat2Channel,
+    disconnectConnectionBot2Chat,
+    setBot2ChatRelationStatus
+} from "../utils/main";
+import {
+    apiDeleteBot,
+    apiPingBot,
+    apiSaveBot
+} from "../utils/api";
 
-const Bot = ({ bot, chats, botsChatRelations, setBots, setBotsChatRelations }) => {
+const Bot = ({
+    bot,
+    chats,
+    bot2ChatConnections,
+    setBots,
+    setBot2ChatConnections,
+    bot2ChannelRelations,
+    setChat2ChannelRelations
+}) => {
     const [isEditingToken, setIsEditingToken] = useState(false);
     const [nameValue, setNameValue] = useState(bot.title.rendered);
     const [tokenValue, setTokenValue] = useState(bot.token);
@@ -13,13 +30,14 @@ const Bot = ({ bot, chats, botsChatRelations, setBots, setBotsChatRelations }) =
     const [updatingStatusIds, setUpdatingStatusIds] = useState([]);
     const [online, setOnline] = useState(null);
 
-    const relatedChatIds = botsChatRelations
+    const relatedChatIds = bot2ChatConnections
         .filter(relation => relation.data.from === bot.id)
         .map(relation => relation.data.to);
 
     const chatsForBot = chats.filter(chat => relatedChatIds.includes(chat.id));
 
     useEffect(() => {
+        // @todo recheck when the bot is not online.
         if (online === null) {
             pingBot();
         }
@@ -38,19 +56,13 @@ const Bot = ({ bot, chats, botsChatRelations, setBots, setBotsChatRelations }) =
 
     const pingBot = async () => {
         try {
-            const res = await fetch(`${cf7TelegramData.routes.bots}${bot.id}/ping`, {
-                method: 'GET',
-                headers: {
-                    'X-WP-Nonce': cf7TelegramData?.nonce,
-                }
-            });
-            if (!res.ok) throw new Error('Ping failed');
-            const json = await res.json();
-            setOnline(json.online);
-            if (json.botName) {
-                setNameValue(json.botName);
+            let pingedBot = await apiPingBot( bot.id );
+
+            setOnline(pingedBot.online);
+            if (pingedBot.botName) {
+                setNameValue(pingedBot.botName);
                 setBots(prev => prev.map(b => (
-                    b.id === bot.id ? { ...b, title: { ...b.title, rendered: json.botName } } : b
+                    b.id === bot.id ? { ...b, title: { ...b.title, rendered: pingedBot.botName } } : b
                 )));
             }
         } catch (err) {
@@ -64,19 +76,9 @@ const Bot = ({ bot, chats, botsChatRelations, setBots, setBotsChatRelations }) =
         setError(null);
 
         try {
-            const response = await fetch(`${cf7TelegramData.routes.bots}${bot.id}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-WP-Nonce': cf7TelegramData?.nonce,
-                },
-                body: JSON.stringify({
-                    title: nameValue,
-                    token: tokenValue,
-                }),
-            });
+            const response = await apiSaveBot(bot.id, nameValue, tokenValue)
 
-            if (!response.ok) throw new Error('Failed to update bot');
+            if (!response) return;
 
             setBots(prev => prev.map(b => (
                 b.id === bot.id ? { ...b, title: { ...b.title, rendered: nameValue }, token: tokenValue } : b
@@ -101,14 +103,9 @@ const Bot = ({ bot, chats, botsChatRelations, setBots, setBotsChatRelations }) =
         setError(null);
 
         try {
-            const response = await fetch(`${cf7TelegramData.routes.bots}${bot.id}/?force=true`, {
-                method: 'DELETE',
-                headers: {
-                    'X-WP-Nonce': cf7TelegramData?.nonce,
-                }
-            });
+            const response = await apiDeleteBot(bot.id)
 
-            if (!response.ok) throw new Error('Failed to delete bot');
+            if (!response) return;
 
             setBots(prev => prev.filter(b => b.id !== bot.id));
         } catch (err) {
@@ -125,10 +122,10 @@ const Bot = ({ bot, chats, botsChatRelations, setBots, setBotsChatRelations }) =
     };
 
     const handleToggleChatStatus = async (chatId, currentStatus) => {
-        const relationIndex = botsChatRelations.findIndex(rel => rel.data.from === bot.id && rel.data.to === chatId);
+        const relationIndex = bot2ChatConnections.findIndex(rel => rel.data.from === bot.id && rel.data.to === chatId);
         if (relationIndex === -1) return;
 
-        const relation = botsChatRelations[relationIndex];
+        const relation = bot2ChatConnections[relationIndex];
 
         let newStatus;
         if (currentStatus === 'active') newStatus = 'muted';
@@ -139,33 +136,16 @@ const Bot = ({ bot, chats, botsChatRelations, setBots, setBotsChatRelations }) =
         setUpdatingStatusIds(prev => [...prev, chatId]);
 
         try {
-            const response = await fetch(`${cf7TelegramData.routes.relations.bot2chat}${relation.data.id}/meta`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-WP-Nonce': cf7TelegramData?.nonce,
-                },
-                body: JSON.stringify({
-                    meta: [{ key: 'status', value: newStatus }]
-                })
-            });
+            let res = setBot2ChatRelationStatus(relation.data.id, newStatus, setBot2ChatConnections);
 
-            if (response.ok) {
-                const updatedRelations = [...botsChatRelations];
-                updatedRelations[relationIndex] = {
-                    ...relation,
-                    data: {
-                        ...relation.data,
-                        meta: {
-                            ...relation.data.meta,
-                            status: [newStatus]
-                        }
-                    }
-                };
-                setBotsChatRelations(updatedRelations);
-            } else {
-                console.error('Failed to update chat status');
+            // If the status was 'pending', we need to connect the chat to the all channels this bot is connected to.
+            if (res && currentStatus === 'pending') {
+                const channels = bot2ChannelRelations.filter(rel => rel.data.from === bot.id);
+                for (const channel of channels) {
+                    await connectChat2Channel(chatId, channel.data.to, setChat2ChannelRelations)
+                }
             }
+
         } catch (err) {
             console.error('Failed to update chat status', err);
         } finally {
@@ -174,51 +154,18 @@ const Bot = ({ bot, chats, botsChatRelations, setBots, setBotsChatRelations }) =
     };
 
     const handleDisconnectChat = async (chatId, botID) => {
-        const relationIndex = botsChatRelations.findIndex(rel => rel.data.from === botID && rel.data.to === chatId);
-        if (relationIndex === -1) return;
+        const relationIndex = bot2ChatConnections.findIndex(rel => rel.data.from === botID && rel.data.to === chatId);
+        if (
+            relationIndex === -1 ||
+            ! window.confirm('Are you sure you want to delete this chat?')
+        ) return;
 
-        const relation = botsChatRelations[relationIndex];
+        const connection = bot2ChatConnections[relationIndex];
 
         setUpdatingStatusIds(prev => [...prev, chatId]);
 
         try {
-            const response = await fetch(`${cf7TelegramData.routes.relations.bot2chat}${relation.data.id}`, {
-                method: 'DELETE',
-                headers: {
-                    'X-WP-Nonce': cf7TelegramData?.nonce,
-                }
-            });
-
-            if (response.ok) {
-                const updatedRelations = botsChatRelations.filter(rel => rel.data.id !== relation.data.id);
-                setBotsChatRelations(updatedRelations);
-
-                // If the chat has no connections left, remove the chat as entity.
-                const remainingRelations = updatedRelations.filter(rel => rel.data.to === chatId);
-                if (remainingRelations.length === 0) {
-                    try {
-                        const chatResponse = await fetch(`${cf7TelegramData.routes.chats}${chatId}/?force=true`, {
-                            method: 'DELETE',
-                            headers: {
-                                'X-WP-Nonce': cf7TelegramData?.nonce,
-                            }
-                        });
-
-                        if (chatResponse.ok) {
-                            // Optionally, you can remove the chat from the UI or perform any other action.
-                        } else {
-                            console.error('Failed to delete chat');
-                        }
-                    }
-                    catch (err) {
-                        console.error('Failed to delete chat', err);
-                    }
-                }
-
-
-            } else {
-                console.error('Failed to disconnect chat');
-            }
+            await disconnectConnectionBot2Chat(connection.data.id, setBot2ChatConnections)
         } catch (err) {
             console.error('Something went wrong while disconnecting chat', err);
         } finally {
@@ -237,7 +184,7 @@ const Bot = ({ bot, chats, botsChatRelations, setBots, setBotsChatRelations }) =
         <BotView
             bot={bot}
             chatsForBot={chatsForBot}
-            botsChatRelations={botsChatRelations}
+            bot2ChatConnections={bot2ChatConnections}
             updatingStatusIds={updatingStatusIds}
             isEditingToken={isEditingToken}
             nameValue={nameValue}
@@ -246,8 +193,6 @@ const Bot = ({ bot, chats, botsChatRelations, setBots, setBotsChatRelations }) =
             saving={saving}
             error={error}
             handleEditToken={handleEditToken}
-            cancelEdit={cancelEdit}
-            saveBot={saveBot}
             deleteBot={deleteBot}
             handleKeyDown={handleKeyDown}
             setTokenValue={handleTokenChange}

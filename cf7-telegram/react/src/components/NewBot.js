@@ -1,29 +1,13 @@
 /* global cf7TelegramData */
 
 import React from 'react';
+import {apiCreateBot} from "../utils/api";
 
 const NewBot = ({ setBots }) => {
     const handleCreateBot = async () => {
-        const newBotData = {
-            title: 'Bot Name',
-            token: '[empty]',
-            status: 'publish',
-        };
-
         try {
-            const response = await fetch(cf7TelegramData.routes.bots, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-WP-Nonce': cf7TelegramData?.nonce,
-                },
-                body: JSON.stringify(newBotData)
-            });
-
-            if (!response.ok) throw new Error('Failed to create bot');
-
-            const createdBot = await response.json();
-            setBots(prev => [...prev, createdBot]);
+            let bot = await apiCreateBot('Bot Name', '[empty]')
+            setBots(prev => [...prev, bot])
         } catch (error) {
             console.error('Error creating bot:', error);
             alert('Failed to create bot');

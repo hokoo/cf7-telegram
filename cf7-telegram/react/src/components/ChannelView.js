@@ -1,32 +1,32 @@
 import React from 'react';
 
 const ChannelView = ({
-                         isEditingTitle,
-                         titleValue,
-                         saving,
-                         error,
-                         handleTitleClick,
-                         handleTitleChange,
-                         handleKeyDown,
-                         handleCancelEdit,
-                         saveTitle,
-                         botForChannel,
-                         chatsForChannel = [],
-                         formsForChannel = [],
-                         availableForms = [],
-                         showFormSelector,
-                         handleAddForm,
-                         handleFormSelect,
-                         handleRemoveForm,
-                         availableBots = [],
-                         handleBotSelect,
-                         handleRemoveBot,
-                         botsChatRelations = [],
-                         handleToggleChat
-                     }) => {
+    isEditingTitle,
+    titleValue,
+    saving,
+    error,
+    handleTitleClick,
+    handleTitleChange,
+    handleKeyDown,
+    handleCancelEdit,
+    saveTitle,
+    botForChannel,
+    chatsForChannel = [],
+    formsForChannel = [],
+    availableForms = [],
+    showFormSelector,
+    handleAddForm,
+    handleFormSelect,
+    handleRemoveForm,
+    availableBots = [],
+    handleBotSelect,
+    handleRemoveBot,
+    bot2ChatConnections = [],
+    handleToggleChat
+}) => {
     const renderedChats = (botForChannel?.chats || [])
         .map(chat => {
-            const relation = botsChatRelations.find(rel => rel.data.from === botForChannel.id && rel.data.to === chat.id);
+            const relation = bot2ChatConnections.find(rel => rel.data.from === botForChannel.id && rel.data.to === chat.id);
             const statusMeta = relation?.data?.meta?.status?.[0] || null;
 
             if (statusMeta === 'pending') return null;
@@ -102,7 +102,7 @@ const ChannelView = ({
                         {renderedChats.map(chat => (
                             <li key={chat.id}>
                                 {chat.title.rendered} ({chat.status})
-                                <button onClick={() => handleToggleChat(chat.id)} style={{ marginLeft: '0.5em' }}>
+                                <button onClick={() => handleToggleChat(chat.id)} >
                                     {chat.status === 'Active' ? 'Pause' : 'Activate'}
                                 </button>
                             </li>

@@ -15,41 +15,42 @@ import {
     fetchFormsForChannels,
     fetchBotsForChannels,
     fetchBotsForChats,
-    fetchChatsForChannels
+    fetchChatsForChannels, apiDeleteChat
 } from './utils/api';
 
-const ChannelList = () => {
+const App = () => {
     const [client, setClient] = useState([]);
     const [forms, setForms] = useState([]);
     const [bots, setBots] = useState([]);
     const [chats, setChats] = useState([]);
     const [channels, setChannels] = useState([]);
-    const [formsRelations, setFormsRelations] = useState([]);
-    const [botsRelations, setBotsRelations] = useState([]);
-    const [chatsRelations, setChatsRelations] = useState([]);
-    const [botsChatRelations, setBotsChatRelations] = useState([]);
+    const [form2ChannelRelations, setForm2ChannelRelations] = useState([]);
+    const [bot2ChannelRelations, setBot2ChannelRelations] = useState([]);
+    const [chat2ChannelRelations, setChat2ChannelRelations] = useState([]);
+    const [bot2ChatConnections, setBot2ChatConnections] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    // Run once when the component mounts.
     useEffect(() => {
         fetchClient().then(setClient);
         fetchForms().then(setForms);
         fetchBots().then(setBots);
         fetchChats().then(setChats);
-        fetchFormsForChannels().then(setFormsRelations);
-        fetchBotsForChannels().then(setBotsRelations);
-        fetchChatsForChannels().then(setChatsRelations);
-        loadBotsChatRelations();
+        fetchFormsForChannels().then(setForm2ChannelRelations);
+        fetchBotsForChannels().then(setBot2ChannelRelations);
+        fetchChatsForChannels().then(setChat2ChannelRelations);
+        loadBot2ChatConnections();
 
         const interval = setInterval(() => {
-            loadBotsChatRelations();
+            loadBot2ChatConnections();
         }, 10000); // refresh every 10 seconds
 
         return () => clearInterval(interval);
     }, []);
 
-    const loadBotsChatRelations = () => {
-        fetchBotsForChats().then((relations) => {
-            const mapped = relations.map(rel => {
+    const loadBot2ChatConnections = () => {
+        fetchBotsForChats().then((connections) => {
+            const mapped = connections.map(rel => {
                 const status = rel.data?.meta?.status?.[0];
                 return {
                     ...rel,
@@ -59,7 +60,7 @@ const ChannelList = () => {
                     }
                 };
             });
-            setBotsChatRelations(mapped);
+            setBot2ChatConnections(mapped);
         });
     };
 
@@ -74,6 +75,23 @@ const ChannelList = () => {
                 setLoading(false);
             });
     }, []);
+
+    // When chats has a chat that is not in bot2ChatConnections, destroy it.
+    useEffect( () => {
+        const chatIdsInBot2ChatConnections = bot2ChatConnections.map(rel => rel.data.to);
+        const chatsToRemove = chats.filter(chat => !chatIdsInBot2ChatConnections.includes(chat.id));
+        const chatIdsToRemove = chatsToRemove.map(chat => chat.id);
+        const deletePromises = chatIdsToRemove.map(chatId => apiDeleteChat(chatId));
+        Promise.all(deletePromises)
+            .then(() => {
+                setChats(chats.filter(chat => chatIdsInBot2ChatConnections.includes(chat.id)));
+            })
+            .catch(error => {
+                console.error("Error deleting chats:", error);
+            });
+        },
+        [chats, bot2ChatConnections]
+    )
 
     if (loading) return <div>Loading channels...</div>;
     if (channels.length === 0) return <div>No channels found</div>;
@@ -92,9 +110,11 @@ const ChannelList = () => {
                             <Bot
                                 bot={bot}
                                 chats={chats}
-                                botsChatRelations={botsChatRelations}
+                                bot2ChatConnections={bot2ChatConnections}
                                 setBots={setBots}
-                                setBotsChatRelations={setBotsChatRelations}
+                                setBot2ChatConnections={setBot2ChatConnections}
+                                bot2ChannelRelations={bot2ChannelRelations}
+                                setChat2ChannelRelations={setChat2ChannelRelations}
                             />
                         </div>
                     ))}
@@ -112,15 +132,14 @@ const ChannelList = () => {
                             <Channel
                                 channel={channel}
                                 forms={forms}
-                                formsRelations={formsRelations}
-                                setFormsRelations={setFormsRelations}
+                                form2ChannelRelations={form2ChannelRelations}
+                                setForm2ChannelRelations={setForm2ChannelRelations}
                                 bots={bots}
-                                botsRelations={botsRelations}
-                                setBotsRelations={setBotsRelations}
+                                bot2ChannelRelations={bot2ChannelRelations}
                                 chats={chats}
-                                chatsRelations={chatsRelations}
-                                botsChatRelations={botsChatRelations}
-                                setChatsRelations={setChatsRelations}
+                                chat2ChannelRelations={chat2ChannelRelations}
+                                setChat2ChannelRelations={setChat2ChannelRelations}
+                                bot2ChatConnections={bot2ChatConnections}
                             />
                         </div>
                     ))}
@@ -130,4 +149,4 @@ const ChannelList = () => {
     );
 };
 
-export default ChannelList;
+export default App;

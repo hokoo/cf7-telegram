@@ -1,11 +1,11 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
-import ChannelList from './ChannelList';
+import App from './App';
 
 const root = ReactDOM.createRoot(document.getElementById('settings-content'));
 root.render(
     <React.StrictMode>
-        <ChannelList />
+        <App />
     </React.StrictMode>
 );

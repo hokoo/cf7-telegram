@@ -2,20 +2,27 @@
 
 import React, { useState, useEffect } from 'react';
 import ChannelView from './ChannelView';
+import {
+    connectBot2Channel,
+    connectChat2Channel,
+    connectForm2Channel, disconnectConnectionBot2Channel,
+    disconnectConnectionChat2Channel,
+    disconnectConnectionForm2Channel
+} from "../utils/main";
+import { apiSaveChannel} from "../utils/api";
 
 const Channel = ({
-                     channel,
-                     forms,
-                     formsRelations,
-                     setFormsRelations,
-                     bots,
-                     botsRelations,
-                     setBotsRelations,
-                     chats,
-                     chatsRelations,
-                     botsChatRelations,
-                     setChatsRelations
-                 }) => {
+    channel,
+    forms,
+    form2ChannelRelations,
+    setForm2ChannelRelations,
+    bots,
+    bot2ChannelRelations,
+    chats,
+    chat2ChannelRelations,
+    setChat2ChannelRelations,
+    bot2ChatConnections
+}) => {
     const [botForChannel, setBotForChannel] = useState(null);
     const [chatsForChannel, setChatsForChannel] = useState([]);
     const [formsForChannel, setFormsForChannel] = useState([]);
@@ -29,18 +36,18 @@ const Channel = ({
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        const botRelation = botsRelations.find(r => r.data.to === channel.id);
+        const botRelation = bot2ChannelRelations.find(r => r.data.to === channel.id);
         if (!botRelation) return setBotForChannel(null);
         const bot = bots.find(b => b.id === botRelation.data.from);
         if (!bot) return setBotForChannel(null);
 
-        const botChatRelations = botsChatRelations.filter(r => r.data.from === bot.id);
+        const botChatRelations = bot2ChatConnections.filter(r => r.data.from === bot.id);
         const botChats = chats
             .map(chat => {
                 const relation = botChatRelations.find(r => r.data.to === chat.id);
                 if (!relation) return null;
 
-                const hasChannelRelation = chatsRelations.some(r => r.data.from === chat.id && r.data.to === channel.id);
+                const hasChannelRelation = chat2ChannelRelations.some(r => r.data.from === chat.id && r.data.to === channel.id);
 
                 return {
                     ...chat,
@@ -52,63 +59,49 @@ const Channel = ({
 
         setBotForChannel({ ...bot, chats: botChats });
         setChatsForChannel(botChats.filter(chat => chat.status === 'active'));
-    }, [channel.id, bots, botsRelations, botsChatRelations, chats, chatsRelations]);
+    }, [channel.id, bots, bot2ChannelRelations, bot2ChatConnections, chats, chat2ChannelRelations]);
 
     useEffect(() => {
-        const relatedIds = formsRelations.filter(r => r.data?.to === channel.id).map(r => r.data.from);
+        const relatedIds = form2ChannelRelations.filter(r => r.data?.to === channel.id).map(r => r.data.from);
         const linked = forms.filter(f => relatedIds.includes(f.id));
         const unlinked = forms.filter(f => !relatedIds.includes(f.id));
         setFormsForChannel(linked);
         setAvailableForms(unlinked);
-    }, [forms, formsRelations, channel.id]);
+    }, [forms, form2ChannelRelations, channel.id]);
 
     useEffect(() => {
-        const currentBotRelation = botsRelations.find(r => r.data.to === channel.id);
+        const currentBotRelation = bot2ChannelRelations.find(r => r.data.to === channel.id);
         const usedBotId = currentBotRelation?.data.from;
         const unlinkedBots = bots.filter(bot => bot.id !== usedBotId);
         setAvailableBots(unlinkedBots);
-    }, [bots, botsRelations, channel.id]);
+    }, [bots, bot2ChannelRelations, channel.id]);
 
     const handleAddForm = () => setShowFormSelector(prev => !prev);
 
     const handleFormSelect = async (event) => {
         const formId = parseInt(event.target.value, 10);
-        try {
-            const response = await fetch(cf7TelegramData.routes.relations.form2channel, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-WP-Nonce': cf7TelegramData?.nonce,
-                },
-                body: JSON.stringify({ from: formId, to: channel.id }),
-            });
 
-            if (response.status !== 200) throw new Error('Failed to assign form');
-            const newRelation = await response.json();
-            setFormsRelations(prev => [...prev, { data: newRelation }]);
-            setShowFormSelector(false);
+        try {
+            await connectForm2Channel(formId, channel.id, setForm2ChannelRelations)
         } catch (err) {
             console.error(err);
             alert('Something went wrong while assigning the form');
+        } finally {
+            setShowFormSelector(false);
         }
     };
 
     const handleRemoveForm = async (formId) => {
-        const relation = formsRelations.find(r => r.data.from === formId && r.data.to === channel.id);
-        if (!relation) return;
+        const connection = form2ChannelRelations.find(r => r.data.from === formId && r.data.to === channel.id);
 
-        const confirmDelete = window.confirm('Are you sure you want to remove this form from the channel?');
-        if (!confirmDelete) return;
+        if (
+            !connection ||
+            !window.confirm('Are you sure you want to remove this form from the channel?')
+        )
+            return;
 
         try {
-            const response = await fetch(`${cf7TelegramData.routes.relations.form2channel}${relation.data.id}`, {
-                method: 'DELETE',
-                headers: {
-                    'X-WP-Nonce': cf7TelegramData?.nonce,
-                },
-            });
-            if (response.status !== 200) throw new Error('Failed to remove form');
-            setFormsRelations(prev => prev.filter(r => r.data.id !== relation.data.id));
+            await disconnectConnectionForm2Channel(connection.data.id, setForm2ChannelRelations)
         } catch (err) {
             console.error(err);
             alert('Failed to remove form');
@@ -116,43 +109,12 @@ const Channel = ({
     };
 
     const handleToggleChat = async (chatId) => {
-        const relation = chatsRelations.find(r => r.data.from === chatId && r.data.to === channel.id);
+        let connection = chat2ChannelRelations.find(r => r.data.from === chatId && r.data.to === channel.id);
 
-        if (!relation) {
-            try {
-                const response = await fetch(cf7TelegramData.routes.relations.chat2channel, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-WP-Nonce': cf7TelegramData?.nonce,
-                    },
-                    body: JSON.stringify({ from: chatId, to: channel.id })
-                });
-
-                if (!response.ok) throw new Error('Failed to assign chat');
-
-                const newRelation = await response.json();
-                setChatsRelations(prev => [...prev, { data: newRelation }]);
-            } catch (err) {
-                console.error(err);
-                alert('Failed to assign chat');
-            }
+        if (!connection) {
+            await connectChat2Channel(chatId, channel.id, setChat2ChannelRelations);
         } else {
-            try {
-                const response = await fetch(`${cf7TelegramData.routes.relations.chat2channel}${relation.data.id}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'X-WP-Nonce': cf7TelegramData?.nonce,
-                    },
-                });
-
-                if (!response.ok) throw new Error('Failed to remove chat');
-
-                setChatsRelations(prev => prev.filter(r => r.data.id !== relation.data.id));
-            } catch (err) {
-                console.error(err);
-                alert('Failed to remove chat');
-            }
+            await disconnectConnectionChat2Channel(connection.data.id, setChat2ChannelRelations);
         }
     };
 
@@ -160,18 +122,7 @@ const Channel = ({
         const botId = parseInt(event.target.value, 10);
 
         try {
-            const response = await fetch(cf7TelegramData.routes.relations.bot2channel, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-WP-Nonce': cf7TelegramData?.nonce,
-                },
-                body: JSON.stringify({ from: botId, to: channel.id }),
-            });
-
-            if (response.status !== 200) throw new Error('Failed to assign bot');
-            const newRelation = await response.json();
-            setBotsRelations(prev => [...prev.filter(r => r.data.to !== channel.id), { data: newRelation }]);
+            await connectBot2Channel(botId, channel.id);
         } catch (err) {
             console.error(err);
             alert('Failed to assign bot');
@@ -179,21 +130,12 @@ const Channel = ({
     };
 
     const handleRemoveBot = async () => {
-        const relation = botsRelations.find(r => r.data.to === channel.id);
+        const relation = bot2ChannelRelations.find(r => r.data.to === channel.id);
+
         if (!relation) return;
 
-        const confirmRemove = window.confirm('Are you sure you want to remove this bot from the channel?');
-        if (!confirmRemove) return;
-
         try {
-            const response = await fetch(`${cf7TelegramData.routes.relations.bot2channel}${relation.data.id}`, {
-                method: 'DELETE',
-                headers: {
-                    'X-WP-Nonce': cf7TelegramData?.nonce,
-                },
-            });
-            if (response.status !== 200) throw new Error('Failed to remove bot');
-            setBotsRelations(prev => prev.filter(r => r.data.id !== relation.data.id));
+            await disconnectConnectionBot2Channel(relation.data.id);
         } catch (err) {
             console.error(err);
             alert('Failed to remove bot');
@@ -228,16 +170,7 @@ const Channel = ({
         setError(null);
 
         try {
-            const response = await fetch(`${cf7TelegramData.routes.channels}${channel.id}`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-WP-Nonce': cf7TelegramData?.nonce,
-                },
-                body: JSON.stringify({ title: titleValue }),
-            });
-
-            if (response.status !== 200) throw new Error('Failed to update title');
+            await apiSaveChannel(channel.id, titleValue);
             setIsEditingTitle(false);
         } catch (err) {
             console.error(err);
@@ -269,7 +202,7 @@ const Channel = ({
             availableBots={availableBots}
             handleBotSelect={handleBotSelect}
             handleRemoveBot={handleRemoveBot}
-            botsChatRelations={botsChatRelations}
+            bot2ChatConnections={bot2ChatConnections}
             handleToggleChat={handleToggleChat}
         />
     );
