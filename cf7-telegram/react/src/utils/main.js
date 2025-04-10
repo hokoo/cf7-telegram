@@ -45,7 +45,7 @@ export const disconnectConnectionForm2Channel = async (connectionId, setForm2Cha
 export const connectChat2Channel = async (chatId, channelId, setChat2ChannelConnections) => {
     const result = await apiConnectChat2Channel(chatId, channelId);
     if (result) {
-        setChat2ChannelConnections(prev => [...prev, result]);
+        setChat2ChannelConnections(prev => [...prev, { data: result }]);
     }
 };
 

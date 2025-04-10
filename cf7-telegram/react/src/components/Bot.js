@@ -139,7 +139,7 @@ const Bot = ({
             let res = setBot2ChatConnectionStatus(connection.data.id, newStatus, setBot2ChatConnections);
 
             // If the status was 'pending', we need to connect the chat to the all channels this bot is connected to.
-            if (res && currentStatus === 'pending') {
+            if (currentStatus === 'pending') {
                 const channels = bot2ChannelConnections.filter(c => c.data.from === bot.id);
                 for (const channel of channels) {
                     await connectChat2Channel(chatId, channel.data.to, setChat2ChannelConnections)
