@@ -82,10 +82,13 @@ const App = () => {
         const chatIdsInBot2ChatConnections = bot2ChatConnections.map(rel => rel.data.to);
         const chatsToRemove = chats.filter(chat => !chatIdsInBot2ChatConnections.includes(chat.id));
         const chatIdsToRemove = chatsToRemove.map(chat => chat.id);
+
+        if (chatIdsToRemove.length === 0) return;
+
         const deletePromises = chatIdsToRemove.map(chatId => apiDeleteChat(chatId));
         Promise.all(deletePromises)
             .then(() => {
-                setChats(chats.filter(chat => chatIdsInBot2ChatConnections.includes(chat.id)));
+                setChats(currentChats => currentChats.filter(chat => chatIdsInBot2ChatConnections.includes(chat.id)));
             })
             .catch(error => {
                 console.error("Error deleting chats:", error);
