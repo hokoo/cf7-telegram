@@ -6,12 +6,11 @@ import {
     connectBot2Channel,
     connectChat2Channel,
     connectForm2Channel,
-    deleteChannel,
-    disconnectConnectionBot2Channel,
+    deleteChannel, disconnectConnectionBot2Channel,
     disconnectConnectionChat2Channel,
     disconnectConnectionForm2Channel
 } from "../utils/main";
-import { apiSaveChannel} from "../utils/api";
+import {apiConnectBot2Channel, apiDisconnectBot2Channel, apiSaveChannel} from "../utils/api";
 
 const Channel = ({
     channel,
@@ -21,6 +20,7 @@ const Channel = ({
     setForm2ChannelConnections,
     bots,
     bot2ChannelConnections,
+    setBot2ChannelConnections,
     chats,
     chat2ChannelConnections,
     setChat2ChannelConnections,
@@ -125,7 +125,7 @@ const Channel = ({
         const botId = parseInt(event.target.value, 10);
 
         try {
-            await connectBot2Channel(botId, channel.id);
+            await connectBot2Channel(botId, channel.id, setBot2ChannelConnections);
         } catch (err) {
             console.error(err);
             alert('Failed to assign bot');
@@ -138,7 +138,7 @@ const Channel = ({
         if (!connection) return;
 
         try {
-            await disconnectConnectionBot2Channel(connection.data.id);
+            await disconnectConnectionBot2Channel(connection.data.id, setBot2ChannelConnections);
         } catch (err) {
             console.error(err);
             alert('Failed to remove bot');
