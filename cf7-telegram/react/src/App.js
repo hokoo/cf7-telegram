@@ -15,7 +15,8 @@ import {
     fetchFormsForChannels,
     fetchBotsForChannels,
     fetchBotsForChats,
-    fetchChatsForChannels, apiDeleteChat
+    fetchChatsForChannels, 
+    apiDeleteChat
 } from './utils/api';
 
 const App = () => {
@@ -24,9 +25,9 @@ const App = () => {
     const [bots, setBots] = useState([]);
     const [chats, setChats] = useState([]);
     const [channels, setChannels] = useState([]);
-    const [form2ChannelRelations, setForm2ChannelRelations] = useState([]);
-    const [bot2ChannelRelations, setBot2ChannelRelations] = useState([]);
-    const [chat2ChannelRelations, setChat2ChannelRelations] = useState([]);
+    const [form2ChannelConnections, setForm2ChannelConnections] = useState([]);
+    const [bot2ChannelConnections, setBot2ChannelConnections] = useState([]);
+    const [chat2ChannelConnections, setChat2ChannelConnections] = useState([]);
     const [bot2ChatConnections, setBot2ChatConnections] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -36,9 +37,9 @@ const App = () => {
         fetchForms().then(setForms);
         fetchBots().then(setBots);
         fetchChats().then(setChats);
-        fetchFormsForChannels().then(setForm2ChannelRelations);
-        fetchBotsForChannels().then(setBot2ChannelRelations);
-        fetchChatsForChannels().then(setChat2ChannelRelations);
+        fetchFormsForChannels().then(setForm2ChannelConnections);
+        fetchBotsForChannels().then(setBot2ChannelConnections);
+        fetchChatsForChannels().then(setChat2ChannelConnections);
         loadBot2ChatConnections();
 
         const interval = setInterval(() => {
@@ -113,8 +114,8 @@ const App = () => {
                                 bot2ChatConnections={bot2ChatConnections}
                                 setBots={setBots}
                                 setBot2ChatConnections={setBot2ChatConnections}
-                                bot2ChannelRelations={bot2ChannelRelations}
-                                setChat2ChannelRelations={setChat2ChannelRelations}
+                                bot2ChannelConnections={bot2ChannelConnections}
+                                setChat2ChannelConnections={setChat2ChannelConnections}
                             />
                         </div>
                     ))}
@@ -133,14 +134,14 @@ const App = () => {
                                 channel={channel}
                                 forms={forms}
                                 setChannels={setChannels}
-                                form2ChannelConnections={form2ChannelRelations}
-                                setForm2ChannelConnections={setForm2ChannelRelations}
+                                form2ChannelConnections={form2ChannelConnections}
+                                setForm2ChannelConnections={setForm2ChannelConnections}
                                 bots={bots}
-                                bot2ChannelConnections={bot2ChannelRelations}
-                                setBot2ChannelConnections={setBot2ChannelRelations}
+                                bot2ChannelConnections={bot2ChannelConnections}
+                                setBot2ChannelConnections={setBot2ChannelConnections}
                                 chats={chats}
-                                chat2ChannelConnections={chat2ChannelRelations}
-                                setChat2ChannelConnections={setChat2ChannelRelations}
+                                chat2ChannelConnections={chat2ChannelConnections}
+                                setChat2ChannelConnections={setChat2ChannelConnections}
                                 bot2ChatConnections={bot2ChatConnections}
                             />
                         </div>
