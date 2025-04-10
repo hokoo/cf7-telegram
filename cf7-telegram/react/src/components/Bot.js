@@ -1,6 +1,6 @@
 /* global cf7TelegramData */
 
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import BotView from './BotView';
 import {
     connectChat2Channel, disconnectConnectionBot2Chat, setBot2ChatConnectionStatus
@@ -26,6 +26,9 @@ const Bot = ({
     const [updatingStatusIds, setUpdatingStatusIds] = useState([]);
     const [online, setOnline] = useState(null);
 
+    const timeoutRef = useRef(null);
+    const isUnmountedRef = useRef(false);
+
     const relatedChatIds = bot2ChatConnections
         .filter(connection => connection.data.from === bot.id)
         .map(connection => connection.data.to);
@@ -33,10 +36,33 @@ const Bot = ({
     const chatsForBot = chats.filter(chat => relatedChatIds.includes(chat.id));
 
     useEffect(() => {
-        // @todo recheck when the bot is not online.
+        // Clear timeout on unmount.
+        return () => {
+            isUnmountedRef.current = true;
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+            }
+        };
+    }, []);
+
+    useEffect(() => {
+        const scheduleNextPing = () => {
+            timeoutRef.current = setTimeout(() => {
+                pingBot();
+            }, 5000);
+        };
+
         if (online === null) {
-            pingBot();
+            pingBot(); // First ping.
+        } else if (online === false) {
+            scheduleNextPing();
         }
+
+        return () => {
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+            }
+        };
     }, [online]);
 
     const handleEditToken = () => {
@@ -52,9 +78,12 @@ const Bot = ({
 
     const pingBot = async () => {
         try {
-            let pingedBot = await apiPingBot(bot.id);
+            const pingedBot = await apiPingBot(bot.id);
+
+            if (isUnmountedRef.current) return;
 
             setOnline(pingedBot.online);
+
             if (pingedBot.botName) {
                 setNameValue(pingedBot.botName);
                 setBots(prev => prev.map(b => (b.id === bot.id ? {
@@ -63,7 +92,10 @@ const Bot = ({
             }
         } catch (err) {
             console.error('Ping failed', err);
-            setOnline(false);
+
+            if (!isUnmountedRef.current) {
+                setOnline(false);
+            }
         }
     };
 
