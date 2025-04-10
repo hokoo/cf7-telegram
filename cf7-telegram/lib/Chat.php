@@ -78,7 +78,7 @@ class Chat extends Entity implements WPPostAble{
 	}
 
 	public function getName(): string {
-		return trim( $this->getTitle() ?? $this->getFirstName() . ' ' . $this->getLastName() );
+		return trim( $this->getTitle() ?: $this->getFirstName() . ' ' . $this->getLastName() );
 	}
 
 	public function isPrivateChat(): bool {
@@ -124,8 +124,8 @@ class Chat extends Entity implements WPPostAble{
 	 * @throws ConnectionNotFound
 	 * @throws RelationNotFound
 	 */
-	public function setActive( Channel $channel ): Chat {
-		$this->setConnectionStatus( $channel, self::STATUS_ACTIVE );
+	public function setPending( Bot $bot ): Chat {
+		$this->setBotConnectionStatus( $bot, self::STATUS_PENDING );
 		return $this;
 	}
 
@@ -134,8 +134,8 @@ class Chat extends Entity implements WPPostAble{
 	 * @throws ConnectionNotFound
 	 * @throws RelationNotFound
 	 */
-	public function setPending( Channel $channel ): Chat {
-		$this->setConnectionStatus( $channel, self::STATUS_PENDING );
+	public function setActivated( Bot $bot ): Chat {
+		$this->setBotConnectionStatus( $bot, self::STATUS_ACTIVE );
 		return $this;
 	}
 
@@ -144,8 +144,8 @@ class Chat extends Entity implements WPPostAble{
 	 * @throws ConnectionNotFound
 	 * @throws RelationNotFound
 	 */
-	public function setMuted( Channel $channel ): Chat {
-		$this->setConnectionStatus( $channel, self::STATUS_MUTED );
+	public function setMuted( Bot $bot ): Chat {
+		$this->setBotConnectionStatus( $bot, self::STATUS_MUTED );
 		return $this;
 	}
 
@@ -154,8 +154,21 @@ class Chat extends Entity implements WPPostAble{
 	 * @throws ConnectionNotFound
 	 * @throws RelationNotFound
 	 */
-	private function setConnectionStatus( Channel $channel, string $status ): Chat {
-		$connection = $this->getConnection( $channel );
+	private function setChannelConnectionStatus( Channel $channel, string $status ): Chat {
+		$connection = $this->getChannelConnection( $channel );
+		$connection->meta->where( 'key', self::STATUS_KEY )->clear();
+		$connection->meta->add( new Meta( self::STATUS_KEY, $status ) );
+		$connection->update();
+		return $this;
+	}
+
+	/**
+	 * @throws ConnectionNotFound
+	 * @throws ConnectionWrongData
+	 * @throws RelationNotFound
+	 */
+	private function setBotConnectionStatus( Bot $bot, string $status ): Chat {
+		$connection = $this->getBotConnection( $bot );
 		$connection->meta->where( 'key', self::STATUS_KEY )->clear();
 		$connection->meta->add( new Meta( self::STATUS_KEY, $status ) );
 		$connection->update();
@@ -167,7 +180,7 @@ class Chat extends Entity implements WPPostAble{
 	 * @throws RelationNotFound
 	 */
 	public function getConnectionStatus( Channel $channel ): string {
-		$connection = $this->getConnection( $channel );
+		$connection = $this->getChannelConnection( $channel );
 		$meta = $connection->meta->where( 'key', self::STATUS_KEY )->first();
 		return $meta ? $meta->value : self::STATUS_PENDING;
 	}
@@ -176,9 +189,24 @@ class Chat extends Entity implements WPPostAble{
 	 * @throws ConnectionNotFound
 	 * @throws RelationNotFound
 	 */
-	private function getConnection( Channel $channel ): Connection {
+	private function getChannelConnection( Channel $channel ): Connection {
 		// Check if connection exists.
 		$connections = $this->client->getChat2ChannelRelation()->findConnections( new Query\Connection( $this->getPost()->ID, $channel->getPost()->ID ) );
+
+		if ( $connections->isEmpty() ) {
+			throw new ConnectionNotFound();
+		}
+
+		return $connections->first();
+	}
+
+	/**
+	 * @throws ConnectionNotFound
+	 * @throws RelationNotFound
+	 */
+	private function getBotConnection( Bot $bot ): Connection {
+		// Check if connection exists.
+		$connections = $this->client->getBot2ChatRelation()->findConnections( new Query\Connection( $bot->getPost()->ID, $this->getPost()->ID ) );
 
 		if ( $connections->isEmpty() ) {
 			throw new ConnectionNotFound();

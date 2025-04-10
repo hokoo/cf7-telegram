@@ -166,6 +166,27 @@ class Bot extends Entity implements wpPostAble{
 	/**
 	 * @throws RelationNotFound
 	 */
+	public function disconnectChat( Chat $chat ): self {
+		$chatID = $chat->getPost()->ID;
+		$this->client
+			->getBot2ChatRelation()
+			->detachConnections( new Query\Connection( $this->getPost()->ID, $chatID ) );
+
+		// Disconnect the chat from all channels of the bot.
+		foreach ( $this->getChannels()->getIterator() as $channel ) {
+			/** @var Channel $channel */
+			if ( ! $channel->hasChat( $chat ) ) {
+				continue;
+			}
+
+			$channel->disconnectChat( $chat );
+		}
+		return $this;
+	}
+
+	/**
+	 * @throws RelationNotFound
+	 */
 	public function hasChat( Chat $chat ): bool {
 		return $this->getChats()->contains( $chat );
 	}
@@ -330,21 +351,11 @@ class Bot extends Entity implements wpPostAble{
 				continue;
 			}
 
-
-			// Try to find out if the chat is already connected to the bot.
 			if ( ! $this->getChats()->contains( $chat ) ) {
-				$this->hasChat( $chat ) || $this->connectChat( $chat );
-
-				foreach ( $this->getChannels()->getIterator() as $channel ) {
-					/** @var Channel $channel */
-					if ( $channel->hasChat( $chat ) ) {
-						continue;
-					}
-
-					$channel->connectChat( $chat );
-					$chat->setPending( $channel );
-					$chat->setDate( $update->message->date );
-				}
+				$this->connectChat( $chat );
+				$chat->setPending( $this );
+				$chat->setDate( $update->message->date );
+				$chat->savePost();
 			}
 		}
 

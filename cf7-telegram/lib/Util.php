@@ -93,10 +93,11 @@ class Util {
 		$chat
 			->setChatID( $tg_chat->get( 'id' ) )
 			->setChatType( $tg_chat->get( 'type' ) )
-			->setTitle( $tg_chat->get( 'title' ) )
-			->setFirstName( $tg_chat->get( 'firstName' ) )
-			->setLastName( $tg_chat->get( 'lastName' ) )
-			->setUsername( $tg_chat->get( 'username' ) )
+			->setFirstName( $tg_chat->get( 'first_name' ) ?? '' )
+			->setLastName( $tg_chat->get( 'last_name' ) ?? '' )
+			->setUsername( $tg_chat->get( 'username' ) ?? '' )
+			->setTitle( '' )
+			->setTitle( $tg_chat->get( 'title' ) ?? $chat->getName() )
 			->publish();
 
 		return $chat;
