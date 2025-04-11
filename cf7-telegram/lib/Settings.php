@@ -60,6 +60,11 @@ HTML;
 
 			// Put this nonce to X-WP-Nonce header request.
 			'nonce'		        => wp_create_nonce( 'wp_rest' ),
+
+			'intervals' => [
+				'ping'      => defined( 'WPCF7TG_PING_INTERVAL' ) ? WPCF7TG_PING_INTERVAL : 5000,
+				'bot_fetch' => defined( 'WPCF7TG_UPDATES_INTERVAL' ) ? WPCF7TG_UPDATES_INTERVAL : 30000,
+			],
 			'l10n'		        => [
 				'channel' => [
 					'new_channel_name'  	    => __( 'New Channel Name', 'cf7-telegram' ),

@@ -82,7 +82,7 @@ const Bot = ({
     }, [online]);
 
     const scheduleNextPing = () => {
-        pingTimeoutRef.current = setTimeout(pingBot, 5000);
+        pingTimeoutRef.current = setTimeout(pingBot, cf7TelegramData.intervals.ping);
     };
 
     const scheduleNextFetch = () => {
@@ -92,7 +92,7 @@ const Bot = ({
             if (!isUnmountedRef.current && online === true) {
                 scheduleNextFetch();
             }
-        }, 30000);
+        }, cf7TelegramData.intervals.bot_fetch);
     }
 
     const handleFetchUpdates = async () => {
