@@ -70,6 +70,12 @@ export const apiConnectBot2Channel = async (botId, channelId) => {
     )
 }
 
+export const apiFetchUpdates = async (botId) => {
+    return await apiRequest(
+        `${cf7TelegramData.routes.bots}${botId}/fetch_updates`
+    )
+}
+
 export const apiDisconnectBot2Channel = async (connectionId) => {
     return await apiRequest(
         `${cf7TelegramData.routes.relations.bot2channel}${connectionId}`,

@@ -41,12 +41,6 @@ const App = () => {
         fetchBotsForChannels().then(setBot2ChannelConnections);
         fetchChatsForChannels().then(setChat2ChannelConnections);
         loadBot2ChatConnections();
-
-        const interval = setInterval(() => {
-            loadBot2ChatConnections();
-        }, 10000); // refresh every 10 seconds
-
-        return () => clearInterval(interval);
     }, []);
 
     const loadBot2ChatConnections = () => {
