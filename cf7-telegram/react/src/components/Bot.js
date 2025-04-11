@@ -16,7 +16,9 @@ const Bot = ({
     setBots,
     setBot2ChatConnections,
     bot2ChannelConnections,
-    setChat2ChannelConnections
+    setChat2ChannelConnections,
+    loadBot2ChatConnections,
+    loadChats
 }) => {
     const [isEditingToken, setIsEditingToken] = useState(false);
     const [nameValue, setNameValue] = useState(bot.title.rendered);
@@ -100,7 +102,18 @@ const Bot = ({
 
         isFetchingRef.current = true;
         try {
-            await apiFetchUpdates(bot.id);
+            let updates = await apiFetchUpdates(bot.id);
+
+            if (updates.hasNewConnections) {
+                // This means that new or an existing chat has been connected to another bot.
+                // Anyway, fetch bot2Chat connections first.
+                loadBot2ChatConnections();
+            }
+
+            if (updates.hasNewChats) {
+                // If there are new chats, we need to fetch the chats again.
+                loadChats();
+            }
         } catch (err) {
             console.error('Fetch updates failed', err);
         } finally {

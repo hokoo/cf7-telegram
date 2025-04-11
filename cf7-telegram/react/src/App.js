@@ -36,12 +36,19 @@ const App = () => {
         fetchClient().then(setClient);
         fetchForms().then(setForms);
         fetchBots().then(setBots);
-        fetchChats().then(setChats);
+
+        // That's crucial to load the bot2ChatConnections first so that chat-garbage-collector would not delete chats.
+        loadBot2ChatConnections();
+        loadChats();
+
         fetchFormsForChannels().then(setForm2ChannelConnections);
         fetchBotsForChannels().then(setBot2ChannelConnections);
         fetchChatsForChannels().then(setChat2ChannelConnections);
-        loadBot2ChatConnections();
     }, []);
+
+    const loadChats = () => {
+        fetchChats().then(setChats);
+    }
 
     const loadBot2ChatConnections = () => {
         fetchBotsForChats().then((connections) => {
@@ -69,7 +76,7 @@ const App = () => {
             });
     }, []);
 
-    // When chats has a chat that is not in bot2ChatConnections, destroy it.
+    // Chat-garbage collector. When chats has a chat that is not in bot2ChatConnections, destroy it.
     useEffect(() => {
         const chatIdsInBot2ChatConnections = bot2ChatConnections.map(rel => rel.data.to);
         const chatsToRemove = chats.filter(chat => !chatIdsInBot2ChatConnections.includes(chat.id));
@@ -107,6 +114,8 @@ const App = () => {
                                 setBot2ChatConnections={setBot2ChatConnections}
                                 bot2ChannelConnections={bot2ChannelConnections}
                                 setChat2ChannelConnections={setChat2ChannelConnections}
+                                loadBot2ChatConnections={loadBot2ChatConnections}
+                                loadChats={loadChats}
                             />
                         </div>))}
                 </div>
