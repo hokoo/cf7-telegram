@@ -2,6 +2,7 @@
 
 namespace iTRON\cf7Telegram;
 
+use Illuminate\Support\Collection;
 use iTRON\wpPostAble\Exceptions\wppaCreatePostException;
 use iTRON\wpPostAble\Exceptions\wppaLoadPostException;
 use iTRON\wpPostAble\Exceptions\wppaSavePostException;
@@ -88,7 +89,7 @@ class Util {
 	/**
 	 * @throws wppaSavePostException
 	 */
-	static function createChat( \Telegram\Bot\Objects\Chat $tg_chat ): Chat {
+	static function createChat( Collection $tg_chat ): Chat {
 		$chat = new Chat();
 		$chat
 			->setChatID( $tg_chat->get( 'id' ) )
