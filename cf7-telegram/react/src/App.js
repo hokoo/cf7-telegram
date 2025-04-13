@@ -105,19 +105,19 @@ const App = () => {
                 </div>
 
                 <div className="bot-list">
-                    {bots.map(bot => (<div className="entity-container bot" key={bot.id} id={`bot-${bot.id}`}>
-                            <Bot
-                                bot={bot}
-                                chats={chats}
-                                bot2ChatConnections={bot2ChatConnections}
-                                setBots={setBots}
-                                setBot2ChatConnections={setBot2ChatConnections}
-                                bot2ChannelConnections={bot2ChannelConnections}
-                                setChat2ChannelConnections={setChat2ChannelConnections}
-                                loadBot2ChatConnections={loadBot2ChatConnections}
-                                loadChats={loadChats}
-                            />
-                        </div>))}
+                    {bots.map(bot => (
+                        <Bot
+                            bot={bot}
+                            chats={chats}
+                            bot2ChatConnections={bot2ChatConnections}
+                            setBots={setBots}
+                            setBot2ChatConnections={setBot2ChatConnections}
+                            bot2ChannelConnections={bot2ChannelConnections}
+                            setChat2ChannelConnections={setChat2ChannelConnections}
+                            loadBot2ChatConnections={loadBot2ChatConnections}
+                            loadChats={loadChats}
+                        />
+                    ))}
                 </div>
             </div>
 
@@ -128,22 +128,21 @@ const App = () => {
                 </div>
                 <div className="channel-list">
                     {channels.map(channel => (
-                        <div className="entity-container channel" key={channel.id} id={`channel-${channel.id}`}>
-                            <Channel
-                                channel={channel}
-                                forms={forms}
-                                setChannels={setChannels}
-                                form2ChannelConnections={form2ChannelConnections}
-                                setForm2ChannelConnections={setForm2ChannelConnections}
-                                bots={bots}
-                                bot2ChannelConnections={bot2ChannelConnections}
-                                setBot2ChannelConnections={setBot2ChannelConnections}
-                                chats={chats}
-                                chat2ChannelConnections={chat2ChannelConnections}
-                                setChat2ChannelConnections={setChat2ChannelConnections}
-                                bot2ChatConnections={bot2ChatConnections}
-                            />
-                        </div>))}
+                        <Channel
+                            channel={channel}
+                            forms={forms}
+                            setChannels={setChannels}
+                            form2ChannelConnections={form2ChannelConnections}
+                            setForm2ChannelConnections={setForm2ChannelConnections}
+                            bots={bots}
+                            bot2ChannelConnections={bot2ChannelConnections}
+                            setBot2ChannelConnections={setBot2ChannelConnections}
+                            chats={chats}
+                            chat2ChannelConnections={chat2ChannelConnections}
+                            setChat2ChannelConnections={setChat2ChannelConnections}
+                            bot2ChatConnections={bot2ChatConnections}
+                        />
+                    ))}
                 </div>
             </div>
         </div>);

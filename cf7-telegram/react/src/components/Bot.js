@@ -39,7 +39,6 @@ const Bot = ({
     const isUnmountedRef = useRef(false);
     const isFetchingRef = useRef(false);
 
-
     useEffect(() => {
         return () => {
             isUnmountedRef.current = true;
@@ -134,9 +133,12 @@ const Bot = ({
                 setBots(prev => prev.map(b => (
                     b.id === bot.id ? {
                         ...b,
-                        title: { ...b.title, rendered: pingedBot.botName }
+                        title: { ...b.title, rendered: pingedBot.botName },
+                        online: pingedBot.online
                     } : b
                 )));
+
+                await apiSaveBot(bot.id, pingedBot.botName, '')
             }
         } catch (err) {
             console.error('Ping failed', err);
@@ -163,9 +165,7 @@ const Bot = ({
         setError(null);
 
         try {
-            const response = await apiSaveBot(bot.id, nameValue, tokenValue)
-
-            if (!response) return;
+            await apiSaveBot(bot.id, '', tokenValue)
 
             setBots(prev => prev.map(b => (b.id === bot.id ? {
                 ...b, title: {...b.title, rendered: nameValue}, token: tokenValue

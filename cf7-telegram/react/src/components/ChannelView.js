@@ -1,6 +1,7 @@
 import React from 'react';
 
 const ChannelView = ({
+    channel,
     isEditingTitle,
     titleValue,
     saving,
@@ -23,7 +24,8 @@ const ChannelView = ({
     handleRemoveBot,
     bot2ChatConnections = [],
     handleToggleChat,
-    deleteChannel
+    deleteChannel,
+    getToggleButtonLabel
 }) => {
     const renderedChats = (botForChannel?.chats || [])
         .map(chat => {
@@ -47,120 +49,109 @@ const ChannelView = ({
         .filter(Boolean);
 
     return (
-        <div className="entity-wrapper channel-wrapper">
-            <div className="channel-title">
-                {isEditingTitle ? (
-                    <div className="edit-title">
-                        <input
-                            type="text"
-                            value={titleValue}
-                            onChange={handleTitleChange}
-                            onKeyDown={handleKeyDown}
-                            onBlur={() => {}}
-                            disabled={saving}
-                            autoFocus
-                        />
-                        <button onClick={saveTitle} disabled={saving}>💾</button>
-                        <button onClick={handleCancelEdit} disabled={saving}>❌</button>
-                        {saving && <span>⏳ Saving...</span>}
-                        {error && <p style={{color: 'red'}}>{error}</p>}
+        <div className="entity-container channel" key={channel.id} id={`channel-${channel.id}`}>
+            <div className="entity-wrapper channel-wrapper">
+                <div className={`frame channel-title-wrapper`}>
+                    <div className="columns">
+                        <div className="column title-column">
+                            <input
+                                className="edit-title"
+                                type="text"
+                                value={titleValue}
+                                onChange={handleTitleChange}
+                                onKeyDown={handleKeyDown}
+                                onBlur={saveTitle}
+                                disabled={saving}
+                                autoFocus
+                            />
+                        </div>
+
+                        <div className="column bot-column">
+                            {botForChannel ? (
+                                <div data-Bot-Id={botForChannel.id} className="bot-for-channel">
+                                    <span>{botForChannel.title.rendered}</span>
+                                    <button
+                                        className="detach-button detach-bot-button crux"
+                                        onClick={handleRemoveBot}
+                                    ></button>
+                                </div>
+                            ) : (
+                                <>
+                                    {availableBots.length > 0 && (
+                                        <select onChange={handleBotSelect} defaultValue="">
+                                            <option value="" disabled>Select bot</option>
+                                            {availableBots.map(bot => (
+                                                <option key={bot.id} value={bot.id}>{bot.title.rendered}</option>
+                                            ))}
+                                        </select>
+                                    )}
+                                </>
+                            )}
+                        </div>
                     </div>
-                ) : (
-                    <h4 onClick={handleTitleClick} style={{cursor: 'pointer'}}>
-                        {titleValue} <span style={{marginLeft: 6, fontSize: '0.9em'}}>✏️</span>
-                    </h4>
-                )}
-            </div>
+                </div>
 
-            <div className="frame bots">
-                <h5>Bot</h5>
-                {botForChannel ? (
-                    <div id={botForChannel.id} className="bot-for-channel">
-                        <p>{botForChannel.title.rendered}</p>
-                        <button
-                            className="detach-button detach-bot-button"
-                            onClick={handleRemoveBot}
-                        >
-                            Detach Bot
-                        </button>
-                    </div>
-                ) : (
-                    <>
-                        <p>No bot assigned to this channel</p>
-                        {availableBots.length > 0 && (
-                            <select onChange={handleBotSelect} defaultValue="">
-                                <option value="" disabled>Select bot</option>
-                                {availableBots.map(bot => (
-                                    <option key={bot.id} value={bot.id}>{bot.title.rendered}</option>
-                                ))}
-                            </select>
-                        )}
-                    </>
-                )}
-            </div>
-
-            <div className="frame chats">
-                <h5>Chats</h5>
-                {renderedChats.length > 0 ? (
-                    <ul>
-                        {renderedChats.map(chat => (
-                            <li key={chat.id}>
-                                {chat.title.rendered} ({chat.status})
-                                <button onClick={() => handleToggleChat(chat.id)}>
-                                    {chat.status === 'Active' ? 'Pause' : 'Activate'}
-                                </button>
-                            </li>
-                        ))}
-                    </ul>
-                ) : (
-                    <p>No chats assigned to this channel</p>
-                )}
-            </div>
-
-            <div className="frame forms">
-                <h5>Forms</h5>
-                <button
-                    className="add-button add-form-button"
-                    onClick={handleAddForm}
-                >
-                    Add Form
-                </button>
-                {showFormSelector && (
-                    <select onChange={handleFormSelect} defaultValue="">
-                        <option value="" disabled>Select form</option>
-                        {availableForms.map(form => (
-                            <option key={form.id} value={form.id}>{form.title}</option>
-                        ))}
-                    </select>
-                )}
-
-                {formsForChannel.length > 0 ? (
-                    <ul>
-                        {formsForChannel.map(form => (
-                            <li key={form.id}>
-                                {form.title}
-                                <button
-                                    className="detach-button detach-form-button"
-                                    onClick={() => handleRemoveForm(form.id)}
+                <div className="frame chats">
+                    {renderedChats.length > 0 ? (
+                        <ul>
+                            {renderedChats.map(chat => (
+                                <li
+                                    key={chat.id}
+                                    className={`chat chat-${chat.id} ${chat.status.toLowerCase()}`}
+                                    onClick={() => handleToggleChat(chat.id, chat.status)}
+                                    title={getToggleButtonLabel(chat.status)}
                                 >
-                                    Detach Form
-                                </button>
-                            </li>
-                        ))}
-                    </ul>
-                ) : (
-                    <p>No forms assigned to this channel</p>
-                )}
-            </div>
+                                    <span className={`chat-username`}>{chat.title.rendered}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <span className="no-chats-found">No chats assigned to this channel</span>
+                    )}
+                </div>
+
+                <div className="frame forms">
+                    <button
+                        className="add-button add-form-button"
+                        onClick={handleAddForm}
+                    >
+                        {!showFormSelector ? (`Add Form`) : (`Cancel`)}
+                    </button>
+                    {showFormSelector && (
+                        <select onChange={handleFormSelect} defaultValue="">
+                            <option value="" disabled>Select form</option>
+                            {availableForms.map(form => (
+                                <option key={form.id} value={form.id}>{form.title}</option>
+                            ))}
+                        </select>
+                    )}
+
+                    {formsForChannel.length > 0 ? (
+                        <ul className={`form-list`}>
+                            {formsForChannel.map(form => (
+                                <li key={form.id}>
+                                    {form.title}
+                                    <button
+                                        className="detach-button crux detach-form-button"
+                                        onClick={() => handleRemoveForm(form.id)}
+                                    ></button>
+                                </li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <p>No forms assigned to this channel</p>
+                    )}
+                </div>
 
 
-            <div className="status-bar">
-                <button
-                    className="remove-channel-button"
-                    onClick={deleteChannel}
-                    disabled={saving}>
-                    Remove Channel
-                </button>
+                <div className="frame status-bar">
+                    <button
+                        className="remove-channel-button"
+                        onClick={deleteChannel}
+                        disabled={saving}>
+                        Remove Channel
+                    </button>
+                </div>
             </div>
         </div>
     );

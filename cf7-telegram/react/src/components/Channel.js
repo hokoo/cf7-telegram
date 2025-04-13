@@ -112,7 +112,11 @@ const Channel = ({
         }
     };
 
-    const handleToggleChat = async (chatId) => {
+    const handleToggleChat = async (chatId, status) => {
+        if (status.toLowerCase() === 'muted') {
+            return;
+        }
+
         let connection = chat2ChannelConnections.find(c => c.data.from === chatId && c.data.to === channel.id);
 
         if (!connection) {
@@ -199,8 +203,22 @@ const Channel = ({
         }
     }
 
+    const getToggleButtonLabel = (status) => {
+        switch (status.toLowerCase()) {
+            case 'active':
+                return 'Pause';
+            case 'paused':
+                return 'Activate';
+            case 'muted':
+                return 'Muted by Bot';
+            default:
+                return '';
+        }
+    }
+
     return (
         <ChannelView
+            channel={channel}
             isEditingTitle={isEditingTitle}
             titleValue={titleValue}
             saving={saving}
@@ -224,6 +242,7 @@ const Channel = ({
             bot2ChatConnections={bot2ChatConnections}
             handleToggleChat={handleToggleChat}
             deleteChannel={handleDeleteChannel}
+            getToggleButtonLabel={getToggleButtonLabel}
         />
     );
 };

@@ -1,6 +1,7 @@
 body.contact-1_page_wpcf7_tg {
   background-color: #0e1621;
 
+
   h1,
   h2,
   h3,
@@ -12,10 +13,11 @@ body.contact-1_page_wpcf7_tg {
 
   #settings-content {
     color: #fff;
+    font-family: "Open Sans";
   }
 }
 
-ul#adminmenu a.wp-has-current-submenu:after, ul#adminmenu>li.current>a.current:after {
+ul#adminmenu a.wp-has-current-submenu:after, ul#adminmenu > li.current > a.current:after {
   border-right-color: #0e1621;
 }
 
@@ -32,10 +34,10 @@ ul#adminmenu a.wp-has-current-submenu:after, ul#adminmenu>li.current>a.current:a
   }
 
   .title-container {
+    align-items: start;
     display: flex;
-    justify-content: start;
-    align-items: center;
     padding: 15px 0;
+    flex-direction: column;
 
     .title {
       margin: 0;
@@ -49,6 +51,8 @@ ul#adminmenu a.wp-has-current-submenu:after, ul#adminmenu>li.current>a.current:a
       cursor: pointer;
       font-size: 12px;
       text-align: center;
+      padding: 0;
+      margin: 0;
 
       &:hover {
         color: #0c87b3;
@@ -57,23 +61,37 @@ ul#adminmenu a.wp-has-current-submenu:after, ul#adminmenu>li.current>a.current:a
   }
 
   .entity-container {
-    flex-basis: 360px;
+    flex-basis: 500px;
     flex-shrink: 0;
+
+    border-width: 4px;
+    border-style: dashed;
+    border-radius: 12px;
+
+    transition: all .4s ease;
+
+    &.saving {
+      opacity: .5;
+    }
 
     .entity-wrapper {
       display: flex;
       flex-direction: column;
-      gap: 15px;
+      gap: 0;
+    }
 
-      border-width: 4px;
-      border-style: dashed;
-      border-radius: 12px;
-      padding: 14px 16px;
+    .columns {
+      display: flex;
+      gap: 10px;
+      flex-direction: row;
 
-      transition: all .4s ease;
-
-      &.saving {
-        opacity: .5;
+      .column {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-basis: 100%;
+        flex-grow: 1;
+        border-radius: 5px;
       }
     }
 
@@ -93,10 +111,8 @@ ul#adminmenu a.wp-has-current-submenu:after, ul#adminmenu>li.current>a.current:a
   }
 
   .frame {
-    border-width: 2px;
-    border-style: dotted;
-    border-radius: 8px;
-    padding: 0;
+    position: relative;
+    padding: 10px 15px;
   }
 
   .bots-container {
@@ -109,11 +125,8 @@ ul#adminmenu a.wp-has-current-submenu:after, ul#adminmenu>li.current>a.current:a
       .bot {
         width: 100%;
         flex-basis: unset;
-      }
-
-
-      .bot-wrapper {
         border-color: rgba(12, 136, 180, 0.09);
+        box-sizing: border-box;
 
         &.offline {
           border-color: #432929;
@@ -122,11 +135,12 @@ ul#adminmenu a.wp-has-current-submenu:after, ul#adminmenu>li.current>a.current:a
         &.online {
           border-color: #0c88b4;
         }
+      }
+
+      .bot-wrapper {
 
         .bot-summary {
           position: relative;
-          border-color: #0a4b78;
-          border: none;
           font-family: monospace;
           display: flex;
           justify-content: space-between;
@@ -143,6 +157,10 @@ ul#adminmenu a.wp-has-current-submenu:after, ul#adminmenu>li.current>a.current:a
               text-align: center;
               font-weight: 100;
               font-size: 15px;
+
+              &.offline {
+                color: #573535 !important;
+              }
 
               a, a:focus, a:active, a:visited {
                 color: inherit;
@@ -192,8 +210,6 @@ ul#adminmenu a.wp-has-current-submenu:after, ul#adminmenu>li.current>a.current:a
         }
 
         .chats-for-bot {
-          border-color: #1d1f2c;
-          border: none;
 
           h5 {
             margin: 0;
@@ -201,6 +217,10 @@ ul#adminmenu a.wp-has-current-submenu:after, ul#adminmenu>li.current>a.current:a
             text-transform: uppercase;
             color: #375885;
             font-size: 11px;
+          }
+
+          ul {
+            margin: 0;
           }
 
           .chat-item {
@@ -227,12 +247,37 @@ ul#adminmenu a.wp-has-current-submenu:after, ul#adminmenu>li.current>a.current:a
             span {
               cursor: pointer;
               padding: 0 5px;
+
+              &.action {
+                color: #272727;
+                text-align: center;
+                text-transform: uppercase;
+
+                &:hover {
+                  color: #873d3d;
+                }
+              }
             }
           }
 
           .no-chats-found {
             text-align: center;
             color: #0c88b4;
+            font-size: 12px;
+            font-style: italic;
+          }
+
+          .offline-bot-sad-message {
+            text-align: center;
+            color: #573535;
+            font-size: 12px;
+            font-style: italic;
+          }
+
+          .unknown-bot-status-message {
+            text-align: center;
+            color: #0c88b4;
+            opacity: 0.25;
             font-size: 12px;
             font-style: italic;
           }
@@ -287,12 +332,70 @@ ul#adminmenu a.wp-has-current-submenu:after, ul#adminmenu>li.current>a.current:a
       gap: 10px;
 
       .channel {
+        border-color: #2f4f37;
 
         > h4 {
         }
 
         .channel-wrapper {
-          border-color: #2f4f37;
+
+          .channel-title-wrapper {
+            font-size: 17px;
+            line-height: 17px;
+            text-align: center;
+            font-weight: 500;
+            color: #2f4f37;
+
+            .channel-title {
+              margin: 0;
+              cursor: pointer;
+              color: inherit;
+              text-align: inherit;
+              line-height: inherit;
+            }
+
+            input.edit-title {
+              padding: 0;
+              border: 0;
+              margin: 0;
+              border: none;
+              outline: none;
+              box-shadow: none;
+              text-transform: none;
+              text-shadow: none;
+
+              font-size: 1em;
+              position: relative;
+              top: 0;
+              left: 0;
+              width: 100%;
+              height: 100%;
+
+              line-height: inherit;
+              text-align: inherit;
+              background: transparent;
+              color: inherit;
+              font-family: inherit;
+              font-weight: inherit;
+            }
+
+            .bot-for-channel {
+              display: inline-flex;
+              justify-content: space-between;
+              align-items: center;
+              gap: 10px;
+              padding: 5px 10px;
+              border-width: 1px;
+              border-style: dashed;
+              border-radius: 5px;
+              border-color: #0c88b4;
+
+              span {
+                font-family: monospace;
+                color: #0c88b4;
+              }
+            }
+          }
 
           .status-bar {
             display: flex;
@@ -317,32 +420,87 @@ ul#adminmenu a.wp-has-current-submenu:after, ul#adminmenu>li.current>a.current:a
         }
 
         .bots {
-          border-color: #37465d;
         }
 
         .chats {
           border-color: #505145;
+
+          .chat {
+            color: #898735;
+            padding: 5px 10px;
+            border-radius: 5px;
+            border-width: 1px;
+            border-style: dashed;
+            border-color: #898735;
+            cursor: pointer;
+            display: inline;
+
+            &.active {
+              color: #487d44;
+              border-color: #487d44;
+            }
+
+            &.muted {
+                color: #656565;
+                border-color: #656565;
+            }
+
+            .chat-username {
+            }
+
+            &.active .chat-username {
+              color: #487d44;
+            }
+
+            .chat-toggle-status {
+              background: none;
+              border: none;
+              border-radius: 5px;
+              color: #1f3047;
+              cursor: pointer;
+              font-size: 12px;
+              text-align: center;
+              padding: 0;
+
+              &:hover {
+                color: #873d3d;
+              }
+            }
+          }
+
+          .no-chats-found {
+            color: #0a4b78;
+          }
         }
 
         .forms {
           border-color: #797083;
-        }
 
-        .edit-title {
-          display: flex;
-          gap: 0.5em;
-          align-items: center;
-
-          input {
-            padding: 4px;
-            font-size: 1em;
+          .add-button {
+            display: block;
           }
 
-          button {
-            cursor: pointer;
-            padding: 4px 8px;
+          .form-list {
+            display: inline-flex;
+            gap: 8px;
+            align-items: center;
+
+            li {
+              display: inline-flex;
+              gap: 8px;
+              align-items: center;
+
+              padding: 5px 10px;
+              border-radius: 5px;
+              border-width: 1px;
+              border-style: dashed;
+              border-color: #2f4f37;
+
+              color: #487d44;
+            }
           }
         }
+
 
         .detach-button {
           background: none;
@@ -353,6 +511,37 @@ ul#adminmenu a.wp-has-current-submenu:after, ul#adminmenu>li.current>a.current:a
           font-size: 12px;
           text-align: center;
           padding: 0;
+
+          &.crux {
+            width: 20px;
+            height: 20px;
+            position: relative;
+
+            &:before,
+            &:after {
+              position: absolute;
+              content: "";
+              display: block;
+              width: 20px;
+              height: 1px;
+              background-color: #1f3047;
+              top: 50%;
+              transition: all .2s ease;
+            }
+
+            &:before {
+              transform: rotate(45deg);
+            }
+
+            &:after {
+              transform: rotate(-45deg);
+            }
+
+            &:hover:before,
+            &:hover:after {
+              background-color: #873d3d;
+            }
+          }
 
           &:hover {
             color: #873d3d;
