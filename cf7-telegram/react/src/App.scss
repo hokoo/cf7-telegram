@@ -176,6 +176,10 @@ ul#adminmenu a.wp-has-current-submenu:after, ul#adminmenu > li.current > a.curre
             text-align: center;
             color: #465b79;
 
+            .show-token {
+              cursor: pointer;
+            }
+
             .token-value,
             .edit-token {
               font-family: Monospace, serif;

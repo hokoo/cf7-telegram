@@ -32,7 +32,7 @@ const BotView = ({
                     </div>
 
                     <div className="bot-token">
-                        <span onClick={handleEditToken} style={{cursor: 'pointer'}}>
+                        <span className={`show-token`} onClick={handleEditToken}>
                             token: <span className="token-value">{trimmedToken}</span>
                         </span>
 
