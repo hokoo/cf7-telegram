@@ -3,7 +3,7 @@
 import React, {useState, useEffect, useRef} from 'react';
 import BotView from './BotView';
 import {
-    connectChat2Channel, disconnectConnectionBot2Chat, setBot2ChatConnectionStatus
+    connectChat2Channel, disconnectConnectionBot2Channel, disconnectConnectionBot2Chat, setBot2ChatConnectionStatus
 } from "../utils/main";
 import {
     apiDeleteBot, apiFetchUpdates, apiPingBot, apiSaveBot
@@ -16,6 +16,7 @@ const Bot = ({
     setBots,
     setBot2ChatConnections,
     bot2ChannelConnections,
+    setBot2ChannelConnections,
     setChat2ChannelConnections,
     loadBot2ChatConnections,
     loadChats
@@ -155,6 +156,10 @@ const Bot = ({
 
 
     const handleEditToken = () => {
+        if ( online && ! window.confirm( 'Changing the bot token will disconnect all its chats and channels. Continue?' ) ) {
+            return;
+        }
+
         setError(null);
         setIsEditingToken(true);
     };
@@ -165,6 +170,12 @@ const Bot = ({
         setError(null);
     };
 
+    /**
+     * Saves the bot with the new token and name.
+     * ATTENTION! This will disconnect all chats and channels connected to the bot.
+     *
+     * @returns {Promise<void>}
+     */
     const saveBot = async () => {
         setSaving(true);
         setError(null);
@@ -184,6 +195,18 @@ const Bot = ({
             console.error(err);
             setError('Failed to update bot');
         } finally {
+            // Disconnect all chats.
+            let connections = bot2ChatConnections.filter(c => c.data.from === bot.id);
+            for (const connection of connections) {
+                await disconnectConnectionBot2Chat(connection.data.id, setBot2ChatConnections);
+            }
+
+            // Disconnect all channels.
+            connections = bot2ChannelConnections.filter(c => c.data.from === bot.id);
+            for (const connection of connections) {
+                await disconnectConnectionBot2Channel(connection.data.id, setBot2ChannelConnections);
+            }
+
             setSaving(false);
         }
     };

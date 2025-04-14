@@ -113,6 +113,7 @@ const App = () => {
                             setBots={setBots}
                             setBot2ChatConnections={setBot2ChatConnections}
                             bot2ChannelConnections={bot2ChannelConnections}
+                            setBot2ChannelConnections={setBot2ChannelConnections}
                             setChat2ChannelConnections={setChat2ChannelConnections}
                             loadBot2ChatConnections={loadBot2ChatConnections}
                             loadChats={loadChats}
