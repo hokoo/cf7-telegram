@@ -33,17 +33,18 @@ const Bot = ({
 
     const chatsForBot = chats.filter(chat => relatedChatIds.includes(chat.id));
 
+    const [lastPing, setLastPing] = useState(null);
     const [online, setOnline] = useState(null);
     const pingTimeoutRef = useRef(null);
-    const updatesIntervalRef = useRef(null);
+    const updatesTimeoutRef = useRef(null);
     const isUnmountedRef = useRef(false);
     const isFetchingRef = useRef(false);
 
     useEffect(() => {
         return () => {
             isUnmountedRef.current = true;
-            if (pingTimeoutRef.current) clearTimeout(pingTimeoutRef.current);
-            if (updatesIntervalRef.current) clearTimeout(updatesIntervalRef.current);
+            pingTimeoutRef.current || clearTimeout(pingTimeoutRef.current);
+            updatesTimeoutRef.current || clearTimeout(updatesTimeoutRef.current);
         };
     }, []);
 
@@ -51,43 +52,45 @@ const Bot = ({
         if (online === null) {
             pingBot();
         }
-    }, [online]);
+    }, [lastPing]);
 
     useEffect(() => {
-        if (online === false && !pingTimeoutRef.current) {
+        if (online === false) {
             scheduleNextPing();
         }
 
         return () => {
-            if (pingTimeoutRef.current) clearTimeout(pingTimeoutRef.current);
+            pingTimeoutRef.current || clearTimeout(pingTimeoutRef.current);
         };
-    }, [online]);
+    }, [lastPing]);
 
     // Fetch updates when the bot is online only.
     useEffect(() => {
         if (online === true) {
-            updatesIntervalRef.current || handleFetchUpdates().then( () => {
+            updatesTimeoutRef.current || handleFetchUpdates().then( () => {
                     scheduleNextFetch();
                 }
             );
 
-        } else if (updatesIntervalRef.current) {
+        } else if (updatesTimeoutRef.current) {
             // Clear the updates interval if it is already running.
-            clearTimeout(updatesIntervalRef.current);
-            updatesIntervalRef.current = null;
+            clearTimeout(updatesTimeoutRef.current);
+            updatesTimeoutRef.current = null;
         }
 
         return () => {
-            if (updatesIntervalRef.current) clearTimeout(updatesIntervalRef.current);
+            if (updatesTimeoutRef.current) clearTimeout(updatesTimeoutRef.current);
         };
     }, [online]);
 
     const scheduleNextPing = () => {
-        pingTimeoutRef.current = setTimeout(pingBot, cf7TelegramData.intervals.ping);
+        pingTimeoutRef.current = setTimeout( () => {
+            pingBot()
+        }, cf7TelegramData.intervals.ping);
     };
 
     const scheduleNextFetch = () => {
-        updatesIntervalRef.current = setTimeout(async () => {
+        updatesTimeoutRef.current = setTimeout(async () => {
             await handleFetchUpdates();
 
             if (!isUnmountedRef.current && online === true) {
@@ -128,7 +131,7 @@ const Bot = ({
 
             setOnline(pingedBot.online);
 
-            if (pingedBot.botName) {
+            if (pingedBot.online) {
                 setNameValue(pingedBot.botName);
                 setBots(prev => prev.map(b => (
                     b.id === bot.id ? {
@@ -145,6 +148,8 @@ const Bot = ({
             if (!isUnmountedRef.current) {
                 setOnline(false);
             }
+        } finally {
+            setLastPing(Date.now());
         }
     };
 

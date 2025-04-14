@@ -188,10 +188,16 @@ export const apiPingBot = async (botId) => {
 }
 
 export const apiSaveBot = async (botId, title, token) => {
-    let botData = {
-        title: title,
-        token: token ?? '',
-    };
+    let botData = {}
+
+    if (title) {
+        botData.title = title;
+    }
+
+    if (token) {
+        botData.token = token;
+    }
+
     return await apiRequest(
         `${cf7TelegramData.routes.bots}${botId}`,
         'POST',
