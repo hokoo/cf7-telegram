@@ -68,7 +68,7 @@ const ChannelView = ({
 
                         <div className="column bot-column">
                             {botForChannel ? (
-                                <div data-Bot-Id={botForChannel.id} className="bot-for-channel">
+                                <div data-Bot-Id={botForChannel.id} className={`bot-for-channel ` + (botForChannel?.online ? 'online' : 'offline')}>
                                     <span>{botForChannel.title.rendered}</span>
                                     <button
                                         className="detach-button detach-bot-button crux"
