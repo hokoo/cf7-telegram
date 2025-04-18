@@ -349,6 +349,11 @@ ul#adminmenu a.wp-has-current-submenu:after, ul#adminmenu > li.current > a.curre
             text-align: center;
             font-weight: 500;
             color: #2f4f37;
+            min-height: 60px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
 
             .channel-title {
               margin: 0;
@@ -402,6 +407,39 @@ ul#adminmenu a.wp-has-current-submenu:after, ul#adminmenu > li.current > a.curre
 
               span {
                 font-family: monospace;
+              }
+            }
+          }
+
+          .bot-picker {
+            &__indicator-separator {
+              background-color: rgba(43, 54, 89, 0.33);
+            }
+            &__control {
+              background-color: #0e1621;
+              border-color: rgba(43, 54, 89, 0.33);
+              font-size: 13px;
+              min-width: 180px;
+              cursor: pointer;
+
+              &--menu-is-open {
+              }
+            }
+
+            &__menu {
+              border-color: rgba(43, 54, 89, 0.33);
+              border-width: 1px;
+            }
+
+            &__menu,
+            &__option {
+              background-color: #0e1621;
+              font-size: 13px;
+              color: #707070;
+              cursor: pointer;
+
+              &--is-focused {
+                background-color: #061215;
               }
             }
           }

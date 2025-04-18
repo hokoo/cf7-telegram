@@ -1,4 +1,5 @@
 import React from 'react';
+import Select from 'react-select';
 
 const ChannelView = ({
     channel,
@@ -78,12 +79,18 @@ const ChannelView = ({
                             ) : (
                                 <>
                                     {availableBots.length > 0 && (
-                                        <select onChange={handleBotSelect} defaultValue="">
-                                            <option value="" disabled>Select bot</option>
-                                            {availableBots.map(bot => (
-                                                <option key={bot.id} value={bot.id}>{bot.title.rendered}</option>
-                                            ))}
-                                        </select>
+                                        <Select
+                                            className="bot-picker"
+                                            classNamePrefix="bot-picker"
+                                            options={availableBots.map(bot => ({
+                                                value: bot.id,
+                                                label: bot.title.rendered
+                                            }))}
+                                            isSearchable={false}
+                                            placeholder="Pick bot"
+                                            onChange={(selectedOption) => handleBotSelect({target: {value: selectedOption?.value}})}
+                                            isClearable
+                                        />
                                     )}
                                 </>
                             )}
