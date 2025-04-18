@@ -74,7 +74,7 @@ class Client {
 			->set( 'name', self::BOT2CHANNEL )
 			->set( 'from', self::CPT_BOT )
 			->set( 'to', self::CPT_CHANNEL )
-			->set( 'cardinality', 'm-1' )
+			->set( 'cardinality', '1-m' )
 			->set( 'duplicatable', false );
 
 		$form2channel = new Query\Relation();
