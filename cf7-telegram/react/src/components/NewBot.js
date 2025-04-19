@@ -1,4 +1,4 @@
-/* global cf7TelegramData */
+/* global cf7TelegramData, wp */
 
 import React from 'react';
 import {apiCreateBot} from "../utils/api";
@@ -6,17 +6,17 @@ import {apiCreateBot} from "../utils/api";
 const NewBot = ({setBots}) => {
     const handleCreateBot = async () => {
         try {
-            let bot = await apiCreateBot('Bot Name', '[empty]')
+            let bot = await apiCreateBot(wp.i18n.__( 'Bot Name', 'cf7-telegram' ), '[' + wp.i18n._x( 'empty', 'Empty token field', 'cf7-telegram' ) + ']')
             setBots(prev => [...prev, bot])
         } catch (error) {
             console.error('Error creating bot:', error);
-            alert('Failed to create bot');
+            alert( wp.i18n.__( 'Failed to create bot', 'cf7-telegram' ) );
         }
     };
 
     return (
         <button className="add-button add-bot-button" onClick={handleCreateBot}>
-            Create Bot
+            {wp.i18n.__( 'Create Bot', 'cf7-telegram' )}
         </button>
     );
 };

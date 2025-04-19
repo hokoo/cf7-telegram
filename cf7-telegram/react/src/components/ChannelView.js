@@ -1,9 +1,10 @@
+/* global cf7TelegramData, wp */
+
 import React from 'react';
 import Select from 'react-select';
 
 const ChannelView = ({
     channel,
-    isEditingTitle,
     titleValue,
     saving,
     error,
@@ -108,7 +109,7 @@ const ChannelView = ({
                                                 label: bot.title.rendered
                                             }))}
                                             isSearchable={false}
-                                            placeholder="Pick bot"
+                                            placeholder={wp.i18n.__( 'Pick a bot', 'cf7-telegram' )}
                                             onChange={(selectedOption) => handleBotSelect({target: {value: selectedOption?.value}})}
                                             isClearable
                                         />
@@ -134,7 +135,7 @@ const ChannelView = ({
                             ))}
                         </ul>
                     ) : (
-                        <span className="no-chats-found">[No chats assigned to this channel]</span>
+                        <span className="no-chats-found">[{wp.i18n.__( 'No chats assigned to this channel', 'cf7-telegram' )}]</span>
                     )}
                 </div>
 
@@ -143,7 +144,9 @@ const ChannelView = ({
                         className="add-button add-form-button"
                         onClick={handleAddForm}
                     >
-                        {!showFormSelector ? (`Add Form`) : (`Cancel`)}
+                        {!showFormSelector ?
+                            (wp.i18n.__( 'Add Form', 'cf7-telegram' )) :
+                            (wp.i18n.__( 'Cancel', 'cf7-telegram' ))}
                     </button>
                     {showFormSelector && (
                         <Select
@@ -154,7 +157,7 @@ const ChannelView = ({
                                 label: form.title
                             }))}
                             isSearchable={true}
-                            placeholder="Pick Form"
+                            placeholder={wp.i18n.__( 'Pick a form', 'cf7-telegram' )}
                             onChange={(selectedOption) => handleFormSelect({target: {value: selectedOption?.value}})}
                             isClearable
                         />
@@ -173,7 +176,7 @@ const ChannelView = ({
                             ))}
                         </ul>
                     ) : showFormSelector || (
-                        <span className="no-forms-found">[No forms assigned to this channel]</span>
+                        <span className="no-forms-found">[{wp.i18n.__( 'No forms assigned to this channel', 'cf7-telegram' )}]</span>
                     )}
                 </div>
 
@@ -183,7 +186,7 @@ const ChannelView = ({
                         className="remove-channel-button"
                         onClick={deleteChannel}
                         disabled={saving}>
-                        Remove Channel
+                        {wp.i18n.__( 'Remove channel', 'cf7-telegram' )}
                     </button>
                 </div>
             </div>

@@ -40,10 +40,17 @@ HTML;
 
 		$manifest = json_decode( file_get_contents( $json_manifest ), true );
 
-		wp_enqueue_style( 'wpcf7telegram-admin-styles', self::pluginUrl() . '/react/build/' . $manifest['files']['main.css'], null, WPCF7TG_VERSION );
+		wp_enqueue_style( 'cf7-telegram-admin-styles', self::pluginUrl() . '/react/build/' . $manifest['files']['main.css'], null, WPCF7TG_VERSION );
 		wp_enqueue_style( 'gf-styles', 'https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap', null, WPCF7TG_VERSION );
-		wp_enqueue_script( 'wpcf7telegram-admin', self::pluginUrl() . '/react/build/' . $manifest['files']['main.js'], null, WPCF7TG_VERSION, true );
-		wp_localize_script( 'wpcf7telegram-admin', 'cf7TelegramData', array(
+		wp_enqueue_script( 'cf7-telegram-admin', self::pluginUrl() . '/react/build/' . $manifest['files']['main.js'], null, WPCF7TG_VERSION, true );
+
+		wp_set_script_translations(
+			'cf7-telegram-admin',
+			'cf7-telegram',
+			self::pluginDir() . '/languages'
+		);
+
+		wp_localize_script( 'cf7-telegram-admin', 'cf7TelegramData', array(
 			'routes' => [
 				'relations' => [
 					'bot2channel'  => get_rest_url( null, 'wp-connections/v1' . '/client/cf7-telegram/relation/bot2channel/' ),
@@ -65,38 +72,6 @@ HTML;
 			'intervals' => [
 				'ping'      => defined( 'WPCF7TG_PING_INTERVAL' ) ? WPCF7TG_PING_INTERVAL : 5000,
 				'bot_fetch' => defined( 'WPCF7TG_UPDATES_INTERVAL' ) ? WPCF7TG_UPDATES_INTERVAL : 30000,
-			],
-			'l10n'		        => [
-				'channel' => [
-					'new_channel_name'  	    => __( 'New Channel Name', 'cf7-telegram' ),
-					'create_new_channel'	    => __( 'Create new channel', 'cf7-telegram' ),
-					'rename_channel'		    => __( 'Rename channel', 'cf7-telegram' ),
-					'connect_form'              => __( 'Connect form', 'cf7-telegram' ),
-					'connect_bot'               => __( 'Connect bot', 'cf7-telegram' ),
-					/* translators: channel name */
-					'confirm_disconnect_bot'    => __( 'Disconnect this bot from %s channel?', 'cf7-telegram' ),
-					/* translators: channel name */
-					'confirm_remove_channel'    => __( 'Do you really want to remove %s channel?', 'cf7-telegram' ),
-					/* translators: 1. form name, 2. channel name */
-					'confirm_disconnect_form'   => __( 'Do you really want to disconnect %1$s form from %2$s channel?', 'cf7-telegram' ),
-					'pause_chat'                => __( 'Pause', 'cf7-telegram' ),
-					'resume_chat'               => __( 'Resume', 'cf7-telegram' ),
-				],
-				'bot'   => [
-					'bot'       =>  __( 'Bot', 'cf7-telegram' ),
-					'api_key'   =>  __( 'API Key', 'cf7-telegram' ),
-				],
-				'chat'  => [
-					'confirm_approve'	=> __( 'Do you really want to approve?', 'cf7-telegram' ),
-					'confirm_refuse'	=> __( 'Do you really want to refuse?', 'cf7-telegram' ),
-					'confirm_pause'     => __( 'Do you really want to pause?', 'cf7-telegram' ),
-					'approved'          => __( 'Successfully approved', 'cf7-telegram' ),
-					'refused'           => __( 'Request refused', 'cf7-telegram' ),
-					'chat_is_muted'     => __( 'Muted', 'cf7-telegram' ),
-					'mute_chat'         => __( 'Mute', 'cf7-telegram' ),
-					'remove_chat'       => __( 'Remove', 'cf7-telegram' ),
-					'activate_chat'     => __( 'Activate', 'cf7-telegram' ),
-				],
 			],
 		) );
 	}
