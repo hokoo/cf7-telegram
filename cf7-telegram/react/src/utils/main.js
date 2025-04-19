@@ -14,6 +14,14 @@ import {
 
 import chat2ChannelRelations from "../App";
 
+export function copyWithTooltip(element) {
+    const text = element.innerText;
+    navigator.clipboard.writeText(text).then(() => {
+        element.classList.add("copied");
+        setTimeout(() => element.classList.remove("copied"), 1500);
+    });
+}
+
 export const connectBot2Channel = async (botId, channelId, setBot2ChannelConnections) => {
     const result = await apiConnectBot2Channel(botId, channelId);
     if (result) {

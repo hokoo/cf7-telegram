@@ -151,6 +151,10 @@ const App = () => {
                 </div>
             </div>
         </div>
+
+        <style>
+            {`.copyable::after { content: '` + wp.i18n.__( 'Copied!', 'cf7-telegram' ) + `' !important }`}
+        </style>
         </>
     );
 };

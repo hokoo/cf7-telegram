@@ -148,16 +148,22 @@ ul#adminmenu a.wp-has-current-submenu:after, ul#adminmenu > li.current > a.curre
           align-items: center;
 
           .bot-title {
+            display: flex;
+            flex-direction: column;
 
             .bot-name {
+              border-top-right-radius: 5px;
+              border-top-left-radius: 5px;
+              color: #7499b3;
+              font-size: 15px;
+              font-weight: 100;
               margin: 0;
               padding: 2px 8px;
-              background-color: #09090c;
-              color: #246b9d;
-              border-radius: 5px;
               text-align: center;
-              font-weight: 100;
-              font-size: 15px;
+              border: 1px solid #082d3b;
+              border-bottom-width: 0;
+              max-width: 190px;
+              overflow: hidden;
 
               &.offline {
                 color: #9d6262 !important;
@@ -170,6 +176,16 @@ ul#adminmenu a.wp-has-current-submenu:after, ul#adminmenu > li.current > a.curre
                 -webkit-tap-highlight-color: transparent;
                 box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.2);
               }
+            }
+
+            .bot-command {
+              text-align: center;
+              background-color: #112747;
+              border-bottom-right-radius: 5px;
+              border-bottom-left-radius: 5px;
+              border: 1px solid #112747;
+              border-top-width: 0;
+              color: #7499b3;
             }
           }
 
@@ -190,13 +206,17 @@ ul#adminmenu a.wp-has-current-submenu:after, ul#adminmenu > li.current > a.curre
 
             .edit-token {
               position: absolute;
-              top: 50%;
-              transform: translateY(-50%);
-              left: 0;
-              width: 100%;
-              text-align: inherit;
               color: inherit;
               line-height: 100%;
+              text-align: inherit;
+              width: 98%;
+              height: 45px;
+              left: 50%;
+              top: 50%;
+              transform: translate(-50%, -50%);
+              box-shadow: none;
+              border: 1px solid #0c88b447;
+              padding: 0 10px;
             }
           }
         }
@@ -634,5 +654,32 @@ ul#adminmenu a.wp-has-current-submenu:after, ul#adminmenu > li.current > a.curre
         }
       }
     }
+  }
+
+  .copyable {
+    position: relative;
+    cursor: pointer;
+    display: inline-block;
+  }
+
+  .copyable::after {
+    content: "Copied!";
+    position: absolute;
+    bottom: 120%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #333;
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 4px;
+    opacity: 0;
+    pointer-events: none;
+    font-size: 12px;
+    transition: opacity 0.3s;
+    white-space: nowrap;
+  }
+
+  .copyable.copied::after {
+    opacity: 1;
   }
 }

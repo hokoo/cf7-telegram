@@ -1,6 +1,7 @@
 /* global wp */
 
-import React from 'react';
+import React, {useEffect, useRef} from 'react';
+import {copyWithTooltip} from '../utils/main';
 import {getChatStatus, getToggleButtonLabel} from '../utils/chatStatus';
 
 const BotView = ({
@@ -28,8 +29,20 @@ const BotView = ({
             <div className={`entity-wrapper bot-wrapper ${saving ? 'saving' : ''}`}>
                 <div className="frame bot-summary">
                     <div className="bot-title">
-                        <div className={`bot-name ${status}`}>
-                            <a href={`https://t.me/${nameValue}?cf7tg_start`} target="_blank">@{nameValue}</a>
+                        <div
+                            className={`bot-name ${status} copyable`}
+                            onClick={(e) => copyWithTooltip(e.target)}
+                            title={wp.i18n.__( 'Click to copy bot name', 'cf7-telegram' )}
+                        >
+                            <span>@{nameValue}</span>
+                        </div>
+
+                        <div
+                            className={`bot-command copyable`}
+                            onClick={(e) => copyWithTooltip(e.target)}
+                            title={wp.i18n.__( 'Click to copy bot command', 'cf7-telegram' )}
+                            >
+                            /cf7tg_start
                         </div>
                     </div>
 
@@ -39,6 +52,7 @@ const BotView = ({
                         </span>
 
                         {isEditingToken && (
+                            <>
                             <input
                                 className="edit-token"
                                 type="text"
@@ -47,7 +61,10 @@ const BotView = ({
                                 onKeyDown={handleKeyDown}
                                 autoFocus
                                 disabled={saving}
+                                title={wp.i18n.__( 'Press Enter to save token, Esc to cancel.', 'cf7-telegram' )}
                             />
+
+                            </>
                         )}
                     </div>
                 </div>
