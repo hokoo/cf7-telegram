@@ -24,7 +24,7 @@ class RestApi {
 				return true;
 			},
 			'schema' => array(
-				'description' => __( 'Poop Foo Data.' ),
+				'description' => '',
 				'type'        => 'string'
 			),
 		) );
@@ -40,7 +40,7 @@ class RestApi {
 				return true;
 			},
 			'schema' => array(
-				'description' => __( 'Poop Foo Data.' ),
+				'description' => '',
 				'type'        => 'string'
 			),
 		) );

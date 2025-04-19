@@ -15,13 +15,12 @@ class Settings {
 		$s = <<<HTML
 		<div id="cf7-telegram-container">
 			<div class="wrap">
-				<h1>%s</h1>
 				%s
 			</div>
 		</div>
 HTML;
 
-		printf( $s, __( 'Telegram notificator settings', 'cf7-telegram' ), self::get_settings_content() );
+		printf( $s, self::get_settings_content() );
 	}
 
 	public static function initScreen(){

@@ -22,7 +22,7 @@ class BotController extends Controller {
 			[
 				'args'   => [
 					'id' => [
-						'description' => __( 'Unique identifier for the object.' ),
+						'description' => 'Unique identifier for the object.',
 						'type'        => 'integer',
 					],
 				],
@@ -41,7 +41,7 @@ class BotController extends Controller {
 			[
 				'args'   => [
 					'id' => [
-						'description' => __( 'Last update ID.' ),
+						'description' => 'Last update ID.',
 						'type'        => 'integer',
 					],
 				],
@@ -64,7 +64,7 @@ class BotController extends Controller {
 			// Apparently the wrong post ID has been provided which does not belong Bot CPT.
 			return new WP_Error(
 				'rest_post_invalid_id',
-				__( 'Invalid post ID.' ),
+				'Invalid post ID',
 				[ 'status' => 404 ]
 			);
 		}

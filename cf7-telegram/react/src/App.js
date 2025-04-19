@@ -1,4 +1,4 @@
-/* global cf7TelegramData */
+/* global cf7TelegramData, wp */
 
 import React, {useState, useEffect} from 'react';
 import Channel from './components/Channel';
@@ -94,13 +94,15 @@ const App = () => {
             });
     }, [chats, bot2ChatConnections])
 
-    if (loading) return <div>Loading channels...</div>;
-    if (channels.length === 0) return <div>No channels found</div>;
+    if (loading) return <div>{wp.i18n.__( 'Loading data...', 'cf7-telegram' )}</div>;
 
-    return (<div className="cf7-tg-container">
+    return (
+        <>
+        <h1>{wp.i18n.__( 'Telegram notificator settings', 'cf7-telegram' )}</h1>
+        <div className="cf7-tg-container">
             <div className="list-container bots-container">
                 <div className="title-container">
-                    <h3 className="title">Bots</h3>
+                    <h3 className="title">{wp.i18n.__( 'Bots', 'cf7-telegram' )}</h3>
                     <NewBot setBots={setBots}/>
                 </div>
 
@@ -125,7 +127,7 @@ const App = () => {
 
             <div className="list-container channels-container">
                 <div className="title-container">
-                    <h3 className="title">Channels</h3>
+                    <h3 className="title">{wp.i18n.__( 'Channels', 'cf7-telegram' )}</h3>
                     <NewChannel setChannels={setChannels}/>
                 </div>
                 <div className="channel-list">
@@ -148,7 +150,9 @@ const App = () => {
                     ))}
                 </div>
             </div>
-        </div>);
+        </div>
+        </>
+    );
 };
 
 export default App;
