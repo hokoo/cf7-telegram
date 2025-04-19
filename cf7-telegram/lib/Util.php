@@ -2,6 +2,7 @@
 
 namespace iTRON\cf7Telegram;
 
+use Illuminate\Support\Collection;
 use iTRON\wpPostAble\Exceptions\wppaCreatePostException;
 use iTRON\wpPostAble\Exceptions\wppaLoadPostException;
 use iTRON\wpPostAble\Exceptions\wppaSavePostException;
@@ -65,10 +66,9 @@ class Util {
 
 	/**
 	 * @throws wppaLoadPostException
-	 * @throws wppaSavePostException
 	 * @throws wppaCreatePostException
 	 */
-	static function getChatByTelegramID( $chatID ): Chat {
+	static function getChatByTelegramID( $chatID ): ?Chat {
 		$chats = get_posts( [
 			'post_type'      => Client::CPT_CHAT,
 			'posts_per_page' => - 1,
@@ -83,9 +83,22 @@ class Util {
 			}
 		}
 
+		return null;
+	}
+
+	/**
+	 * @throws wppaSavePostException
+	 */
+	static function createChat( Collection $tg_chat ): Chat {
 		$chat = new Chat();
 		$chat
-			->setChatID( $chatID )
+			->setChatID( $tg_chat->get( 'id' ) )
+			->setChatType( $tg_chat->get( 'type' ) )
+			->setFirstName( $tg_chat->get( 'first_name' ) ?? '' )
+			->setLastName( $tg_chat->get( 'last_name' ) ?? '' )
+			->setUsername( $tg_chat->get( 'username' ) ?? '' )
+			->setTitle( '' )
+			->setTitle( $tg_chat->get( 'title' ) ?? $chat->getName() )
 			->publish();
 
 		return $chat;

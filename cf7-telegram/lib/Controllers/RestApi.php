@@ -16,7 +16,7 @@ class RestApi {
 		register_rest_field( Client::CPT_BOT, 'token', array(
 			'get_callback' => function( $object ) {
 				$bot = new Bot( $object['id'] );
-				return empty( $bot->getToken() ) ? 'empty' : 'set';
+				return empty( $token = $bot->getToken() ) ? 'empty' : $token;
 			},
 			'update_callback' => function( $updatedValue, $wp_post, $field, $request, $cpt ) {
 				$chat = new Bot( $wp_post->ID );
@@ -24,7 +24,7 @@ class RestApi {
 				return true;
 			},
 			'schema' => array(
-				'description' => __( 'Poop Foo Data.' ),
+				'description' => '',
 				'type'        => 'string'
 			),
 		) );
@@ -40,7 +40,7 @@ class RestApi {
 				return true;
 			},
 			'schema' => array(
-				'description' => __( 'Poop Foo Data.' ),
+				'description' => '',
 				'type'        => 'string'
 			),
 		) );

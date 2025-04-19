@@ -12,13 +12,15 @@ class Settings {
 	}
 
 	public static function plugin_menu_cbf(){
-		?>
+		$s = <<<HTML
 		<div id="cf7-telegram-container">
 			<div class="wrap">
-				<h1><?php echo __( 'Telegram notificator settings', 'cf7-telegram' ); ?></h1>
+				%s
 			</div>
 		</div>
-		<?php
+HTML;
+
+		printf( $s, self::get_settings_content() );
 	}
 
 	public static function initScreen(){
@@ -30,48 +32,58 @@ class Settings {
 	public static function admin_enqueue_scripts(){
 		if ( ! did_action( 'wpcf7_telegram_settings' ) ) return;
 
-		wp_enqueue_style( 'wpcf7telegram-admin-styles', self::pluginUrl() . '/assets/css/index.css', null, WPCF7TG_VERSION );
-		wp_enqueue_script( 'wpcf7telegram-admin', self::pluginUrl() . '/assets/js/index.js', null, WPCF7TG_VERSION );
-		wp_localize_script( 'wpcf7telegram-admin', 'cf7TelegramData', array(
-			'rest_client_url'   => get_rest_url( null, 'wp-connections/v1' . '/client/' . Client::WPCONNECTIONS_CLIENT ),
+		$json_manifest = self::pluginDir() . '/react/build/asset-manifest.json';
+		if ( ! file_exists( $json_manifest ) ) {
+			wp_die( 'React build not found' );
+		}
+
+		$manifest = json_decode( file_get_contents( $json_manifest ), true );
+
+		wp_enqueue_style( 'cf7-telegram-admin-styles', self::pluginUrl() . '/react/build/' . $manifest['files']['main.css'], null, WPCF7TG_VERSION );
+		wp_enqueue_style( 'gf-styles', 'https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap', null, WPCF7TG_VERSION );
+		wp_enqueue_script( 'cf7-telegram-admin', self::pluginUrl() . '/react/build/' . $manifest['files']['main.js'], null, WPCF7TG_VERSION, true );
+
+		wp_set_script_translations(
+			'cf7-telegram-admin',
+			'cf7-telegram',
+			self::pluginDir() . '/languages'
+		);
+
+		wp_localize_script( 'cf7-telegram-admin', 'cf7TelegramData', array(
+			'routes' => [
+				'relations' => [
+					'bot2channel'  => get_rest_url( null, 'wp-connections/v1' . '/client/cf7-telegram/relation/bot2channel/' ),
+					'chat2channel' => get_rest_url( null, 'wp-connections/v1' . '/client/cf7-telegram/relation/chat2channel/' ),
+					'form2channel' => get_rest_url( null, 'wp-connections/v1' . '/client/cf7-telegram/relation/form2channel/' ),
+					'bot2chat'     => get_rest_url( null, 'wp-connections/v1' . '/client/cf7-telegram/relation/bot2chat/' ),
+				],
+
+				'client'   => get_rest_url( null, 'wp-connections/v1' . '/client/' . Client::WPCONNECTIONS_CLIENT ),
+				'channels' => get_rest_url( null, 'wp/v2' . '/cf7tg_channel/' ),
+				'bots'     => get_rest_url( null, 'wp/v2' . '/cf7tg_bot/' ),
+				'chats'    => get_rest_url( null, 'wp/v2' . '/cf7tg_chat/' ),
+				'forms'    => get_rest_url( null, 'contact-form-7/v1' . '/contact-forms/' ),
+			],
+
 			// Put this nonce to X-WP-Nonce header request.
-			'nonce'		        => wp_create_nonce( 'wpcf7_telegram_nonce' ),
-			'l10n'		        => [
-				'channel' => [
-					'new_channel_name'  	    => __( 'New Channel Name', 'cf7-telegram' ),
-					'create_new_channel'	    => __( 'Create new channel', 'cf7-telegram' ),
-					'rename_channel'		    => __( 'Rename channel', 'cf7-telegram' ),
-					'connect_form'              => __( 'Connect form', 'cf7-telegram' ),
-					'connect_bot'               => __( 'Connect bot', 'cf7-telegram' ),
-					/* translators: channel name */
-					'confirm_disconnect_bot'    => __( 'Disconnect this bot from %s channel?', 'cf7-telegram' ),
-					/* translators: channel name */
-					'confirm_remove_channel'    => __( 'Do you really want to remove %s channel?', 'cf7-telegram' ),
-					/* translators: 1. form name, 2. channel name */
-					'confirm_disconnect_form'   => __( 'Do you really want to disconnect %1$s form from %2$s channel?', 'cf7-telegram' ),
-					'pause_chat'                => __( 'Pause', 'cf7-telegram' ),
-					'resume_chat'               => __( 'Resume', 'cf7-telegram' ),
-				],
-				'bot'   => [
-					'bot'       =>  __( 'Bot', 'cf7-telegram' ),
-					'api_key'   =>  __( 'API Key', 'cf7-telegram' ),
-				],
-				'chat'  => [
-					'confirm_approve'	=> __( 'Do you really want to approve?', 'cf7-telegram' ),
-					'confirm_refuse'	=> __( 'Do you really want to refuse?', 'cf7-telegram' ),
-					'confirm_pause'     => __( 'Do you really want to pause?', 'cf7-telegram' ),
-					'approved'          => __( 'Successfully approved', 'cf7-telegram' ),
-					'refused'           => __( 'Request refused', 'cf7-telegram' ),
-					'chat_is_muted'     => __( 'Muted', 'cf7-telegram' ),
-					'mute_chat'         => __( 'Mute', 'cf7-telegram' ),
-					'remove_chat'       => __( 'Remove', 'cf7-telegram' ),
-					'activate_chat'     => __( 'Activate', 'cf7-telegram' ),
-				],
+			'nonce'		        => wp_create_nonce( 'wp_rest' ),
+
+			'intervals' => [
+				'ping'      => defined( 'WPCF7TG_PING_INTERVAL' ) ? WPCF7TG_PING_INTERVAL : 5000,
+				'bot_fetch' => defined( 'WPCF7TG_UPDATES_INTERVAL' ) ? WPCF7TG_UPDATES_INTERVAL : 30000,
 			],
 		) );
 	}
 
 	public static function pluginUrl() {
 		return untrailingslashit( plugins_url( '/', WPCF7TG_FILE ) );
+	}
+
+	public static function pluginDir(): string {
+		return untrailingslashit( plugin_dir_path( WPCF7TG_FILE ) );
+	}
+
+	private static function get_settings_content() : string {
+		return file_get_contents( self::pluginDir() . '/assets/settings-content.html' );
 	}
 }

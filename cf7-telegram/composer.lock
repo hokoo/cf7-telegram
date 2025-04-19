@@ -497,12 +497,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/hokoo/wpConnections.git",
-                "reference": "d3b87da431044b521611c7526cc79a9a2d6de4da"
+                "reference": "74c2104eea996a88e708a480244615ef93be8f2f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/hokoo/wpConnections/zipball/d3b87da431044b521611c7526cc79a9a2d6de4da",
-                "reference": "d3b87da431044b521611c7526cc79a9a2d6de4da",
+                "url": "https://api.github.com/repos/hokoo/wpConnections/zipball/74c2104eea996a88e708a480244615ef93be8f2f",
+                "reference": "74c2104eea996a88e708a480244615ef93be8f2f",
                 "shasum": ""
             },
             "require": {
@@ -547,7 +547,7 @@
                 "source": "https://github.com/hokoo/wpConnections/tree/master",
                 "issues": "https://github.com/hokoo/wpConnections/issues"
             },
-            "time": "2024-10-21T10:48:58+00:00"
+            "time": "2025-04-18T05:12:26+00:00"
         },
         {
             "name": "hokoo/wppostable",

@@ -166,6 +166,27 @@ class Bot extends Entity implements wpPostAble{
 	/**
 	 * @throws RelationNotFound
 	 */
+	public function disconnectChat( Chat $chat ): self {
+		$chatID = $chat->getPost()->ID;
+		$this->client
+			->getBot2ChatRelation()
+			->detachConnections( new Query\Connection( $this->getPost()->ID, $chatID ) );
+
+		// Disconnect the chat from all channels of the bot.
+		foreach ( $this->getChannels()->getIterator() as $channel ) {
+			/** @var Channel $channel */
+			if ( ! $channel->hasChat( $chat ) ) {
+				continue;
+			}
+
+			$channel->disconnectChat( $chat );
+		}
+		return $this;
+	}
+
+	/**
+	 * @throws RelationNotFound
+	 */
 	public function hasChat( Chat $chat ): bool {
 		return $this->getChats()->contains( $chat );
 	}
@@ -247,6 +268,8 @@ class Bot extends Entity implements wpPostAble{
 
 		if ( $res instanceof User ) {
 			$this->setBotStatus( self::STATUS_ONLINE );
+			$this->setTitle( $res->get( 'username' ) );
+			$this->savePost();
 			return true;
 		}
 
@@ -265,17 +288,14 @@ class Bot extends Entity implements wpPostAble{
 	}
 
 	/**
-	 * @return array
-	 * @throws BotApiNotInitialized
-	 * @throws ConnectionWrongData
-	 * @throws MissingParameters
-	 * @throws RelationNotFound
-	 * @throws wppaCreatePostException
-	 * @throws wppaLoadPostException
-	 * @throws wppaSavePostException
-	 * @throws ConnectionNotFound
+	 * @return RestBotUpdates
+	 *
+	 * @throws Telegram
+	 * @throws wppaSavePostException|BotApiNotInitialized
 	 */
-	public function fetchUpdates(): array {
+	public function fetchUpdates(): RestBotUpdates {
+		$result = new RestBotUpdates();
+
 		try {
 			$updates = $this->getAPI()->getUpdates( [
 				'offset'  => $this->getLastUpdateID() + 1,
@@ -295,7 +315,7 @@ class Bot extends Entity implements wpPostAble{
 		}
 
 		if ( empty( $updates ) ) {
-			return [];
+			return $result;
 		}
 
 		/**
@@ -308,39 +328,57 @@ class Bot extends Entity implements wpPostAble{
 		 *
 		 * In case the chat is already connected, it should be ignored.
 		 */
-		foreach ( $updates as $update ) {
-			$message = $update->getMessage();
 
-			if ( $message->isEmpty() || ! $message->hasCommand() ) {
-				continue;
-			}
+		try {
+			foreach ( $updates as $update ) {
+				$message = $update->getMessage();
 
-			if ( '/' . CF7::CMD !== trim( $message->get( 'text' ) ) ) {
-				continue;
-			}
+				if ( $message->isEmpty() || ! $message->hasCommand() ) {
+					continue;
+				}
 
-			$chat = Util::getChatByTelegramID( $update->getChat()->get( 'id' ) );
+				if ( '/' . CF7::CMD !== trim( $message->get( 'text' ) ) ) {
+					continue;
+				}
 
-			// Try to find out if the chat is already connected to the bot.
-			if ( ! $this->getChats()->contains( $chat ) ) {
-				$this->hasChat( $chat ) || $this->connectChat( $chat );
+				$tgChatID = $update->getChat()->get( 'id' );
+				$chat     = Util::getChatByTelegramID( $tgChatID );
 
-				foreach ( $this->getChannels()->getIterator() as $channel ) {
-					/** @var Channel $channel */
-					if ( $channel->hasChat( $chat ) ) {
-						continue;
-					}
+				if ( ! $chat ) {
+					$chat                = Util::createChat( $update->getChat() );
+					$result->hasNewChats = true;
+				}
 
-					$channel->connectChat( $chat );
-					$chat->setPending( $channel );
+				$wpChatID = $chat->getPost()->ID ?? null;
+
+				if ( ! $this->getChats()->contains( $chat ) ) {
+					$this->connectChat( $chat );
+					$chat->setPending( $this );
 					$chat->setDate( $update->message->date );
+					$chat->savePost();
+
+					$result->hasNewConnections = true;
 				}
 			}
+		} catch ( \Error|\Exception $e ) {
+			$this->logger->write(
+				[
+					'botTitle'        => $this->getTitle(),
+					'wpPostID'        => $this->getPost()->ID,
+					'botTokenFirst13' => substr( $this->getToken(), 0, 13 ),
+					'tgChatID'        => $tgChatID ?? '',
+					'wpChatID'        => $wpChatID ?? '',
+					'error'           => $e->getMessage(),
+				],
+				'Bot has failed to fetch updates'
+			);
+
+			throw new Telegram( 'Failed to process updates' );
 		}
 
 		$updateID = max( array_column( $updates, 'update_id' ) );
 		$this->setLastUpdateID( max( $updateID, $this->getLastUpdateID() ) );
 
-		return $updates;
+		return $result;
 	}
 }
