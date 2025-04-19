@@ -122,18 +122,18 @@ const ChannelView = ({
 
                 <div className="frame chats">
                     {renderedChats.length > 0 ? (
-                        <ul>
+                        <>
                             {renderedChats.map(chat => (
-                                <li
+                                <div
                                     key={chat.id}
                                     className={`chat chat-${chat.id} ${chat.status.toLowerCase()}`}
                                     onClick={() => handleToggleChat(chat.id, chat.status)}
                                     title={getToggleButtonLabel(chat.status)}
                                 >
                                     <span className={`chat-username`}>{chat.title.rendered}</span>
-                                </li>
+                                </div>
                             ))}
-                        </ul>
+                        </>
                     ) : (
                         <span className="no-chats-found">[{wp.i18n.__( 'No chats assigned to this channel', 'cf7-telegram' )}]</span>
                     )}

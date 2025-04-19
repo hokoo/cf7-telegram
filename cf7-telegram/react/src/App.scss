@@ -507,6 +507,10 @@ ul#adminmenu a.wp-has-current-submenu:after, ul#adminmenu > li.current > a.curre
           border-color: #505145;
           min-height: 65px;
           box-sizing: border-box;
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          margin: 0;
 
           .chat {
             color: #898735;
@@ -517,6 +521,7 @@ ul#adminmenu a.wp-has-current-submenu:after, ul#adminmenu > li.current > a.curre
             border-color: #898735;
             cursor: pointer;
             display: inline;
+            margin: 0;
 
             &.active {
               color: #487d44;
