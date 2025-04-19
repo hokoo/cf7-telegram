@@ -1,3 +1,5 @@
+/* global wp */
+
 import React from 'react';
 import {getChatStatus, getToggleButtonLabel} from '../utils/chatStatus';
 
@@ -33,7 +35,7 @@ const BotView = ({
 
                     <div className="bot-token">
                         <span className={`show-token`} onClick={handleEditToken}>
-                            token: <span className="token-value">{trimmedToken}</span>
+                            {wp.i18n.__( 'token', 'cf7-telegram' )}: <span className="token-value">{trimmedToken}</span>
                         </span>
 
                         {isEditingToken && (
@@ -68,22 +70,22 @@ const BotView = ({
                                             className="action toggle-status"
                                             onClick={() => handleToggleChatStatus(chat.id, status.toLowerCase())}
                                             disabled={isUpdating}
-                                        >{isUpdating ? 'Updating...' : getToggleButtonLabel(status)}</span>
+                                        >{isUpdating ? wp.i18n.__( 'Updating...', 'cf7-telegram' ) : getToggleButtonLabel(status)}</span>
 
                                         <span
                                             className="action remove-chat"
                                             onClick={() => handleDisconnectChat(chat.id, bot.id)}
-                                        >Remove</span>
+                                        >{wp.i18n.__( 'Remove', 'cf7-telegram' )}</span>
                                     </li>
                                 );
                             })}
                         </ul>
                     ) : 'offline' === status ? (
-                        <span className="offline-bot-sad-message">Couldn't load chat list...</span>
+                        <span className="offline-bot-sad-message">{ wp.i18n.__( 'Couldn\'t load chat list...', 'cf7-telegram' ) }</span>
                     ) : 'unknown' === status ? (
-                        <span className="unknown-bot-status-message">Trying to load chat list...</span>
+                        <span className="unknown-bot-status-message">{ wp.i18n.__( 'Trying to load chat list...', 'cf7-telegram' ) }</span>
                     ) : (
-                        <span className="no-chats-found">Waiting for chats to join...</span>
+                        <span className="no-chats-found">{ wp.i18n.__( 'Waiting for chats to join...', 'cf7-telegram' ) }</span>
                     )}
                 </div>
 
@@ -92,7 +94,7 @@ const BotView = ({
                         className="remove-bot-button"
                         onClick={deleteBot}
                         disabled={saving}>
-                        Remove Bot
+                        {wp.i18n.__( 'Remove bot', 'cf7-telegram' )}
                     </button>
                     <div className={`bot-status ${status}`}>{status}</div>
                 </div>

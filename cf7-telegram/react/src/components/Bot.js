@@ -1,4 +1,4 @@
-/* global cf7TelegramData */
+/* global cf7TelegramData, wp */
 
 import React, {useState, useEffect, useRef} from 'react';
 import BotView from './BotView';
@@ -156,7 +156,7 @@ const Bot = ({
 
 
     const handleEditToken = () => {
-        if ( online && ! window.confirm( 'Changing the bot token will disconnect all its chats and channels. Continue?' ) ) {
+        if ( online && ! window.confirm( wp.i18n.__( 'Changing the bot token will disconnect all its chats and channels. Continue?', 'cf7-telegram' ) ) ) {
             return;
         }
 
@@ -193,7 +193,7 @@ const Bot = ({
 
         } catch (err) {
             console.error(err);
-            setError('Failed to update bot');
+            setError(wp.i18n.__( 'Failed to update bot', 'cf7-telegram' ));
         } finally {
             // Disconnect all chats.
             let connections = bot2ChatConnections.filter(c => c.data.from === bot.id);
@@ -225,7 +225,7 @@ const Bot = ({
             setBots(prev => prev.filter(b => b.id !== bot.id));
         } catch (err) {
             console.error(err);
-            setError('Failed to delete bot');
+            setError(wp.i18n.__( 'Failed to delete bot', 'cf7-telegram' ));
         } finally {
             setSaving(false);
         }
@@ -273,7 +273,7 @@ const Bot = ({
 
     const handleDisconnectChat = async (chatId, botID) => {
         const connectionIndex = bot2ChatConnections.findIndex(c => c.data.from === botID && c.data.to === chatId);
-        if (connectionIndex === -1 || !window.confirm('Are you sure you want to delete this chat?')) return;
+        if (connectionIndex === -1 || !window.confirm( wp.i18n.__( 'Are you sure you want to delete this chat?', 'cf7-telegram' )) ) return;
 
         const connection = bot2ChatConnections[connectionIndex];
 
