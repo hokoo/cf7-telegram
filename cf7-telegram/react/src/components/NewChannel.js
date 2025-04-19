@@ -6,7 +6,7 @@ import {createChannel} from "../utils/main";
 const NewChannel = ({setChannels}) => {
     const handleCreateChannel = async () => {
         try {
-            await createChannel('Channel Name', setChannels);
+            await createChannel(wp.i18n.__( 'Channel Name', 'cf7-telegram' ), setChannels);
         } catch (error) {
             console.error('Error creating channel:', error);
             alert( wp.i18n.__( 'Failed to create channel', 'cf7-telegram' ) );

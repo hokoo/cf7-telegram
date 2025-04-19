@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Contact Form 7 + Telegram 1.0-rc1\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/cf7-telegram\n"
-"POT-Creation-Date: 2025-04-19 14:53+0400\n"
+"POT-Creation-Date: 2025-04-19 15:18+0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -24,151 +24,155 @@ msgstr ""
 "X-Poedit-SearchPathExcluded-3: lib\n"
 "X-Poedit-SearchPathExcluded-4: react/src\n"
 
-#: react/build/static/js/main.d550b2d7.js:2
+#: react/build/static/js/main.3ad4f4b5.js:2
 msgid " "
 msgstr ""
 
-#: react/build/static/js/main.d550b2d7.js:2
+#: react/build/static/js/main.3ad4f4b5.js:2
 msgid "Pick a bot"
 msgstr ""
 
-#: react/build/static/js/main.d550b2d7.js:2
+#: react/build/static/js/main.3ad4f4b5.js:2
 msgid "No chats assigned to this channel"
 msgstr ""
 
-#: react/build/static/js/main.d550b2d7.js:2
+#: react/build/static/js/main.3ad4f4b5.js:2
 msgid "Cancel"
 msgstr ""
 
-#: react/build/static/js/main.d550b2d7.js:2
+#: react/build/static/js/main.3ad4f4b5.js:2
 msgid "Add Form"
 msgstr ""
 
-#: react/build/static/js/main.d550b2d7.js:2
+#: react/build/static/js/main.3ad4f4b5.js:2
 msgid "Pick a form"
 msgstr ""
 
-#: react/build/static/js/main.d550b2d7.js:2
+#: react/build/static/js/main.3ad4f4b5.js:2
 msgid "No forms assigned to this channel"
 msgstr ""
 
-#: react/build/static/js/main.d550b2d7.js:2
+#: react/build/static/js/main.3ad4f4b5.js:2
 msgid "Remove channel"
 msgstr ""
 
-#: react/build/static/js/main.d550b2d7.js:2
+#: react/build/static/js/main.3ad4f4b5.js:2
 msgid "Failed to update title"
 msgstr ""
 
-#: react/build/static/js/main.d550b2d7.js:2
+#: react/build/static/js/main.3ad4f4b5.js:2
 msgid "Something went wrong while assigning the form"
 msgstr ""
 
-#: react/build/static/js/main.d550b2d7.js:2
+#: react/build/static/js/main.3ad4f4b5.js:2
 msgid "Are you sure you want to remove this form from the channel?"
 msgstr ""
 
-#: react/build/static/js/main.d550b2d7.js:2
+#: react/build/static/js/main.3ad4f4b5.js:2
 msgid "Failed to remove form"
 msgstr ""
 
-#: react/build/static/js/main.d550b2d7.js:2
+#: react/build/static/js/main.3ad4f4b5.js:2
 msgid "Failed to assign bot"
 msgstr ""
 
-#: react/build/static/js/main.d550b2d7.js:2
+#: react/build/static/js/main.3ad4f4b5.js:2
 msgid "Failed to remove bot"
 msgstr ""
 
-#: react/build/static/js/main.d550b2d7.js:2
+#: react/build/static/js/main.3ad4f4b5.js:2
 msgid "Are you sure you want to delete this channel?"
 msgstr ""
 
-#: react/build/static/js/main.d550b2d7.js:2
+#: react/build/static/js/main.3ad4f4b5.js:2
 msgid "Failed to delete channel"
 msgstr ""
 
-#: react/build/static/js/main.d550b2d7.js:2
+#: react/build/static/js/main.3ad4f4b5.js:2
 msgid "Pause"
 msgstr ""
 
-#: react/build/static/js/main.d550b2d7.js:2
+#: react/build/static/js/main.3ad4f4b5.js:2
 msgid "Activate"
 msgstr ""
 
-#: react/build/static/js/main.d550b2d7.js:2
+#: react/build/static/js/main.3ad4f4b5.js:2
 msgid "Muted by Bot"
 msgstr ""
 
-#: react/build/static/js/main.d550b2d7.js:2
+#: react/build/static/js/main.3ad4f4b5.js:2
 msgid "Mute"
 msgstr ""
 
-#: react/build/static/js/main.d550b2d7.js:2
+#: react/build/static/js/main.3ad4f4b5.js:2
 msgid "token"
 msgstr ""
 
-#: react/build/static/js/main.d550b2d7.js:2
+#: react/build/static/js/main.3ad4f4b5.js:2
 msgid "Updating..."
 msgstr ""
 
-#: react/build/static/js/main.d550b2d7.js:2
+#: react/build/static/js/main.3ad4f4b5.js:2
 msgid "Remove"
 msgstr ""
 
-#: react/build/static/js/main.d550b2d7.js:2
+#: react/build/static/js/main.3ad4f4b5.js:2
 msgid "Couldn't load chat list..."
 msgstr ""
 
-#: react/build/static/js/main.d550b2d7.js:2
+#: react/build/static/js/main.3ad4f4b5.js:2
 msgid "Trying to load chat list..."
 msgstr ""
 
-#: react/build/static/js/main.d550b2d7.js:2
+#: react/build/static/js/main.3ad4f4b5.js:2
 msgid "Waiting for chats to join..."
 msgstr ""
 
-#: react/build/static/js/main.d550b2d7.js:2
+#: react/build/static/js/main.3ad4f4b5.js:2
 msgid "Remove bot"
 msgstr ""
 
-#: react/build/static/js/main.d550b2d7.js:2
+#: react/build/static/js/main.3ad4f4b5.js:2
 msgid "Changing the bot token will disconnect all its chats and channels. Continue?"
 msgstr ""
 
-#: react/build/static/js/main.d550b2d7.js:2
+#: react/build/static/js/main.3ad4f4b5.js:2
 msgid "Failed to delete bot"
 msgstr ""
 
-#: react/build/static/js/main.d550b2d7.js:2
+#: react/build/static/js/main.3ad4f4b5.js:2
 msgid "Failed to update bot"
 msgstr ""
 
-#: react/build/static/js/main.d550b2d7.js:2
+#: react/build/static/js/main.3ad4f4b5.js:2
 msgid "Are you sure you want to delete this chat?"
 msgstr ""
 
-#: react/build/static/js/main.d550b2d7.js:2
+#: react/build/static/js/main.3ad4f4b5.js:2
 msgid "Bot Name"
 msgstr ""
 
-#: react/build/static/js/main.d550b2d7.js:2
+#: react/build/static/js/main.3ad4f4b5.js:2
 msgctxt "Empty token field"
 msgid "empty"
 msgstr ""
 
-#: react/build/static/js/main.d550b2d7.js:2
+#: react/build/static/js/main.3ad4f4b5.js:2
 msgid "Failed to create bot"
 msgstr ""
 
-#: react/build/static/js/main.d550b2d7.js:2
+#: react/build/static/js/main.3ad4f4b5.js:2
 msgid "Create Bot"
 msgstr ""
 
-#: react/build/static/js/main.d550b2d7.js:2
+#: react/build/static/js/main.3ad4f4b5.js:2
+msgid "Channel Name"
+msgstr ""
+
+#: react/build/static/js/main.3ad4f4b5.js:2
 msgid "Failed to create channel"
 msgstr ""
 
-#: react/build/static/js/main.d550b2d7.js:2
+#: react/build/static/js/main.3ad4f4b5.js:2
 msgid "Create Channel"
 msgstr ""

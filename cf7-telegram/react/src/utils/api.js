@@ -139,7 +139,10 @@ export const apiCreateChannel = async (title) => {
     return await apiRequest(
         cf7TelegramData.routes.channels,
         'POST',
-        {title}
+        {
+            title: title,
+            status: 'publish',
+        },
     );
 };
 
