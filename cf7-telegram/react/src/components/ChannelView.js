@@ -49,8 +49,29 @@ const ChannelView = ({
         })
         .filter(Boolean);
 
+    const renderChannelClasses = () => {
+        let classes = '';
+
+        // Has bot online.
+        if (botForChannel?.online) {
+            classes += ' has-bot-online';
+        }
+
+        // Has at least one active chat.
+        if (renderedChats.some(chat => chat.status === 'Active')) {
+            classes += ' has-active-chats';
+        }
+
+        // Has at least one form assigned.
+        if (formsForChannel.length > 0) {
+            classes += ' has-forms';
+        }
+
+        return classes;
+    }
+
     return (
-        <div className="entity-container channel" key={channel.id} id={`channel-${channel.id}`}>
+        <div className={`entity-container channel` + renderChannelClasses()} key={channel.id} id={`channel-${channel.id}`}>
             <div className="entity-wrapper channel-wrapper">
                 <div className={`frame channel-title-wrapper`}>
                     <div className="columns">

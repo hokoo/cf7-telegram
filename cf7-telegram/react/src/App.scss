@@ -338,7 +338,14 @@ ul#adminmenu a.wp-has-current-submenu:after, ul#adminmenu > li.current > a.curre
       .channel {
         display: flex;
         flex-direction: column;
-        border-color: #2f4f37;
+        border-color: #3d3d3d;
+        color: #3d3d3d;
+
+        &.has-bot-online.has-active-chats.has-forms {
+          border-color: #2f4f37;
+          color: #2f4f37;
+          box-shadow: inset 0 0 12px 0 #2f4f37;
+        }
 
         > h4 {
         }
@@ -351,7 +358,7 @@ ul#adminmenu a.wp-has-current-submenu:after, ul#adminmenu > li.current > a.curre
             line-height: 17px;
             text-align: center;
             font-weight: 500;
-            color: #2f4f37;
+            color: inherit;
             min-height: 60px;
             box-sizing: border-box;
             display: flex;
@@ -419,11 +426,13 @@ ul#adminmenu a.wp-has-current-submenu:after, ul#adminmenu > li.current > a.curre
               background-color: rgba(43, 54, 89, 0.33);
             }
             &__control {
+              border-style: dashed;
               background-color: #0e1621;
               border-color: rgba(43, 54, 89, 0.33);
               font-size: 13px;
               min-width: 180px;
               cursor: pointer;
+              box-shadow: none;
 
               &--menu-is-open {
               }
@@ -475,6 +484,8 @@ ul#adminmenu a.wp-has-current-submenu:after, ul#adminmenu > li.current > a.curre
 
         .chats {
           border-color: #505145;
+          min-height: 65px;
+          box-sizing: border-box;
 
           .chat {
             color: #898735;
