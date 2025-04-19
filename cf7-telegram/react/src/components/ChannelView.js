@@ -80,8 +80,8 @@ const ChannelView = ({
                                 <>
                                     {availableBots.length > 0 && (
                                         <Select
-                                            className="bot-picker"
-                                            classNamePrefix="bot-picker"
+                                            className="select-picker bot-picker"
+                                            classNamePrefix="select-picker"
                                             options={availableBots.map(bot => ({
                                                 value: bot.id,
                                                 label: bot.title.rendered
@@ -113,7 +113,7 @@ const ChannelView = ({
                             ))}
                         </ul>
                     ) : (
-                        <span className="no-chats-found">No chats assigned to this channel</span>
+                        <span className="no-chats-found">[No chats assigned to this channel]</span>
                     )}
                 </div>
 
@@ -125,16 +125,22 @@ const ChannelView = ({
                         {!showFormSelector ? (`Add Form`) : (`Cancel`)}
                     </button>
                     {showFormSelector && (
-                        <select onChange={handleFormSelect} defaultValue="">
-                            <option value="" disabled>Select form</option>
-                            {availableForms.map(form => (
-                                <option key={form.id} value={form.id}>{form.title}</option>
-                            ))}
-                        </select>
+                        <Select
+                            className="select-picker form-picker"
+                            classNamePrefix="select-picker"
+                            options={availableForms.map(form => ({
+                                value: form.id,
+                                label: form.title
+                            }))}
+                            isSearchable={true}
+                            placeholder="Pick Form"
+                            onChange={(selectedOption) => handleFormSelect({target: {value: selectedOption?.value}})}
+                            isClearable
+                        />
                     )}
 
                     {formsForChannel.length > 0 ? (
-                        <ul className={`form-list`}>
+                        <ul className={`form-list ` + (showFormSelector ? 'show-selector' : '')}>
                             {formsForChannel.map(form => (
                                 <li key={form.id}>
                                     {form.title}
@@ -145,8 +151,8 @@ const ChannelView = ({
                                 </li>
                             ))}
                         </ul>
-                    ) : (
-                        <p>No forms assigned to this channel</p>
+                    ) : showFormSelector || (
+                        <span className="no-forms-found">[No forms assigned to this channel]</span>
                     )}
                 </div>
 

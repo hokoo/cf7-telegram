@@ -336,12 +336,15 @@ ul#adminmenu a.wp-has-current-submenu:after, ul#adminmenu > li.current > a.curre
       gap: 10px;
 
       .channel {
+        display: flex;
+        flex-direction: column;
         border-color: #2f4f37;
 
         > h4 {
         }
 
         .channel-wrapper {
+          flex-grow: 1;
 
           .channel-title-wrapper {
             font-size: 17px;
@@ -411,7 +414,7 @@ ul#adminmenu a.wp-has-current-submenu:after, ul#adminmenu > li.current > a.curre
             }
           }
 
-          .bot-picker {
+          .select-picker {
             &__indicator-separator {
               background-color: rgba(43, 54, 89, 0.33);
             }
@@ -448,6 +451,7 @@ ul#adminmenu a.wp-has-current-submenu:after, ul#adminmenu > li.current > a.curre
             display: flex;
             align-items: center;
             justify-content: space-between;
+            margin-top: auto;
 
             .remove-channel-button {
               background: none;
@@ -517,6 +521,9 @@ ul#adminmenu a.wp-has-current-submenu:after, ul#adminmenu > li.current > a.curre
 
           .no-chats-found {
             color: #0a4b78;
+            width: 100%;
+            text-align: center;
+            display: block;
           }
         }
 
@@ -532,6 +539,10 @@ ul#adminmenu a.wp-has-current-submenu:after, ul#adminmenu > li.current > a.curre
             gap: 8px;
             align-items: center;
 
+            &.show-selector {
+              opacity: .1;
+            }
+
             li {
               display: inline-flex;
               gap: 8px;
@@ -545,6 +556,21 @@ ul#adminmenu a.wp-has-current-submenu:after, ul#adminmenu > li.current > a.curre
 
               color: #487d44;
             }
+          }
+
+          .form-picker {
+            position: absolute;
+            left: 50%;
+            top: 35px;
+            transform: translateX(-50%);
+            z-index: 5;
+          }
+
+          .no-forms-found {
+            color: #0a4b78;
+            width: 100%;
+            text-align: center;
+            display: block;
           }
         }
 
