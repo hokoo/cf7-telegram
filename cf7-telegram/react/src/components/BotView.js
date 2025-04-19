@@ -24,6 +24,7 @@ const BotView = ({
     online
 }) => {
     let status = online === true ? 'online' : online === false ? 'offline' : 'unknown';
+    let truncatedName = nameValue.slice(0, 18);
     return (
         <div className={`entity-container bot ${status}`} key={bot.id} id={`bot-${bot.id}`}>
             <div className={`entity-wrapper bot-wrapper ${saving ? 'saving' : ''}`}>
@@ -34,7 +35,7 @@ const BotView = ({
                             onClick={(e) => copyWithTooltip(e.target)}
                             title={wp.i18n.__( 'Click to copy bot name', 'cf7-telegram' )}
                         >
-                            <span>@{nameValue}</span>
+                            @{truncatedName}{truncatedName !== nameValue && '...'}
                         </div>
 
                         <div
