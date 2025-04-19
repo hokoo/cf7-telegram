@@ -561,6 +561,8 @@ ul#adminmenu a.wp-has-current-submenu:after, ul#adminmenu > li.current > a.curre
 
         .forms {
           border-color: #797083;
+          min-height: 75px;
+          box-sizing: border-box;
 
           .add-button {
             display: block;
@@ -592,9 +594,8 @@ ul#adminmenu a.wp-has-current-submenu:after, ul#adminmenu > li.current > a.curre
 
           .form-picker {
             position: absolute;
-            left: 50%;
+            left: 15px; // side paddings of .frame
             top: 35px;
-            transform: translateX(-50%);
             z-index: 5;
           }
 
