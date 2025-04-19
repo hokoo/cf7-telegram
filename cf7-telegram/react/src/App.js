@@ -107,6 +107,7 @@ const App = () => {
                 <div className="bot-list">
                     {bots.map(bot => (
                         <Bot
+                            key={bot.id}
                             bot={bot}
                             chats={chats}
                             bot2ChatConnections={bot2ChatConnections}
@@ -130,6 +131,7 @@ const App = () => {
                 <div className="channel-list">
                     {channels.map(channel => (
                         <Channel
+                            key={channel.id}
                             channel={channel}
                             forms={forms}
                             setChannels={setChannels}
