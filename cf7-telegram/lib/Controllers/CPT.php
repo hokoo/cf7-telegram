@@ -23,9 +23,8 @@ class CPT {
 			'labels' => [
 				'name'  => 'Bots'
 			],
-			'public' => true,
-//			'public' => false,
-//			'show_in_menu' => false,
+			'public' => false,
+			'show_in_menu' => false,
 			'publicly_queryable' => false,
 			'show_in_rest' => true,
             'capabilities' => (array) $cf_cpt->cap,
@@ -37,9 +36,8 @@ class CPT {
 			'labels' => [
 				'name'  => 'Сhats'
 			],
-			'public' => true,
-//			'public' => false,
-//			'show_in_menu' => false,
+			'public' => false,
+			'show_in_menu' => false,
 			'publicly_queryable' => false,
 			'show_in_rest' => true,
             'capabilities' => (array) $cf_cpt->cap,
@@ -51,10 +49,9 @@ class CPT {
 			'labels' => [
 				'name'  => 'Channels'
 			],
-			'public' => true,
-//			'public' => false,
-//			'show_in_menu' => false,
-			'publicly_queryable' => true,
+			'public' => false,
+			'show_in_menu' => false,
+			'publicly_queryable' => false,
 			'show_in_rest' => true,
             'capabilities' => (array) $cf_cpt->cap,
             'capability_type' => $cf_cpt->capability_type,
