@@ -1,4 +1,4 @@
-/* global cf7TelegramData */
+/* global cf7TelegramData, wp */
 
 import React, {useState, useEffect} from 'react';
 import ChannelView from './ChannelView';
@@ -89,7 +89,7 @@ const Channel = ({
             await connectForm2Channel(formId, channel.id, setForm2ChannelConnections)
         } catch (err) {
             console.error(err);
-            alert('Something went wrong while assigning the form');
+            alert( wp.i18n.__( 'Something went wrong while assigning the form', 'cf7-telegram' ) );
         } finally {
             setShowFormSelector(false);
         }
@@ -100,7 +100,7 @@ const Channel = ({
 
         if (
             !connection ||
-            !window.confirm('Are you sure you want to remove this form from the channel?')
+            !window.confirm( wp.i18n.__( 'Are you sure you want to remove this form from the channel?', 'cf7-telegram' ) )
         )
             return;
 
@@ -108,7 +108,7 @@ const Channel = ({
             await disconnectConnectionForm2Channel(connection.data.id, setForm2ChannelConnections)
         } catch (err) {
             console.error(err);
-            alert('Failed to remove form');
+            alert( wp.i18n.__( 'Failed to remove form', 'cf7-telegram' ) );
         }
     };
 
@@ -133,7 +133,7 @@ const Channel = ({
             await connectBot2Channel(botId, channel.id, setBot2ChannelConnections);
         } catch (err) {
             console.error(err);
-            alert('Failed to assign bot');
+            alert( wp.i18n.__( 'Failed to assign bot', 'cf7-telegram' ) );
         }
     };
 
@@ -146,7 +146,7 @@ const Channel = ({
             await disconnectConnectionBot2Channel(connection.data.id, setBot2ChannelConnections);
         } catch (err) {
             console.error(err);
-            alert('Failed to remove bot');
+            alert( wp.i18n.__( 'Failed to remove bot', 'cf7-telegram' ) );
         }
     };
 
@@ -182,14 +182,14 @@ const Channel = ({
             setIsEditingTitle(false);
         } catch (err) {
             console.error(err);
-            setError('Failed to update title');
+            setError( wp.i18n.__( 'Failed to update title', 'cf7-telegram' ) );
         } finally {
             setSaving(false);
         }
     };
 
     const handleDeleteChannel = async () => {
-        if (!window.confirm('Are you sure you want to delete this channel?')) return;
+        if (!window.confirm( wp.i18n.__( 'Are you sure you want to delete this channel?', 'cf7-telegram' ) )) return;
 
         setSaving(true);
         setError(null);
@@ -197,7 +197,7 @@ const Channel = ({
             await deleteChannel(channel.id, setChannels);
         } catch (err) {
             console.error(err);
-            setError('Failed to delete channel');
+            setError( wp.i18n.__( 'Failed to delete channel', 'cf7-telegram' ) );
         } finally {
             setSaving(false);
         }
@@ -206,11 +206,11 @@ const Channel = ({
     const getToggleButtonLabel = (status) => {
         switch (status.toLowerCase()) {
             case 'active':
-                return 'Pause';
+                return wp.i18n.__( 'Pause', 'cf7-telegram' );
             case 'paused':
-                return 'Activate';
+                return wp.i18n.__( 'Activate', 'cf7-telegram' );
             case 'muted':
-                return 'Muted by Bot';
+                return wp.i18n.__( 'Muted by Bot', 'cf7-telegram' );
             default:
                 return '';
         }
@@ -219,7 +219,6 @@ const Channel = ({
     return (
         <ChannelView
             channel={channel}
-            isEditingTitle={isEditingTitle}
             titleValue={titleValue}
             saving={saving}
             error={error}
