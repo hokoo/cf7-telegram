@@ -11,6 +11,7 @@ use iTRON\wpConnections\Exceptions\RelationNotFound;
 use iTRON\wpConnections\Query;
 use WP_Query;
 use Exception;
+use WPCF7_ContactForm;
 
 class Client {
 	private static Client $instance;
@@ -120,6 +121,14 @@ class Client {
 
 	public function getConnectionsClient(): wpConnections\Client {
 		if ( empty( self::$connectionsClient ) ) {
+
+			add_filter( 'wpConnections/client/'. self::WPCONNECTIONS_CLIENT .'/clientDefaultCapabilities',
+				function ( $defaultCapability ) {
+					$cf_cpt = get_post_type_object( WPCF7_ContactForm::post_type );
+					return $cf_cpt->cap->edit_posts ?? $defaultCapability;
+				}
+			);
+
 			self::$connectionsClient = new wpConnections\Client( self::WPCONNECTIONS_CLIENT );
 		}
 
