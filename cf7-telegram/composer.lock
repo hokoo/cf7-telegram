@@ -497,12 +497,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/hokoo/wpConnections.git",
-                "reference": "74c2104eea996a88e708a480244615ef93be8f2f"
+                "reference": "da2df3ca17da1e7b9b475048d88863a8e3c37055"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/hokoo/wpConnections/zipball/74c2104eea996a88e708a480244615ef93be8f2f",
-                "reference": "74c2104eea996a88e708a480244615ef93be8f2f",
+                "url": "https://api.github.com/repos/hokoo/wpConnections/zipball/da2df3ca17da1e7b9b475048d88863a8e3c37055",
+                "reference": "da2df3ca17da1e7b9b475048d88863a8e3c37055",
                 "shasum": ""
             },
             "require": {
@@ -510,8 +510,10 @@
                 "ramsey/collection": "^1.3"
             },
             "require-dev": {
+                "composer/installers": "^2.3",
                 "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
-                "johnpbloch/wordpress-core": "5.0.13",
+                "johnpbloch/wordpress": "^6.7",
+                "johnpbloch/wordpress-core-installer": "^2.0",
                 "phpcompatibility/phpcompatibility-wp": "^2.1",
                 "phpunit/phpunit": "9.6.x-dev",
                 "squizlabs/php_codesniffer": "^3.7",
@@ -547,7 +549,7 @@
                 "source": "https://github.com/hokoo/wpConnections/tree/master",
                 "issues": "https://github.com/hokoo/wpConnections/issues"
             },
-            "time": "2025-04-18T05:12:26+00:00"
+            "time": "2025-04-21T13:26:03+00:00"
         },
         {
             "name": "hokoo/wppostable",
@@ -1417,30 +1419,30 @@
         },
         {
             "name": "psr/log",
-            "version": "1.1.4",
+            "version": "3.0.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/php-fig/log.git",
-                "reference": "d49695b909c3b7628b6289db5479a1c204601f11"
+                "reference": "f16e1d5863e37f8d8c2a01719f5b34baa2b714d3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/php-fig/log/zipball/d49695b909c3b7628b6289db5479a1c204601f11",
-                "reference": "d49695b909c3b7628b6289db5479a1c204601f11",
+                "url": "https://api.github.com/repos/php-fig/log/zipball/f16e1d5863e37f8d8c2a01719f5b34baa2b714d3",
+                "reference": "f16e1d5863e37f8d8c2a01719f5b34baa2b714d3",
                 "shasum": ""
             },
             "require": {
-                "php": ">=5.3.0"
+                "php": ">=8.0.0"
             },
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "1.1.x-dev"
+                    "dev-master": "3.x-dev"
                 }
             },
             "autoload": {
                 "psr-4": {
-                    "Psr\\Log\\": "Psr/Log/"
+                    "Psr\\Log\\": "src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -1461,9 +1463,9 @@
                 "psr-3"
             ],
             "support": {
-                "source": "https://github.com/php-fig/log/tree/1.1.4"
+                "source": "https://github.com/php-fig/log/tree/3.0.2"
             },
-            "time": "2021-05-03T11:20:27+00:00"
+            "time": "2024-09-11T13:17:53+00:00"
         },
         {
             "name": "psr/simple-cache",
@@ -1897,8 +1899,8 @@
             "type": "library",
             "extra": {
                 "thanks": {
-                    "name": "symfony/polyfill",
-                    "url": "https://github.com/symfony/polyfill"
+                    "url": "https://github.com/symfony/polyfill",
+                    "name": "symfony/polyfill"
                 }
             },
             "autoload": {
@@ -2205,8 +2207,8 @@
     "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": {
-        "hokoo/wppostable": 20,
-        "hokoo/wpconnections": 20
+        "hokoo/wpconnections": 20,
+        "hokoo/wppostable": 20
     },
     "prefer-stable": false,
     "prefer-lowest": false,
@@ -2214,6 +2216,6 @@
         "ext-json": "*",
         "php": ">=8.0"
     },
-    "platform-dev": [],
+    "platform-dev": {},
     "plugin-api-version": "2.6.0"
 }
