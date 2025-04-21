@@ -23,7 +23,7 @@ require ( __DIR__ . '/classes/wpcf7telegram.php' );
 
 require __DIR__ . '/vendor/autoload.php';
 
-add_action( 'init', [ Client::getInstance(), 'init' ], 20 );
+add_action( 'init', [ Client::getInstance(), 'init' ], 11 );
 Settings::init();
 
 add_action( 'in_plugin_update_message-' . WPCF7TG_PLUGIN_NAME, 'wpcf7tg_plugin_update_message', 10, 2 );
