@@ -18,7 +18,7 @@
     "johnpbloch/wordpress-core-installer": "*",
     "composer/installers": "*",
     "johnpbloch/wordpress": "5.6",
-    "wpackagist-plugin/contact-form-7": "5.1",
+    "wpackagist-plugin/contact-form-7": "^6.0",
     "mobiledetect/mobiledetectlib": "^2.8",
     "wpackagist-plugin/classic-editor": "^1.5",
     "wpackagist-plugin/wp-smtp": "^1.1",
