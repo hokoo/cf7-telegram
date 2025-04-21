@@ -10,6 +10,9 @@ docker.up:
 docker.down:
 	docker-compose -p cf7tg down
 
+docker.build.php:
+	docker-compose -p cf7tg up -d --build php
+
 git.wpc:
 	bash ./install/gitwpc.sh
 
@@ -32,4 +35,4 @@ node.connect.root:
 	docker-compose -p cf7tg exec --user=root node bash
 
 php.log:
-	docker-compose -p cf7tg exec php sh -c 'tail -n 50 -f /var/log/php/cf7tgdev.loc.error.log'
+	docker-compose -p cf7tg exec php sh -c 'tail -n 50 -f /var/log/php/error.log'

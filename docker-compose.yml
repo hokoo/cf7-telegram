@@ -43,6 +43,7 @@ services:
       PHP_EXTENSIONS_DISABLE: $EXTENSIONS_DISABLE
     volumes:
       - ./:/var/www/html
+      - ./install/php-fpm/php.ini:/usr/local/etc/php/conf.d/php-wpcf7-overrides.ini
     networks:
       - cf7tgdev-network
 
@@ -68,7 +69,7 @@ services:
     container_name: "${PROJECT_NAME}_node"
     image: node:18
     user: node
-    tty: true
+    command: sh -c "trap 'exit 0' TERM; while :; do sleep 1; done"
     working_dir: /var/www/html/
     volumes:
       - ./:/var/www/html/
