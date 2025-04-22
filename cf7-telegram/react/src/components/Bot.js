@@ -6,7 +6,7 @@ import {
     connectChat2Channel, disconnectConnectionBot2Channel, disconnectConnectionBot2Chat, setBot2ChatConnectionStatus
 } from "../utils/main";
 import {
-    apiDeleteBot, apiFetchUpdates, apiPingBot, apiSaveBot
+    apiDeleteBot, apiFetchUpdates, apiPingBot, apiSaveBot, fetchBot
 } from "../utils/api";
 
 const Bot = ({
@@ -24,9 +24,11 @@ const Bot = ({
     const [isEditingToken, setIsEditingToken] = useState(false);
     const [nameValue, setNameValue] = useState(bot.title.rendered);
     const [tokenValue, setTokenValue] = useState(bot.token);
+    const [isTokenEmpty, setIsTokenEmpty] = useState(bot.isTokenEmpty);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState(null);
     const [updatingStatusIds, setUpdatingStatusIds] = useState([]);
+    const renderEditTokenCount = useRef(0);
 
     const relatedChatIds = bot2ChatConnections
         .filter(connection => connection.data.from === bot.id)
@@ -63,6 +65,12 @@ const Bot = ({
         return () => {
             pingTimeoutRef.current || clearTimeout(pingTimeoutRef.current);
         };
+    }, [lastPing]);
+
+    useEffect(() => {
+        if (online === true) {
+            pingTimeoutRef.current || clearTimeout(pingTimeoutRef.current);
+        }
     }, [lastPing]);
 
     // Fetch updates when the bot is online only.
@@ -126,23 +134,39 @@ const Bot = ({
 
     const pingBot = async () => {
         try {
-            const pingedBot = await apiPingBot(bot.id);
+            // Skip if the bot token is editing now.
+            if (isEditingToken) {
+                // Throw an error so that the next ping will be scheduled.
+                throw new Error('Token is being edited');
+            }
 
-            if (isUnmountedRef.current) return;
+            // Skip if the bot is already online.
+            if (online === true) {
+                return;
+            }
+
+            let pingedBot = await apiPingBot(bot.id);
+
+            if (isUnmountedRef.current) {
+                return;
+            }
 
             setOnline(pingedBot.online);
 
             if (pingedBot.online) {
                 setNameValue(pingedBot.botName);
+
+                let fetched = await fetchBot(bot.id);
+
+                // No need check bot name since it automatically updates by backend.
+
                 setBots(prev => prev.map(b => (
                     b.id === bot.id ? {
                         ...b,
-                        title: { ...b.title, rendered: pingedBot.botName },
-                        online: pingedBot.online
+                        title: fetched.title,
+                        online: true
                     } : b
                 )));
-
-                await apiSaveBot(bot.id, pingedBot.botName, '')
             }
         } catch (err) {
             console.error('Ping failed', err);
@@ -156,18 +180,36 @@ const Bot = ({
 
 
     const handleEditToken = () => {
+        if ( bot.isTokenDefinedByConst ) {
+            return;
+        }
+
         if ( online && ! window.confirm( wp.i18n.__( 'Changing the bot token will disconnect all its chats and channels. Continue?', 'cf7-telegram' ) ) ) {
             return;
         }
 
         setError(null);
         setIsEditingToken(true);
+        renderEditTokenCount.current = 0;
     };
 
     const cancelEdit = () => {
         setTokenValue(bot.token);
+        setIsTokenEmpty(bot.isTokenEmpty);
         setIsEditingToken(false);
         setError(null);
+    };
+
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter') {
+            if ( '' === tokenValue.trim() ) {
+                cancelEdit();
+                return
+            }
+
+            saveBotToken();
+        }
+        if (e.key === 'Escape') cancelEdit();
     };
 
     /**
@@ -176,17 +218,14 @@ const Bot = ({
      *
      * @returns {Promise<void>}
      */
-    const saveBot = async () => {
+    const saveBotToken = async () => {
         setSaving(true);
         setError(null);
 
         try {
-            await apiSaveBot(bot.id, '', tokenValue)
+            await apiSaveBot(bot.id, '', tokenValue.trim())
 
-            setBots(prev => prev.map(b => (b.id === bot.id ? {
-                ...b, title: {...b.title, rendered: nameValue}, token: tokenValue
-            } : b)));
-
+            setIsTokenEmpty(false);
             setIsEditingToken(false);
 
             await pingBot();
@@ -229,11 +268,6 @@ const Bot = ({
         } finally {
             setSaving(false);
         }
-    };
-
-    const handleKeyDown = (e) => {
-        if (e.key === 'Enter') saveBot();
-        if (e.key === 'Escape') cancelEdit();
     };
 
     const handleToggleChatStatus = async (chatId, currentStatus) => {
@@ -288,13 +322,6 @@ const Bot = ({
         }
     }
 
-    const handleTokenChange = (e) => {
-        setTokenValue(e.target.value);
-    };
-
-    // Trimmed token for display (only last 4 characters)
-    const trimmedToken = tokenValue.length > 7 ? `***${tokenValue.slice(-4)}` : tokenValue;
-
     return (<BotView
         bot={bot}
         chatsForBot={chatsForBot}
@@ -302,17 +329,18 @@ const Bot = ({
         updatingStatusIds={updatingStatusIds}
         isEditingToken={isEditingToken}
         nameValue={nameValue}
+        isTokenEmpty={isTokenEmpty}
         tokenValue={tokenValue}
-        trimmedToken={trimmedToken}
         saving={saving}
         error={error}
         handleEditToken={handleEditToken}
         deleteBot={deleteBot}
         handleKeyDown={handleKeyDown}
-        setTokenValue={handleTokenChange}
+        setTokenValue={setTokenValue}
         handleToggleChatStatus={handleToggleChatStatus}
         handleDisconnectChat={handleDisconnectChat}
         online={online}
+        renderEditTokenCount={renderEditTokenCount}
     />);
 };
 

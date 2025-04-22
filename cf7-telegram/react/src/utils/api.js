@@ -207,3 +207,7 @@ export const apiSaveBot = async (botId, title, token) => {
         botData
     );
 }
+
+export const fetchBot = async (botId) => {
+    return await apiRequest(`${cf7TelegramData.routes.bots}${botId}`)
+}

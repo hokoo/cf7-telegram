@@ -30,6 +30,8 @@ class Bot extends Entity implements wpPostAble{
 
 	const STATUS_ONLINE  = 'online';
 	const STATUS_OFFLINE = 'offline';
+	const TOKEN_CONST_MASK = 'WPFC7TG_BOT_TOKEN__%d';
+	const EMPTY_TOKEN_MASK = '[%s]'; /** @see isTokenEmpty() method */
 
 	public ChatCollection $chats;
 
@@ -61,8 +63,41 @@ class Bot extends Entity implements wpPostAble{
 		}
 	}
 
+	public static function getEmptyToken(): string {
+		$loc = get_locale();
+		return sprintf( self::EMPTY_TOKEN_MASK, _x( 'empty', 'Empty token field', 'cf7-telegram' ) );
+	}
+
+	/**
+	 * Checks whether the token is empty.
+	 * Uses trimming to remove the leading and trailing brackets as a way to determine if the token is empty.
+	 * Works if the localization language had been changed.
+	 *
+	 * @return bool
+	 */
+	public function isTokenEmpty(): bool {
+		return
+			empty ( $this->getToken() ) ||
+
+			/** @see self::EMPTY_TOKEN_MASK */
+			$this->getToken() !== rtrim( ltrim( $this->getToken(), '[' ), ']' );
+	}
+
+	public function getTokenConstName(): string {
+		return sprintf( self::TOKEN_CONST_MASK, $this->getPost()->ID );
+	}
+
+	/**
+	 * Checks whether the token is defined by the constant.
+	 *
+	 * @return bool
+	 */
+	public function isTokenDefined(): bool {
+		return defined( $this->getTokenConstName() );
+	}
+
 	public function getToken() {
-		return $this->getParam( 'token' );
+		return $this->isTokenDefined() ? constant( $this->getTokenConstName() ) : $this->getParam( 'token' );
 	}
 
 	/**

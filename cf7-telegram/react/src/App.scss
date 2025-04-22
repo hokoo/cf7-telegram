@@ -142,7 +142,6 @@ ul#adminmenu a.wp-has-current-submenu:after, ul#adminmenu > li.current > a.curre
 
         .bot-summary {
           position: relative;
-          font-family: monospace;
           display: flex;
           justify-content: space-between;
           align-items: center;
@@ -150,6 +149,7 @@ ul#adminmenu a.wp-has-current-submenu:after, ul#adminmenu > li.current > a.curre
           .bot-title {
             display: flex;
             flex-direction: column;
+            font-family: monospace;
 
             .bot-name {
               border-top-right-radius: 5px;
@@ -194,6 +194,16 @@ ul#adminmenu a.wp-has-current-submenu:after, ul#adminmenu > li.current > a.curre
 
             .show-token {
               cursor: pointer;
+              font-family: monospace;
+
+              &.const {
+                cursor: default;
+              }
+            }
+
+            .php-const-hint {
+              cursor: pointer;
+              font-size: 10px;
             }
 
             .token-value,

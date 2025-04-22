@@ -66,7 +66,10 @@ HTML;
 			],
 
 			// Put this nonce to X-WP-Nonce header request.
-			'nonce'		        => wp_create_nonce( 'wp_rest' ),
+			'nonce'	  => wp_create_nonce( 'wp_rest' ),
+			'phrases' => [
+				'empty' => Bot::getEmptyToken(),
+			],
 
 			'intervals' => [
 				'ping'      => defined( 'WPCF7TG_PING_INTERVAL' ) ? WPCF7TG_PING_INTERVAL : 5000,

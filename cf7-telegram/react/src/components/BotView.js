@@ -11,8 +11,8 @@ const BotView = ({
     updatingStatusIds = [],
     isEditingToken,
     nameValue,
+    isTokenEmpty,
     tokenValue,
-    trimmedToken,
     saving,
     error,
     handleEditToken,
@@ -21,10 +21,19 @@ const BotView = ({
     setTokenValue,
     handleToggleChatStatus,
     handleDisconnectChat,
-    online
+    online,
+    renderEditTokenCount
 }) => {
+
     let status = online === true ? 'online' : online === false ? 'offline' : 'unknown';
     let truncatedName = nameValue.slice(0, 18);
+
+    isEditingToken && renderEditTokenCount.current < 1 && setTokenValue('');
+    isEditingToken && renderEditTokenCount.current++;
+
+    // Trimmed token for display (only last 4 characters)
+    const trimmedToken = isTokenEmpty ? tokenValue : `***${tokenValue.slice(-4)}`;
+
     return (
         <div className={`entity-container bot ${status}`} key={bot.id} id={`bot-${bot.id}`}>
             <div className={`entity-wrapper bot-wrapper ${saving ? 'saving' : ''}`}>
@@ -48,9 +57,25 @@ const BotView = ({
                     </div>
 
                     <div className="bot-token">
-                        <span className={`show-token`} onClick={handleEditToken}>
-                            {wp.i18n.__( 'token', 'cf7-telegram' )}: <span className="token-value">{trimmedToken}</span>
-                        </span>
+                        <div
+                            className={`show-token` + (bot.isTokenDefinedByConst ? ' const' : '')}
+                            onClick={handleEditToken}
+                            title={(bot.isTokenDefinedByConst ?
+                                wp.i18n.__( 'Defined by PHP constant', 'cf7-telegram' ) :
+                                wp.i18n.__( 'Click to edit token', 'cf7-telegram' ))}
+                        >
+                            {wp.i18n.__( 'token', 'cf7-telegram' )}: <span className="token-value">{isEditingToken ? '' : trimmedToken}</span>
+                        </div>
+
+                        {!online && isTokenEmpty && ! bot.isTokenDefinedByConst && (
+                            <div
+                                className="php-const-hint copyable"
+                                title={wp.i18n.__( 'You can define token in wp-config.php', 'cf7-telegram' )}
+                                onClick={(e) => copyWithTooltip(e.target, `const ${bot.phpConst} = 'your_token';`)}
+                            >
+                                {wp.i18n.__( 'set by PHP const', 'cf7-telegram' )}
+                            </div>
+                        )}
 
                         {isEditingToken && (
                             <>
@@ -58,10 +83,11 @@ const BotView = ({
                                 className="edit-token"
                                 type="text"
                                 value={tokenValue}
-                                onChange={e => setTokenValue(e)}
+                                onChange={e => setTokenValue(e.target.value)}
                                 onKeyDown={handleKeyDown}
                                 autoFocus
                                 disabled={saving}
+                                spellCheck="false"
                                 title={wp.i18n.__( 'Press Enter to save token, Esc to cancel.', 'cf7-telegram' )}
                             />
 

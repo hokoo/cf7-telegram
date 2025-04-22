@@ -14,8 +14,8 @@ import {
 
 import chat2ChannelRelations from "../App";
 
-export function copyWithTooltip(element) {
-    const text = element.innerText;
+export function copyWithTooltip(element, textToCopy = null) {
+    const text = textToCopy || element.innerText;
     navigator.clipboard.writeText(text).then(() => {
         element.classList.add("copied");
         setTimeout(() => element.classList.remove("copied"), 1500);
