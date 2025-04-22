@@ -12,6 +12,7 @@ use iTRON\wpConnections\Exceptions\RelationNotFound;
 use iTRON\wpConnections\Query;
 use WP_Query;
 use Exception;
+use WPCF7_ContactForm;
 
 class Client {
 	private static Client $instance;
@@ -27,6 +28,7 @@ class Client {
 	const CHAT2CHANNEL = 'chat2channel';
 	const FORM2CHANNEL = 'form2channel';
 	const BOT2CHANNEL = 'bot2channel';
+	const BOT2CHAT = 'bot2chat';
 
 	/**
 	 * Use get_instance() method for instance creating.
@@ -51,6 +53,8 @@ class Client {
 	}
 
 	public function init() {
+		load_plugin_textdomain( 'cf7-telegram', false,  dirname( WPCF7TG_PLUGIN_NAME ) . '/languages' );
+
 		$this->logger = new Logger();
 
 		$this->registerConnectionsClient();
@@ -75,7 +79,7 @@ class Client {
 			->set( 'name', self::BOT2CHANNEL )
 			->set( 'from', self::CPT_BOT )
 			->set( 'to', self::CPT_CHANNEL )
-			->set( 'cardinality', 'm-1' )
+			->set( 'cardinality', '1-m' )
 			->set( 'duplicatable', false );
 
 		$form2channel = new Query\Relation();
@@ -86,10 +90,19 @@ class Client {
 			->set( 'cardinality', 'm-m' )
 			->set( 'duplicatable', false );
 
+		$bot2chat = new Query\Relation();
+		$bot2chat
+			->set( 'name', self::BOT2CHAT )
+			->set( 'from', self::CPT_BOT )
+			->set( 'to', self::CPT_CHAT )
+			->set( 'cardinality', 'm-m' )
+			->set( 'duplicatable', false );
+
 		try {
 			$this->getConnectionsClient()->registerRelation( $chat2channel );
 			$this->getConnectionsClient()->registerRelation( $bot2channel );
 			$this->getConnectionsClient()->registerRelation( $form2channel );
+			$this->getConnectionsClient()->registerRelation( $bot2chat );
 		} catch ( wpConnections\Exceptions\Exception $e ) {
 			$this->logger->write( $e->getMessage(), 'Can not register the relations.', Logger::LEVEL_CRITICAL );
 		}
@@ -112,6 +125,14 @@ class Client {
 
 	public function getConnectionsClient(): wpConnections\Client {
 		if ( empty( self::$connectionsClient ) ) {
+
+			add_filter( 'wpConnections/client/'. self::WPCONNECTIONS_CLIENT .'/clientDefaultCapabilities',
+				function ( $defaultCapability ) {
+					$cf_cpt = get_post_type_object( WPCF7_ContactForm::post_type );
+					return $cf_cpt->cap->edit_posts ?? $defaultCapability;
+				}
+			);
+
 			self::$connectionsClient = new wpConnections\Client( self::WPCONNECTIONS_CLIENT );
 		}
 
@@ -137,5 +158,12 @@ class Client {
      */
     public function getForm2ChannelRelation(): wpConnections\Relation {
 		return $this->getConnectionsClient()->getRelation( self::FORM2CHANNEL );
+	}
+
+	/**
+	 * @throws RelationNotFound
+	 */
+	public function getBot2ChatRelation(): wpConnections\Relation {
+		return $this->getConnectionsClient()->getRelation( self::BOT2CHAT );
 	}
 }

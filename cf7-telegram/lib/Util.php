@@ -2,6 +2,10 @@
 
 namespace iTRON\cf7Telegram;
 
+use Illuminate\Support\Collection;
+use iTRON\wpPostAble\Exceptions\wppaCreatePostException;
+use iTRON\wpPostAble\Exceptions\wppaLoadPostException;
+use iTRON\wpPostAble\Exceptions\wppaSavePostException;
 use wpdb;
 
 class Util {
@@ -58,5 +62,45 @@ class Util {
 	static function getWPDB(): wpdb {
 		global $wpdb;
 		return $wpdb;
+	}
+
+	/**
+	 * @throws wppaLoadPostException
+	 * @throws wppaCreatePostException
+	 */
+	static function getChatByTelegramID( $chatID ): ?Chat {
+		$chats = get_posts( [
+			'post_type'      => Client::CPT_CHAT,
+			'posts_per_page' => - 1,
+			'fields'         => 'ids',
+			'post_status'    => 'any',
+		] );
+
+		foreach ( $chats as $postID ) {
+			$chat = new Chat( $postID );
+			if ( $chat->getChatID() == $chatID ) {
+				return $chat;
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * @throws wppaSavePostException
+	 */
+	static function createChat( Collection $tg_chat ): Chat {
+		$chat = new Chat();
+		$chat
+			->setChatID( $tg_chat->get( 'id' ) )
+			->setChatType( $tg_chat->get( 'type' ) )
+			->setFirstName( $tg_chat->get( 'first_name' ) ?? '' )
+			->setLastName( $tg_chat->get( 'last_name' ) ?? '' )
+			->setUsername( $tg_chat->get( 'username' ) ?? '' )
+			->setTitle( '' )
+			->setTitle( $tg_chat->get( 'title' ) ?? $chat->getName() )
+			->publish();
+
+		return $chat;
 	}
 }

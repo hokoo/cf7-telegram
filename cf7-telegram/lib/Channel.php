@@ -6,6 +6,7 @@ use iTRON\cf7Telegram\Collections\BotCollection;
 use iTRON\cf7Telegram\Collections\ChatCollection;
 use iTRON\cf7Telegram\Collections\FormCollection;
 use iTRON\cf7Telegram\Exceptions\Telegram;
+use iTRON\wpConnections\Abstracts\Connection;
 use iTRON\wpConnections\Exceptions\ConnectionWrongData;
 use iTRON\wpConnections\Exceptions\MissingParameters;
 use iTRON\wpConnections\Exceptions\RelationNotFound;
@@ -21,7 +22,7 @@ class Channel extends Entity implements wpPostAble{
 
 	public ChatCollection $chats;
 	public FormCollection $forms;
-	public Bot $bot;
+	public ?Bot $bot = null;
 
 	/**
 	 * @throws wppaCreatePostException
@@ -99,18 +100,16 @@ class Channel extends Entity implements wpPostAble{
      * @throws ConnectionWrongData
      * @throws RelationNotFound
      */
-	public function addChat( Chat $chat ): Channel {
-		$this->client
+	public function connectChat( Chat $chat ): Connection {
+		return $this->client
 			->getChat2ChannelRelation()
 			->createConnection( new Query\Connection( $chat->getPost()->ID, $this->getPost()->ID ) );
-
-		return $this;
 	}
 
     /**
      * @throws RelationNotFound
      */
-    public function removeChat(Chat $chat ): Channel {
+    public function disconnectChat(Chat $chat ): Channel {
 		$this->client
 			->getChat2ChannelRelation()
 			->detachConnections( new Query\Connection( $chat->getPost()->ID, $this->getPost()->ID ) );
@@ -118,12 +117,19 @@ class Channel extends Entity implements wpPostAble{
 		return $this;
 	}
 
+	/**
+	 * @throws RelationNotFound
+	 */
+	public function hasChat( Chat $chat ): bool {
+		return $this->getChats()->contains( $chat );
+	}
+
     /**
      * @throws MissingParameters
      * @throws ConnectionWrongData
      * @throws RelationNotFound
      */
-	public function addForm( Form $form ): Channel {
+	public function connectForm( Form $form ): Channel {
 		$this->client
 			->getForm2ChannelRelation()
 			->createConnection( new Query\Connection( $form->getPost()->ID, $this->getPost()->ID ) );
@@ -134,7 +140,7 @@ class Channel extends Entity implements wpPostAble{
     /**
      * @throws RelationNotFound
      */
-    public function removeForm(Form $form ): Channel {
+    public function disconnectForm(Form $form ): Channel {
 		$this->client
 			->getForm2ChannelRelation()
 			->detachConnections( new Query\Connection( $form->getPost()->ID, $this->getPost()->ID ) );
@@ -143,12 +149,16 @@ class Channel extends Entity implements wpPostAble{
 	}
 
     /**
+     * Set connection to a bot.
+     * If there is already a bot connected, it will be disconnected and a new connection will be created.
+     * It will remove also all connection metadata if there is any.
+     *
      * @throws MissingParameters
      * @throws ConnectionWrongData
      * @throws RelationNotFound
      */
-	public function setBot( Bot $bot ): Channel {
-		$this->unsetBot();
+	public function connectBot( Bot $bot ): Channel {
+		$this->disconnectBot();
 
 		$this->client
 			->getBot2ChannelRelation()
@@ -160,7 +170,7 @@ class Channel extends Entity implements wpPostAble{
     /**
      * @throws RelationNotFound
      */
-    public function unsetBot(): Channel {
+    public function disconnectBot(): Channel {
 		if ( $this->getBot() ) {
 			$query = new Query\Connection();
 			$query->set( 'from', $this->getBot()->getPost()->ID );
@@ -171,9 +181,25 @@ class Channel extends Entity implements wpPostAble{
 		return $this;
 	}
 
-    /**
-     * @throws RelationNotFound
-     */
+	/**
+	 * @throws RelationNotFound
+	 */
+	public function hasBot( Bot $bot = null ): bool {
+		if ( is_null( $this->getBot() ) ) {
+			return false;
+		}
+
+		if ( is_null( $bot ) ) {
+			return true;
+		}
+
+		return $this->getBot()->getPost()->ID === $bot->getPost()->ID;
+	}
+
+	/**
+	 * @throws RelationNotFound
+	 * not @throws Telegram exception due to throwOnError is set to false.
+	 */
     public function doSendOut(string $message, string $mode ) {
 		$chats = $this->getChats();
 
@@ -183,21 +209,7 @@ class Channel extends Entity implements wpPostAble{
 
 		foreach ( $chats as $chat ) {
 			/** @var Chat $chat */
-			try {
-				$this->getBot()->sendMessage( $chat->getChatID(), $message, $mode );
-			} catch ( Telegram $e ) {
-				$this->logger->write(
-					[
-						'telegramChatID'=> $chat->getChatID(),
-						'chatTitle'     => $chat->getTitle(),
-						'chatPostID'    => $chat->getPost()->ID,
-						'channelTitle'  => $this->getTitle(),
-						'channelPostID' => $this->getPost()->ID,
-					],
-					$e->getMessage() . " [chatID:{$chat->getChatID()}]",
-					Logger::LEVEL_CRITICAL
-				);
-			}
+			$this->getBot()->sendMessage( $chat->getChatID(), $message, $mode, false, [ $this ] );
 		}
 	}
 

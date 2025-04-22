@@ -1,11 +1,11 @@
 === Contact Form 7 + Telegram ===
 Contributors: hokku
-Donate link: https://www.paypal.me/hokku
+Donate link: https://www.paypal.me/igortron
 Tags: contact form telegram,contact form 7,telegram
-Requires at least: 5.3
-Tested up to: 6.1
-Requires PHP: 7.4
-Stable tag: 0.8
+Requires at least: 5.6
+Tested up to: 7.0
+Requires PHP: 8.0
+Stable tag: 1.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -89,3 +89,8 @@ You can see your Chat ID by typing anything to Telegram-Bot <code>@wpcf7Bot</cod
 = 0.5 =
 * Markdown added
 
+
+== Upgrade Notice ==
+
+= 1.0 =
+This is a large update. Your settings would be refactored. Please, check it after update. In case of any problems, please, contact to support. Anyways, the option to roll back to the previous version is would be available except a case if your current version is 0.6 or less.

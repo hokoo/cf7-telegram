@@ -8,6 +8,8 @@ use iTRON\wpConnections\Exceptions\RelationNotFound;
 use iTRON\wpConnections\Query;
 
 class CF7 {
+	const CMD = 'cf7tg_start';
+
 	private static array $markdown_tags = [
 		'bold' => [
 			'<h1>','</h1>', '<h2>','</h2>', '<h3>','</h3>', '<h4>','</h4>', '<h5>','</h5>', '<h6>','</h6>',
@@ -31,9 +33,6 @@ class CF7 {
 		]
 	];
 
-    /**
-     * @throws RelationNotFound
-     */
     public static function handleSubscribe(\WPCF7_ContactForm $cf, &$abort, \WPCF7_Submission $instance ) {
 
 		if ( $abort ) {
@@ -71,7 +70,11 @@ class CF7 {
 		$targetChannels = $client->getChannels()->filterByIDs( $connections->column( 'to' ) );
 		foreach ( $targetChannels as $channel ) {
 			/** @var Channel $channel */
-			$channel->doSendOut( apply_filters( 'cf7tg_filtered_message', $output, $instance, $mode ), $mode );
+			try {
+				$channel->doSendOut( apply_filters( 'cf7tg_filtered_message', $output, $instance, $mode ), $mode );
+			} catch ( RelationNotFound $e ) {
+				// @todo log
+			}
 		}
 	}
 

@@ -6,9 +6,13 @@ Linux, Docker Compose
 ## Notice
 Call all commands from root project directory.
 
-## Installation
+## Installation & Use
 
-`make setup.all`
+```bash
+make setup.all
+make docker.up
+make docker.down
+```
 
 Don't forget update your hosts file
 `127.0.0.1     cf7tgdev.loc`.
