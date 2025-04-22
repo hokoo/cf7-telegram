@@ -11,6 +11,23 @@ const apiRequest = async (url, method, body) => {
         }
     }
 
+    let params = new URLSearchParams();
+    if (method === 'GET' || method === 'HEAD') {
+        // GET and HEAD requests should not have a body, so refactor body to query parameters
+        // and append them to the URL.
+        if (body) {
+            for (const [key, value] of Object.entries(body)) {
+                params.append(key, value);
+            }
+
+            body = null;
+        }
+
+        if (params.toString()) {
+            url += '?' + params.toString();
+        }
+    }
+
     if (body) {
         query.body = JSON.stringify(body);
     }
@@ -35,7 +52,13 @@ export const fetchForms = async () => {
 };
 
 export const fetchBots = async () => {
-    return await apiRequest(cf7TelegramData.routes.bots)
+    return await apiRequest(
+        cf7TelegramData.routes.bots,
+        'GET',
+        {
+            order: 'asc', orderby: 'id'
+        }
+    )
 };
 
 export const fetchChats = async () => {
@@ -43,7 +66,13 @@ export const fetchChats = async () => {
 };
 
 export const fetchChannels = async () => {
-    return await apiRequest(cf7TelegramData.routes.channels)
+    return await apiRequest(
+        cf7TelegramData.routes.channels,
+        'GET',
+        {
+            order: 'asc', orderby: 'id'
+        }
+    )
 };
 
 export const fetchFormsForChannels = async () => {
