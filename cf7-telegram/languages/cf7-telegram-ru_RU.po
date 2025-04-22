@@ -6,9 +6,10 @@ msgstr ""
 "Project-Id-Version: Contact Form 7 + Telegram 1.0-rc1\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/cf7-telegram\n"
 "POT-Creation-Date: 2025-04-22 07:32+0400\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
+"PO-Revision-Date: 2025-04-22 07:39+0400\n"
+"Last-Translator: Igor Tron <root@itron.pro>\n"
+"Language-Team: itron.pro\n"
+"Language: ru_RU\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -26,200 +27,203 @@ msgstr ""
 #: lib/Bot.php:67
 msgctxt "Empty token field"
 msgid "empty"
-msgstr ""
+msgstr "пусто"
 
 #: react/build/static/js/main.13c2bdc3.js:2
 msgid " "
-msgstr ""
+msgstr " "
 
 #: react/build/static/js/main.13c2bdc3.js:2
 msgid "Pick a bot"
-msgstr ""
+msgstr "Выберите бота"
 
 #: react/build/static/js/main.13c2bdc3.js:2
 msgid "No chats assigned to this channel"
-msgstr ""
+msgstr "К этому каналу не привязаны чаты"
 
 #: react/build/static/js/main.13c2bdc3.js:2
 msgid "Cancel"
-msgstr ""
+msgstr "Отмена"
 
 #: react/build/static/js/main.13c2bdc3.js:2
 msgid "Add Form"
-msgstr ""
+msgstr "Добавить форму"
 
 #: react/build/static/js/main.13c2bdc3.js:2
 msgid "Pick a form"
-msgstr ""
+msgstr "Выберите форму"
 
 #: react/build/static/js/main.13c2bdc3.js:2
 msgid "No forms assigned to this channel"
-msgstr ""
+msgstr "Этому каналу не назначены формы"
 
 #: react/build/static/js/main.13c2bdc3.js:2
 msgid "Remove channel"
-msgstr ""
+msgstr "Удалить канал"
 
 #: react/build/static/js/main.13c2bdc3.js:2
 msgid "Failed to update title"
-msgstr ""
+msgstr "Не удалось обновить название"
 
 #: react/build/static/js/main.13c2bdc3.js:2
 msgid "Something went wrong while assigning the form"
-msgstr ""
+msgstr "Что-то пошло не так при назначении формы"
 
 #: react/build/static/js/main.13c2bdc3.js:2
 msgid "Are you sure you want to remove this form from the channel?"
-msgstr ""
+msgstr "Вы уверены, что хотите удалить эту форму из канала?"
 
 #: react/build/static/js/main.13c2bdc3.js:2
 msgid "Failed to remove form"
-msgstr ""
+msgstr "Не удалось удалить форму"
 
 #: react/build/static/js/main.13c2bdc3.js:2
 msgid "Failed to assign bot"
-msgstr ""
+msgstr "Не удалось назначить бота"
 
 #: react/build/static/js/main.13c2bdc3.js:2
 msgid "Failed to remove bot"
-msgstr ""
+msgstr "Не удалось удалить бота"
 
 #: react/build/static/js/main.13c2bdc3.js:2
 msgid "Are you sure you want to delete this channel?"
-msgstr ""
+msgstr "Вы уверены, что хотите удалить этот канал?"
 
 #: react/build/static/js/main.13c2bdc3.js:2
 msgid "Failed to delete channel"
-msgstr ""
+msgstr "Не удалось удалить канал"
 
 #: react/build/static/js/main.13c2bdc3.js:2
 msgid "Pause"
-msgstr ""
+msgstr "Приостановить"
 
 #: react/build/static/js/main.13c2bdc3.js:2
 msgid "Activate"
-msgstr ""
+msgstr "Активировать"
 
 #: react/build/static/js/main.13c2bdc3.js:2
 msgid "Muted by Bot"
-msgstr ""
+msgstr "Приостановлено ботом"
 
 #: react/build/static/js/main.13c2bdc3.js:2
 msgid "Mute"
-msgstr ""
+msgstr "Пауза"
 
 #: react/build/static/js/main.13c2bdc3.js:2
 msgid "Click to copy bot name"
-msgstr ""
+msgstr "Нажмите, чтобы скопировать имя бота"
 
 #: react/build/static/js/main.13c2bdc3.js:2
 msgid "Click to copy bot command"
-msgstr ""
+msgstr "Нажмите, чтобы скопировать команду для бота"
 
 #: react/build/static/js/main.13c2bdc3.js:2
 msgid "Defined by PHP constant"
-msgstr ""
+msgstr "Задано PHP константой"
 
 #: react/build/static/js/main.13c2bdc3.js:2
 msgid "Click to edit token"
-msgstr ""
+msgstr "Нажмите, чтобы изменить токен"
 
 #: react/build/static/js/main.13c2bdc3.js:2
 msgid "token"
-msgstr ""
+msgstr "токен"
 
 #: react/build/static/js/main.13c2bdc3.js:2
 msgid "You can define token in wp-config.php"
-msgstr ""
+msgstr "Вы можете задать токен в wp-config.php"
 
 #: react/build/static/js/main.13c2bdc3.js:2
 msgid "set by PHP const"
-msgstr ""
+msgstr "задать PHP константой"
 
 #: react/build/static/js/main.13c2bdc3.js:2
 msgid "Press Enter to save token, Esc to cancel."
-msgstr ""
+msgstr "Нажмите Enter для сохранения токена, Esc для отмены."
 
 #: react/build/static/js/main.13c2bdc3.js:2
 msgid "Updating..."
-msgstr ""
+msgstr "Обновление..."
 
 #: react/build/static/js/main.13c2bdc3.js:2
 msgid "Remove"
-msgstr ""
+msgstr "Удалить"
 
 #: react/build/static/js/main.13c2bdc3.js:2
 msgid "Couldn't load chat list..."
-msgstr ""
+msgstr "Не удалось загрузить список чатов..."
 
 #: react/build/static/js/main.13c2bdc3.js:2
 msgid "Trying to load chat list..."
-msgstr ""
+msgstr "Загрузка списка чатов..."
 
 #: react/build/static/js/main.13c2bdc3.js:2
 msgid "Waiting for chats to join..."
-msgstr ""
+msgstr "Ожидание чатов..."
 
 #: react/build/static/js/main.13c2bdc3.js:2
 msgid "Remove bot"
-msgstr ""
+msgstr "Удалить бота"
 
 #: react/build/static/js/main.13c2bdc3.js:2
-msgid "Changing the bot token will disconnect all its chats and channels. Continue?"
+msgid ""
+"Changing the bot token will disconnect all its chats and channels. Continue?"
 msgstr ""
+"Изменение токена бота приведет к отключению всех его чатов и каналов. "
+"Продолжать?"
 
 #: react/build/static/js/main.13c2bdc3.js:2
 msgid "Failed to delete bot"
-msgstr ""
+msgstr "Не удалось удалить бота"
 
 #: react/build/static/js/main.13c2bdc3.js:2
 msgid "Failed to update bot"
-msgstr ""
+msgstr "Не удалось обновить бота"
 
 #: react/build/static/js/main.13c2bdc3.js:2
 msgid "Are you sure you want to delete this chat?"
-msgstr ""
+msgstr "Вы уверены, что хотите удалить этот чат?"
 
 #: react/build/static/js/main.13c2bdc3.js:2
 msgid "Bot Name"
-msgstr ""
+msgstr "Имя бота"
 
 #: react/build/static/js/main.13c2bdc3.js:2
 msgid "Failed to create bot"
-msgstr ""
+msgstr "Не удалось создать бота"
 
 #: react/build/static/js/main.13c2bdc3.js:2
 msgid "Create Bot"
-msgstr ""
+msgstr "Создать бота"
 
 #: react/build/static/js/main.13c2bdc3.js:2
 msgid "Channel Name"
-msgstr ""
+msgstr "Название канала"
 
 #: react/build/static/js/main.13c2bdc3.js:2
 msgid "Failed to create channel"
-msgstr ""
+msgstr "Не удалось создать канал"
 
 #: react/build/static/js/main.13c2bdc3.js:2
 msgid "Create Channel"
-msgstr ""
+msgstr "Создать канал"
 
 #: react/build/static/js/main.13c2bdc3.js:2
 msgid "Loading data..."
-msgstr ""
+msgstr "Загрузка данных..."
 
 #: react/build/static/js/main.13c2bdc3.js:2
 msgid "Telegram notificator settings"
-msgstr ""
+msgstr "Настройки уведомлений в Telegram"
 
 #: react/build/static/js/main.13c2bdc3.js:2
 msgid "Bots"
-msgstr ""
+msgstr "Боты"
 
 #: react/build/static/js/main.13c2bdc3.js:2
 msgid "Channels"
-msgstr ""
+msgstr "Каналы"
 
 #: react/build/static/js/main.13c2bdc3.js:2
 msgid "Copied!"
-msgstr ""
+msgstr "Скопировано!"

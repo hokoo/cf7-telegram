@@ -19,7 +19,7 @@ define( 'WPCF7TG_VERSION', '1.0-RC1' );
 define( 'WPCF7TG_FILE', __FILE__ );
 
 require ( __DIR__ . '/inc/wp5_functions/wp5_functions.php' );
-require ( __DIR__ . '/classes/wpcf7telegram.php' );
+//require ( __DIR__ . '/classes/wpcf7telegram.php' );
 
 require __DIR__ . '/vendor/autoload.php';
 

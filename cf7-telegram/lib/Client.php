@@ -52,6 +52,8 @@ class Client {
 	}
 
 	public function init() {
+		load_plugin_textdomain( 'cf7-telegram', false,  dirname( WPCF7TG_PLUGIN_NAME ) . '/languages' );
+
 		$this->logger = new Logger();
 
 		$this->registerConnectionsClient();
