@@ -3,9 +3,9 @@ Contributors: hokku
 Donate link: https://www.paypal.me/igortron
 Tags: contact form telegram,contact form 7,telegram
 Requires at least: 5.6
-Tested up to: 7.0
+Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 1.0
+Stable tag: 0.9
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -49,10 +49,9 @@ The Chat ID parameter is your Telegram-identifier. But this is not your phone nu
 You can see your Chat ID by typing anything to Telegram-Bot <code>@wpcf7Bot</code>.
 
 == Changelog ==
-= 1.0 =
 
-* Filter name 'wpcf7tg_markdown' replaced with 'cf7tg_markdown'
-* Filter 'cf7tg_markdown_content' added
+= 0.9 =
+* Preparing to v1.0 seamless transition.
 
 = 0.8.7 =
 * API Telegram errors logging added.
@@ -111,8 +110,9 @@ You can see your Chat ID by typing anything to Telegram-Bot <code>@wpcf7Bot</cod
 = 0.5 =
 * Markdown added
 
-
 == Upgrade Notice ==
 
-= 1.0 =
-This is a large update. Your settings would be refactored. Please, check it after update. In case of any problems, please, contact to support. Anyways, the option to roll back to the previous version is would be available except a case if your current version is 0.6 or less.
+= 0.9 =
+* ATTENTION! ⚡⚡⚡ Get v0.9 now to preserve your settings when you will be upgrading to v1.0.
+* 🔥 Upgrading to v1.0 from v0.9 will be seamless.
+* 😵 Upgrading to v1.0 from v0.8 and earlier will cause losing your settings.

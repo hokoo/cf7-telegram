@@ -14,15 +14,10 @@ jobs:
           php-version: 8.2
           coverage: none
 
-      - name: Install PHP Dependencies
-        uses: ramsey/composer-install@v2
-        with:
-          working-directory: plugin-dir
-          composer-options: "--no-dev"
-
       - name: Remove all files and directories except plugin directory
         run: |
           find . -mindepth 1 -maxdepth 1 -not -name 'plugin-dir' -exec rm -rf {} +
+          rm -fr plugin-dir/lib plugin-dir/react
           mv plugin-dir cf7-telegram
 
       - uses: actions/upload-artifact@v4
