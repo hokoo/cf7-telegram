@@ -78,10 +78,16 @@ class Migration {
 					'>='
 				)
 			) {
-				// todo Exception handling
-				$migration_function( $old_version, $new_version );
+
+				do_action( 'cf7_telegram_migration', $migration_version, $old_version, $new_version );
+
+				try {
+					$migration_function( $old_version, $new_version );
+				} catch ( \Exception|\Error $e ) {
+					do_action( 'logger', [ 'Migration error', $migration_version, $old_version, $new_version, $e->getMessage() ] );
+				}
 			}
-		}, (int) $migration_version * 10, 2 );
+		}, (int) ( $migration_version * 10 ), 2 );
 	}
 
 	private function loadMigrations() {
