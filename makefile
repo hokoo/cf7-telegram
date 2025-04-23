@@ -20,7 +20,7 @@ clear.all:
 	bash ./install/clear.sh
 
 npm.build:
-	docker-compose -p cf7tg exec node bash -c "cd ./cf7-telegram/react && npm run dev-build"
+	docker-compose -p cf7tg exec node bash -c "cd ./plugin-dir/react && npm run dev-build"
 
 php.connect:
 	docker-compose -p cf7tg exec php bash
@@ -42,7 +42,7 @@ ifeq ($(origin LOCALE), undefined)
 	@echo "❌ Specify the LOCALE variable. Example: make i18n.make.json LOCALE=ru_RU"
 else
 	@docker-compose -p cf7tg exec php sh -c '\
-		cd ./cf7-telegram && \
+		cd ./plugin-dir && \
 		echo "🔄 Updating localization files for locale: $(LOCALE)"; \
 		wp i18n make-json ./languages/cf7-telegram-$(LOCALE).po --no-purge && \
 		TARGET="./languages/cf7-telegram-$(LOCALE)-cf7-telegram-admin.json"; \
