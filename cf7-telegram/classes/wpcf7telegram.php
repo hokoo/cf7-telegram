@@ -57,9 +57,9 @@ class wpcf7_Telegram{
 		add_action( 'wpcf7_init', array( $this, 'tg_shortcode' ) );
 		add_action( 'wpcf7_before_send_mail', array( $this, 'send' ), 99999, 3 );
 		add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts' ) );
-		add_action( 'wp_ajax_wpcf7_tg', array( $this, 'ajax' ) );	
+		add_action( 'wp_ajax_wpcf7_tg', array( $this, 'ajax' ) );
 	}
-	
+
 	public static function get_instance(){
 		if ( empty( self::$instance ) ) :
 			self::$instance = new self;
@@ -72,7 +72,7 @@ class wpcf7_Telegram{
 	public function translations() {
 		load_plugin_textdomain( 'cf7-telegram', FALSE,  dirname( WPCF7TG_PLUGIN_NAME ) . '/languages' );
 	}
-	
+
 	public function current_screen(){
 		$screen = get_current_screen();
 		//if ( 'contact-form-7_page_wpcf7_tg' != $screen->id ) return;
@@ -113,7 +113,7 @@ class wpcf7_Telegram{
 		
 		add_settings_field( 
 			'bot_token', 
-			__( 'Bot Token<br/><small>You need to create your own Telegram-Bot.<br/><a target="_blanc" href="https://core.telegram.org/bots#3-how-do-i-create-a-bot">How to create</a></small>', 'cf7-telegram' ), 
+			__( 'Bot Token<br/><small>You need to create your own Telegram-Bot.<br/><a target="_blanc" href="https://core.telegram.org/bots#3-how-do-i-create-a-bot">How to create</a></small>', 'cf7-telegram' ),
 			array( $me, 'settings_clb' ), 
 			'wpcf7tg_settings_page', 
 			'wpcf7_tg_sections__main', 
@@ -460,6 +460,7 @@ class wpcf7_Telegram{
 
 	public function api_request( $method, $parameters = null, $headers = null ) {
 		if ( ! is_string( $method ) ) :
+			do_action( 'logger', "[TELEGRAM] Method name must be a string\n" );
 			error_log( "[TELEGRAM] Method name must be a string\n" );
 			return false;
 		endif;
@@ -486,28 +487,40 @@ class wpcf7_Telegram{
 	private function request( $url, $args ) {
 		$response = wp_remote_post( $url, $args );
 		if ( is_wp_error( $response ) ) :
-			error_log( "wp_remote_post returned error : ". $response->get_error_code() . ': ' . $response->get_error_message() . ' : ' . $response->get_error_data() ."\n");
+			$message = "[TELEGRAM] wp_remote_post has returned an error : ".
+					   $response->get_error_code() . ': ' .
+					   $response->get_error_message() . ' : ' .
+					   $response->get_error_data() ."\n";
+
+			do_action( 'logger', [ $message, $response ] );
+			error_log( $message );
 			return false;
 		endif;
+
+
 		$http_code = intval( $response['response']['code'] );
 		if ( $http_code >= 500 ) :
+
 			// do not to DDOS server if something goes wrong
-			error_log( "[TELEGRAM] Server return status {$http_code}" ."\n" );
-			sleep( 3 );
-			return false;
+			$message = "[TELEGRAM] Server return status {$http_code} : " . $response['response']['message'] ."\n";
 		elseif ( $http_code == 401 ) :
-			//throw new Exception( 'Invalid access token provided' );
-			error_log( "[TELEGRAM] Wrong token \n" );
-			return json_decode( $response['body'] );
+			$message = "[TELEGRAM] Wrong token\n";
+
 		elseif ( $http_code != 200 ) :
-			error_log( "[TELEGRAM] Request has failed with error {$response['response']['code']}: {$response['response']['message']}\n" );
-			return false;
+			$message = "[TELEGRAM] Request has failed with error {$response['response']['code']}: {$response['response']['message']}\n";
+
 		elseif ( empty( $response['body'] ) ) :
-			error_log( "[TELEGRAM] Server return empty body" );
-			return false;
+
+			$message = "[TELEGRAM] Server return empty body\n";
 		else :
+
 			return json_decode( $response['body'] );
 		endif;
+
+		do_action( 'logger', [ $message, $response['response'] ?? [] ] );
+		error_log( $message );
+
+		return false;
 	}
 	
 	public function has_token_constant(){
@@ -543,6 +556,11 @@ class wpcf7_Telegram{
 	function ajax(){
 		$me = self::get_instance();
 		check_ajax_referer( 'wpcf7_telegram_nonce' );
+
+		if ( ! current_user_can( 'wpcf7_read_contact_forms' ) ) {
+			wp_die( json_encode( new \WP_Error( 'no_permission', 'You have no permission to do this', array( 'status' => 403 ) ) ) );
+		}
+
 		$chat_id = @ $_POST['chat'];
 		if ( empty( $chat_id ) ) wp_die( json_encode( new \WP_Error( 'empty_chat_id', 'There is no chat_id in request', array( 'status' => 400 ) ) ) );
 		
@@ -556,16 +574,16 @@ class wpcf7_Telegram{
 	
 	function view_addonds(){
 		echo '<h2>'. __( 'Extensions', 'cf7-telegram' ) .'</h2>';
-		
+
 		foreach ( $this->addons as $slug => $name ) :
-			$attachment_addon_link = "https://nebster.net/product/contact-form-7-telegram-attachments/";
+			$attachment_addon_link = "https://store.itron.pro/product/contact-form-7-telegram-attachments/";
 			echo class_exists( $slug ) ?
 				'<p>' . __( 'Uses addon:', 'cf7-telegram' ) . ' ' . $name . '</p>' :
 				/* translators: 1. File sending extension link, 2. end sale date, 3. "Get it now!" link  */
 				sprintf( __( 'We have a %1$s available that is 75%% OFF until %2$s: %3$s', 'cf7-telegram' ),
 					'<a href="'.$attachment_addon_link.'" target="_blank" >' . __( 'File sending extension', 'cf7-telegram' ) . '</a>',
 					date_i18n( get_option( 'date_format' ), strtotime( '31-12-' . date( 'Y' ) )  ),
-					'<a href="'.$attachment_addon_link.'" target="_blank" >' . __( 'Get it now!', 'cf7-telegram' ) . '</a>',
+					'<a href="'.$attachment_addon_link.'" target="_blank" >' . __( 'Get it now!', 'cf7-telegram' ) . '</a>'
 				) . '</p>';
 		endforeach;
 	}

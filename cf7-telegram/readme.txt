@@ -54,6 +54,28 @@ You can see your Chat ID by typing anything to Telegram-Bot <code>@wpcf7Bot</cod
 * Filter name 'wpcf7tg_markdown' replaced with 'cf7tg_markdown'
 * Filter 'cf7tg_markdown_content' added
 
+= 0.8.7 =
+* API Telegram errors logging added.
+
+= 0.8.6 =
+* Security issue CVE-2024-9629 got fixed.
+
+= 0.8.5 =
+* PHP 7.2 compatibility fixed.
+
+= 0.8.4 =
+* Markdown symbols escaping got added in order to fix [an issue](https://github.com/hokoo/cf7-telegram/issues/17).
+
+= 0.8.3 =
+* Blueprint got added.
+
+= 0.8.2 =
+* Donation link got changed.
+* tested up to WP 6.5
+
+= 0.8.1 =
+* Actualize add-on sale date.
+
 = 0.8 =
 * Addons available
 
