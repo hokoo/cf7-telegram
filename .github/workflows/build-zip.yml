@@ -17,12 +17,13 @@ jobs:
       - name: Install PHP Dependencies
         uses: ramsey/composer-install@v2
         with:
-          working-directory: cf7-telegram
+          working-directory: plugin-dir
           composer-options: "--no-dev"
 
       - name: Remove all files and directories except plugin directory
         run: |
-          find . -mindepth 1 -maxdepth 1 -not -name 'cf7-telegram' -exec rm -rf {} +
+          find . -mindepth 1 -maxdepth 1 -not -name 'plugin-dir' -exec rm -rf {} +
+          mv plugin-dir cf7-telegram
 
       - uses: actions/upload-artifact@v4
         with:
