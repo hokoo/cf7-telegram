@@ -44,6 +44,8 @@ services:
     volumes:
       - ./:/var/www/html
       - ./install/php-fpm/php.ini:/usr/local/etc/php/conf.d/php-wpcf7-overrides.ini
+    extra_hosts:
+      - "cf7tgdev.loc:host-gateway"
     networks:
       - cf7tgdev-network
 
