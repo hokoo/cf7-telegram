@@ -1,6 +1,8 @@
 {
   "name": "hokoo/wpcf7_telegram",
-  "description": "",
+  "version": "1.0-beta",
+  "download_url": "https://github.com/hokoo/cf7-telegram/releases/download/v-1.0.0-beta/cf7-telegram-wp-plugin.zip",
+  "description": "Contact Form 7 Telegram Bot Integration",
   "license": "proprietary",
   "authors": [
     {

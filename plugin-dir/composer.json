@@ -1,7 +1,5 @@
 {
   "name": "hokoo/wpcf7_telegram_app",
-  "version": "1.0-beta",
-  "download_url": "https://github.com/hokoo/cf7-telegram/releases/download/version-1.0/cf7-telegram-wp-plugin.zip",
   "description": "Plugin provides Telegram notifications about incoming Contact Form 7 messages.",
   "type": "wordpress-plugin",
   "minimum-stability": "stable",
