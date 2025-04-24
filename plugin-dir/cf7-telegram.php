@@ -41,6 +41,10 @@ $updateChecker = PucFactory::buildUpdateChecker(
 	'cf7-telegram'
 );
 
+if ( defined( 'WPCF7TG_GITHUB_TOKEN' ) ) {
+	$updateChecker->setAuthentication( WPCF7TG_GITHUB_TOKEN );
+}
+
 $updateChecker->setBranch( 'plugin-dist' );
 
 add_action('admin_init', function () use ( $updateChecker ) {
