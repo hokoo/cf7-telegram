@@ -60,15 +60,15 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # Сохраняем текущий путь
+          # Preserve the current branch
           export TEMP_DIR=$(mktemp -d)
           cp -r cf7-telegram/* "$TEMP_DIR/"
 
-          # Получаем ветку plugin-dist как отдельный чистый clone
+          # Create a new worktree for the plugin-dist branch
           git fetch origin plugin-dist || true
           git worktree add --force dist-worktree origin/plugin-dist
 
-          # Очищаем ветку полностью
+          # Remove all files in the worktree and copy the new build
           rm -rf dist-worktree/*
           cp -r "$TEMP_DIR/"* dist-worktree/
 
