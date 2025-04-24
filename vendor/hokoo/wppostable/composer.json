@@ -1,0 +1,21 @@
+{
+  "name": "hokoo/wppostable",
+  "type": "library",
+  "description": "Library provides a functionality for associating your classes with WordPress class WP_Post.",
+  "minimum-stability": "stable",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Igor Tron",
+      "email": "public@itron.pro"
+    }
+  ],
+  "require": {
+    "ext-json": "*"
+  },
+  "autoload": {
+    "psr-4": {
+      "iTRON\\wpPostAble\\": "src"
+    }
+  }
+}
