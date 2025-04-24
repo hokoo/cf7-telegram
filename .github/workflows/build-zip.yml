@@ -43,7 +43,7 @@ jobs:
 
       - name: Remove all files and directories except plugin directory
         run: |
-          find . -mindepth 1 -maxdepth 1 -not -name 'plugin-dir' -exec rm -rf {} +
+          find . -mindepth 1 -maxdepth 1 -not -name 'plugin-dir' -not -name '.git' -exec rm -rf {} +
           mv plugin-dir cf7-telegram
 
       - name: Zip the plugin directory
