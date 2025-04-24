@@ -48,7 +48,7 @@ class wpcf7_Telegram{
 		$this->load_bot_token();
 		$this->load_chats();
 		
-		add_action( 'plugins_loaded', array( $this, 'translations' ) );
+		add_action( 'init', array( $this, 'translations' ) );
 		add_action( 'admin_menu', array( $this, 'menu_page' ) );
 		add_action( 'admin_init', array( $this, 'save_form' ), 50 );
 		add_action( 'admin_init', array( $this, 'settings_section' ), 999 );
@@ -349,7 +349,7 @@ class wpcf7_Telegram{
 			$chat['id'],
 			$chat['id'] > 0 ? 'admin-users' : 'groups',
 			empty( $str = trim( $chat['id'] > 0 ?
-				$chat['first_name'] .' '. $chat['last_name'] :
+				( $chat['first_name'] ?? '' ) .' '. ( $chat['last_name'] ?? '' ) :
 				$chat['title'] ) ) ? "[{$chat['id']}]" : $str,
 			empty( $chat['username'] ) ? '' : '@'. $chat['username'],
 			isset( $chat['date'] ) ? wp_date( 'j F Y H:i:s', $chat['date'] ) : '',
