@@ -48,7 +48,7 @@ class wpcf7_Telegram{
 		$this->load_bot_token();
 		$this->load_chats();
 		
-		add_action( 'plugins_loaded', array( $this, 'translations' ) );
+		add_action( 'init', array( $this, 'translations' ) );
 		add_action( 'admin_menu', array( $this, 'menu_page' ) );
 		add_action( 'admin_init', array( $this, 'save_form' ), 50 );
 		add_action( 'admin_init', array( $this, 'settings_section' ), 999 );
