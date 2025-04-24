@@ -28,7 +28,7 @@ jobs:
         working-directory: ./plugin-dir/react
         run: |
           npm ci
-          npm run build
+          CI=false npm run build
 
       - name: Clean up react directory (keep only build/)
         run: |
