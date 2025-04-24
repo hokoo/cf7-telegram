@@ -50,6 +50,10 @@ You can see your Chat ID by typing anything to Telegram-Bot <code>@wpcf7Bot</cod
 
 == Changelog ==
 
+= 0.9.2 =
+* Loading textdomain fixed - moved to init hook.
+* Array undefined key fixed.
+
 = 0.9 =
 * Preparing to v1.0 seamless transition.
 
