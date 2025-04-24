@@ -32,7 +32,7 @@ jobs:
 
       - name: Clean up react directory (keep only build/)
         run: |
-          find ./plugin-dir/react -mindepth 1 -not -name build -exec rm -rf {} +
+          find ./plugin-dir/react -mindepth 1 -maxdepth 1 -not -name 'build' -exec rm -rf {} +
 
       - name: Install Composer dependencies
         working-directory: ./plugin-dir
