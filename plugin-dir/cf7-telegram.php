@@ -83,4 +83,4 @@ if ( defined( 'WPCF7TG_GITHUB_TOKEN' ) ) {
 	$updateChecker->setAuthentication( WPCF7TG_GITHUB_TOKEN );
 }
 
-$updateChecker->setBranch( 'plugin-dist' );
+$updateChecker->setBranch( 'pre-releases' );

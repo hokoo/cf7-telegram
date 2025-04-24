@@ -55,20 +55,20 @@ jobs:
           files: ./cf7-telegram-wp-plugin.zip
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Push to plugin-dist branch
+      - name: Push
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # Preserve the current branch
           export TEMP_DIR=$(mktemp -d)
           cp -r cf7-telegram/* "$TEMP_DIR/"
 
-          # Create a new worktree for the plugin-dist branch
-          git fetch origin plugin-dist || true
-          git worktree add --force dist-worktree origin/plugin-dist
+          # Determine the target branch
+          TARGET_BRANCH="${{ github.event.release.prerelease == true && 'pre-releases' || 'plugin-dist' }}"
 
-          # Remove all files in the worktree and copy the new build
+          git fetch origin $TARGET_BRANCH || true
+          git worktree add --force dist-worktree origin/$TARGET_BRANCH
+
           rm -rf dist-worktree/*
           cp -r "$TEMP_DIR/"* dist-worktree/
 
@@ -76,7 +76,6 @@ jobs:
           git add -f vendor
           git add .
           git commit -m "Update plugin build from release ${{ github.event.release.tag_name }}" || echo "No changes to commit"
-          git push origin HEAD:plugin-dist
+          git push origin HEAD:$TARGET_BRANCH
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
