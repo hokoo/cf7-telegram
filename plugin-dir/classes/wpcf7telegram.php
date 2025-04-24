@@ -349,7 +349,7 @@ class wpcf7_Telegram{
 			$chat['id'],
 			$chat['id'] > 0 ? 'admin-users' : 'groups',
 			empty( $str = trim( $chat['id'] > 0 ?
-				$chat['first_name'] .' '. $chat['last_name'] :
+				( $chat['first_name'] ?? '' ) .' '. ( $chat['last_name'] ?? '' ) :
 				$chat['title'] ) ) ? "[{$chat['id']}]" : $str,
 			empty( $chat['username'] ) ? '' : '@'. $chat['username'],
 			isset( $chat['date'] ) ? wp_date( 'j F Y H:i:s', $chat['date'] ) : '',
