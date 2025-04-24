@@ -2,17 +2,19 @@
 
 namespace iTRON\cf7Telegram\Controllers;
 
+use iTRON\cf7Telegram\Logger;
 use iTRON\cf7Telegram\Settings;
-use WP_Upgrader;
 
 class Migration {
 	// This is a migration class. It is used to migrate the plugin from one version to another.
 	// Singleton. Use getInstance() method for instance creating.
 
+	const MIGRATION_HOOK = 'cf7tg_migrations';
+
 	private static Migration $instance;
 
 	/**
-	 * Use get_instance() method for instance creating.
+	 * Use the get_instance() method for instance creating.
 	 */
 	protected function __construct() {
 	}
@@ -36,69 +38,103 @@ class Migration {
 		return self::$instance;
 	}
 
-	public static function init() {
-		add_action( 'upgrader_process_complete', [ self::getInstance(), 'checkMigrate' ], 10, 2 );
+	public static function init(): void {
+		add_action( 'upgrader_process_complete', [ self::getInstance(), 'verifyUpgrading' ], 10, 2 );
+		add_action( self::MIGRATION_HOOK, [ self::getInstance(), 'migrate' ], 10, 2 );
 	}
 
 	/**
-	 * Checks if the plugin was updated and performs migration if necessary.
+	 * Schedules a migration event if the plugin was updated.
 	 *
 	 * @param $upgrader
 	 * @param array $hook_extra
 	 *
 	 * @return void
 	 */
-	public function checkMigrate( $upgrader, array $hook_extra ) {
+	public function verifyUpgrading( $upgrader, array $hook_extra ): void {
 		if ( 'update' !== $hook_extra['action'] || 'plugin' !== $hook_extra['type'] ) {
 			return;
 		}
 
-		if ( ! is_array( $hook_extra['plugins'] ) || ! in_array( WPCF7TG_PLUGIN_NAME, $hook_extra['plugins'] ) ) {
+		if (
+			empty( $hook_extra['plugins'] ) ||
+			! is_array( $hook_extra['plugins'] ) ||
+			! in_array( WPCF7TG_PLUGIN_NAME, $hook_extra['plugins'] )
+		) {
 			return;
 		}
 
+		wp_schedule_single_event(
+			time() + 5,
+			self::MIGRATION_HOOK,
+			[
+				$upgrader,
+				WPCF7TG_VERSION,
+			]
+		);
+	}
+
+	public function migrate( $upgrader, $prev_version ): void {
 		$this->loadMigrations();
 
-		$old_version = get_option( 'cf7tg_version', '0.6' );
 		update_option( 'cf7tg_version', WPCF7TG_VERSION );
 
-		do_action( 'cf7_telegram_migrations', $old_version, WPCF7TG_VERSION );
+		do_action( 'cf7_telegram_migrations', $prev_version, WPCF7TG_VERSION, $upgrader );
 	}
 
-	public static function registerMigration ( $migration_version, callable $migration_function ) {
-		add_action( 'cf7_telegram_migrations', function ( $old_version, $new_version ) use ( $migration_version, $migration_function ) {
-			if (
-				version_compare(
-					$old_version,
-					$migration_version,
-					'<'
-				) && version_compare(
-					$new_version,
-					$migration_version,
-					'>='
-				)
-			) {
+	public static function registerMigration( $migration_version, callable $migration_function ): void {
+		add_action( 'cf7_telegram_migrations',
+			function ( $old_version, $new_version, $upgrader ) use ( $migration_version, $migration_function ) {
+				if (
+					version_compare(
+						$old_version,
+						$migration_version,
+						'<'
+					) && version_compare(
+						$new_version,
+						$migration_version,
+						'>='
+					)
+				) {
+					do_action( 'cf7_telegram_migration', $migration_version, $old_version, $new_version );
 
-				do_action( 'cf7_telegram_migration', $migration_version, $old_version, $new_version );
+					try {
+						call_user_func( $migration_function, $old_version, $new_version, $upgrader );
+					} catch ( \Exception|\Error $e ) {
+						( new Logger() )->write(
+							[
+								'migration_v' => $migration_version,
+								'old_v'       => $old_version,
+								'new_v'       => $new_version,
+								$e->getMessage()
+							],
+							'Migration error',
+							Logger::LEVEL_CRITICAL,
+						);
+					}
 
-				try {
-					$migration_function( $old_version, $new_version );
-				} catch ( \Exception|\Error $e ) {
-					do_action( 'logger', [ 'Migration error', $migration_version, $old_version, $new_version, $e->getMessage() ] );
+					if ( ! empty( get_option( 'cf7tg_migration_' . $migration_version ) ) ) {
+						( new Logger() )->write(
+							[
+								'migration_v' => $migration_version,
+								'old_v'       => $old_version,
+								'new_v'       => $new_version,
+							],
+							'Migration already done',
+							Logger::LEVEL_ATTENTION,
+						);
+					} else {
+						update_option( 'cf7tg_migration_' . $migration_version, compact( $old_version, $new_version ), false );
+					}
 				}
-			}
-		}, (int) ( $migration_version * 10 ), 2 );
+			},
+			(int) ( $migration_version * 10 ),
+			3 );
 	}
 
-	private function loadMigrations() {
+	private function loadMigrations(): void {
 		foreach ( glob( Settings::pluginDir() . '/inc/migrations/*.php' ) as $file ) {
 			require_once $file;
 		}
-	}
-
-	// todo Write tests
-	public static function test() {
-		// Set the cf7tg_version option to any value to test the migration.
-		do_action('upgrader_process_complete', [], ['type'=>'plugin', 'action'=>'update', 'plugins' => ['cf7-telegram/cf7-telegram.php'] ] );
 	}
 }
