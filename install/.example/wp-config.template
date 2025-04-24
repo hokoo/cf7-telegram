@@ -1,0 +1,18 @@
+<?php
+$configs = [
+    'dev'   => './_dev-config.php',
+    'betas' => './_betas-config.php',
+];
+
+// 'dev' or 'betas'
+$current = 'dev';
+
+const WPCF7TG_GITHUB_TOKEN = 'ghp_xxx';
+const WPFC7TG_BOT_TOKEN    = '0123456789:ABCDEF';
+
+const WPCF7TG_PING_INTERVAL = 5000;
+const WPCF7TG_UPDATES_INTERVAL = 50000;
+
+include $configs[$current];
+
+require_once ABSPATH . 'wp-settings.php';

@@ -1,5 +1,3 @@
-real_ip_header X-Forwarded-For;
-
 server {
     listen 443 ssl http2;
     server_name %s *.%s;
@@ -9,8 +7,8 @@ server {
 	ssl_certificate_key /etc/nginx/ssl/host.key;
 
     client_max_body_size 108M;
-    access_log /var/log/nginx/%s.access.log;
-    error_log /var/log/php/%s.error.log notice;
+    access_log /var/log/nginx/access.log;
+    error_log /var/log/php/error.log notice;
     root /var/www/html/;
     index index.php;
     charset utf-8;
@@ -63,7 +61,7 @@ server {
     	rewrite /wp-admin$ $scheme://$host$uri/ permanent;
 
     	rewrite ^/(wp-includes/.*)$ /wordpress/$1 last;
-    	rewrite ^/(wp-content/.*)$ /wordpress/$1 last;
+    	rewrite ^/wp-content/(.*)$ /%s-content/$1 last;
 
     	rewrite ^/(wp-[^/]+\.php)$ /wordpress/$1 last;
         rewrite ^/(/wp-.*) /wordpress/$1 last;
