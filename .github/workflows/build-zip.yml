@@ -62,7 +62,7 @@ jobs:
 
           # Сохраняем текущий путь
           export TEMP_DIR=$(mktemp -d)
-          cp -r cf7-telegram/* "$TEMP_DIR/"
+          cp -r cf7-telegram/. "$TEMP_DIR/"
 
           # Получаем ветку plugin-dist как отдельный чистый clone
           git fetch origin plugin-dist || true
