@@ -26,7 +26,8 @@
     "hokoo/wpconnections": "dev-master",
     "ext-json": "*",
     "php": ">=8.0",
-    "irazasyed/telegram-bot-sdk": "^3.0"
+    "irazasyed/telegram-bot-sdk": "^3.0",
+    "yahnis-elsts/plugin-update-checker": "^5.5"
   },
   "autoload": {
     "psr-4": {
