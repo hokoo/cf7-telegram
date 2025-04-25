@@ -170,7 +170,14 @@ class wpcf7_Telegram{
 				'/>';
 
 				if ( $data['checked'] ) {
-					echo __ ( "You might need a personal GitHub token to access pre-releases — especially if your server has hit GitHub’s free rate limit. You'll see an error when checking for updates if that's the case (this can happen even if you didn’t cause it). It's free and takes just a minute to create.", 'cf7-telegram' );
+					echo '<div class="add-info">';
+					echo __( "You might need a personal GitHub token to access pre-releases — especially if your server has hit GitHub’s free rate limit. <br>You'll see an error when checking for updates if that's the case (this can happen even if you didn’t cause it). <br>Getting a token is free and takes just a minute to create.", 'cf7-telegram' );
+					echo "<br/>";
+					echo sprintf(
+							__( 'Got the token? Just drop it into the %s constant in wp-config.php.', 'cf7-telegram' ),
+						'<code>WPFC7TG_BOT_TOKEN</code>'
+					);
+					echo '</div>';
 				}
 
 				break;
