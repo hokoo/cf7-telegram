@@ -124,6 +124,6 @@ HTML;
 
 		defined( 'WPCF7TG_GITHUB_TOKEN' ) && $updateChecker->setAuthentication( WPCF7TG_GITHUB_TOKEN );
 
-		$updateChecker->setBranch( 'pre-releases' );
+		$updateChecker->setBranch( 'plugin-dist' );
 	}
 }
