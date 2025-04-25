@@ -91,7 +91,7 @@ class Migration {
 						$migration_version,
 						'<'
 					) && version_compare(
-						$new_version,
+						self::stripPrerelease( $new_version ),
 						$migration_version,
 						'>='
 					)
@@ -136,5 +136,9 @@ class Migration {
 		foreach ( glob( Settings::pluginDir() . '/inc/migrations/*.php' ) as $file ) {
 			require_once $file;
 		}
+	}
+
+	public static function stripPrerelease( string $version ): string {
+		return preg_replace( '/[-+].*/', '', $version );
 	}
 }

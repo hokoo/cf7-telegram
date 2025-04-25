@@ -6,12 +6,20 @@ use iTRON\cf7Telegram\Channel;
 use iTRON\cf7Telegram\Chat;
 use iTRON\cf7Telegram\Client;
 use iTRON\cf7Telegram\Form;
+use iTRON\cf7Telegram\Settings;
 use iTRON\wpConnections\Query\Connection;
 
 Migration::registerMigration(
 	'1.0',
 	function () {
 		list( $old_version, $new_version, $upgrader ) = func_get_args();
+
+		// Refactor the early access option flag.
+		update_option(
+			Settings::EARLY_FLAG_OPTION,
+			get_option( 'wpcf7_telegram_pre_releases', false ),
+			false
+		);
 
 		// Try to load a single token.
 		$const = defined( 'WPFC7TG_BOT_TOKEN' ) ? WPFC7TG_BOT_TOKEN : false;
