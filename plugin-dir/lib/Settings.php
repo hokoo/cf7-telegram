@@ -112,7 +112,7 @@ HTML;
 	}
 
 	private static function get_settings_content() : string {
-		return file_get_contents( self::pluginDir() . '/assets/settings-content.html' );
+		return file_get_contents( self::pluginDir() . '/react/public/settings-content.html' ) ?: '';
 	}
 
 	private static function initPreReleases(): void {
