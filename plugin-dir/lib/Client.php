@@ -58,7 +58,6 @@ class Client {
 		$this->logger = new Logger();
 
 		$this->registerConnectionsClient();
-		CPT::init();
 		RestApi::init();
 		Migration::init();
 

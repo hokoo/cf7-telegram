@@ -11,7 +11,7 @@ class Settings {
 
 	 static function init(): void {
 		add_action( 'admin_menu', function () {
-			add_submenu_page( 'wpcf7', 'CF7 Telegram', 'CF7 Telegram', 'wpcf7_read_contact_forms', 'wpcf7_tg', [ self::class, 'plugin_menu_cbf' ] );
+			add_submenu_page( 'wpcf7', 'CF7 Telegram', 'CF7 Telegram', self::getCaps(), 'wpcf7_tg', [ self::class, 'plugin_menu_cbf' ] );
 		} );
 		add_action( 'current_screen', [ self::class, 'initScreen' ], 999 );
 		add_action( 'admin_enqueue_scripts', [ self::class, 'admin_enqueue_scripts' ] );
@@ -25,6 +25,10 @@ class Settings {
 
 	public static function setEarlyFlag( $value ): void {
 		update_option( self::EARLY_FLAG_OPTION, $value, false );
+	}
+
+	public static function getCaps(): string {
+		return CPT::get_instance()->cf7_orig_capabilities['edit_posts'];
 	}
 
 	public static function plugin_menu_cbf(){
