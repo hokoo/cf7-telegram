@@ -65,7 +65,11 @@ jobs:
           files: ./cf7-telegram-wp-plugin.zip
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Push
+      - name: Set target branch
+        id: branch
+        run: echo "branch_name=$([ '${{ github.event.release.prerelease }}' == 'true' ] && echo 'beta-releases' || echo 'plugin-dist')" >> "$GITHUB_OUTPUT"
+
+      - name: Push to release branch
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -73,11 +77,8 @@ jobs:
           export TEMP_DIR=$(mktemp -d)
           cp -r cf7-telegram/* "$TEMP_DIR/"
 
-          # Determine the target branch
-          TARGET_BRANCH="${{ github.event.release.prerelease == true && 'pre-releases' || 'plugin-dist' }}"
-
-          git fetch origin $TARGET_BRANCH || true
-          git worktree add --force dist-worktree origin/$TARGET_BRANCH
+          git fetch origin ${{ steps.branch.outputs.branch_name }} || true
+          git worktree add --force dist-worktree origin/${{ steps.branch.outputs.branch_name }}
 
           rm -rf dist-worktree/*
           cp -r "$TEMP_DIR/"* dist-worktree/
@@ -86,6 +87,20 @@ jobs:
           git add -f vendor
           git add .
           git commit -m "Update plugin build from release ${{ github.event.release.tag_name }}" || echo "No changes to commit"
-          git push origin HEAD:$TARGET_BRANCH
+          git push origin HEAD:${{ steps.branch.outputs.branch_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Prepare version without "v"
+        id: clean_version
+        run: echo "value=${{ github.event.release.tag_name }}" | sed -E 's/^(v-?|version-)//' >> $GITHUB_OUTPUT
+
+      - name: Deploy to WordPress.org (production only)
+        if: ${{ github.event.release.prerelease == false }}
+        uses: 10up/action-wordpress-plugin-deploy@stable
+        env:
+          SVN_USERNAME: ${{ secrets.WPORG_USERNAME }}
+          SVN_PASSWORD: ${{ secrets.WPORG_PASSWORD }}
+          BUILD_DIR: ./cf7-telegram
+          SLUG: cf7-telegram
+          VERSION: ${{ steps.clean_version.outputs.value }}
