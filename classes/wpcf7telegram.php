@@ -2,7 +2,7 @@
 class wpcf7_Telegram{
 	
 	private
-	$cmd = 'cf7tg_start',	
+	$cmd = 'cf7tg_start',
 	$bot_token;
 	
 	static
@@ -13,6 +13,7 @@ class wpcf7_Telegram{
 	$api_url = 'https://api.telegram.org/bot%s/',
 	$chats = array(),
 	$addons = array(),
+	$pre_releases = false,
 	$markdown_tags = array(
 		'bold' => array(
 			'<h1>','</h1>', '<h2>','</h2>', '<h3>','</h3>', '<h4>','</h4>', '<h5>','</h5>', '<h6>','</h6>',
@@ -46,6 +47,7 @@ class wpcf7_Telegram{
 		);
 		
 		$this->load_bot_token();
+		$this->load_pre_releases_flag();
 		$this->load_chats();
 		
 		add_action( 'init', array( $this, 'translations' ) );
@@ -125,6 +127,24 @@ class wpcf7_Telegram{
 				'ph'		=> self::has_token_constant() ? __( 'Defined by WPFC7TG_BOT_TOKEN constant', 'cf7-telegram' ) : __( 'or define by WPFC7TG_BOT_TOKEN constant', 'cf7-telegram' ),
 			)
 		);
+
+		add_settings_field(
+			'pre-releases',
+			__( 'Install pre-releases (unstable, but exciting!)', 'cf7-telegram' ) . '<br/><small>' .
+			sprintf(
+				__( 'You might run into terrible bugs. If that doesn’t scare you off, I’d love to hear your %sfeedback on GitHub%s!', 'cf7-telegram' ),
+				'<a target="_blank" href="https://github.com/hokoo/cf7-telegram/issues">',
+				'</a>'
+			) . '</small>',
+			array( $me, 'settings_clb' ),
+			'wpcf7tg_settings_page',
+			'wpcf7_tg_sections__main',
+			array(
+				'type'		=> 'checkbox',
+				'name'		=> 'wpcf7_telegram_pre_releases',
+				'checked'   => $me->pre_releases,
+			)
+		);
 	}
 	
 	function settings_clb( $data ){
@@ -141,6 +161,20 @@ class wpcf7_Telegram{
 					$disabled .
 					$placeholder .
 				'/>'; break;
+			case 'checkbox' :
+				$checked = checked( (bool) $data['checked'], true, false );
+				echo
+				'<input type="checkbox" ' .
+					'name="'. esc_attr( $data['name'] ) .'" ' .
+					$checked .
+				'/>';
+
+				if ( $data['checked'] ) {
+					echo __ ( "You might need a personal GitHub token to access pre-releases — especially if your server has hit GitHub’s free rate limit. You'll see an error when checking for updates if that's the case (this can happen even if you didn’t cause it). It's free and takes just a minute to create.", 'cf7-telegram' );
+				}
+
+				break;
+
 		}
 	}
 	
@@ -185,7 +219,12 @@ class wpcf7_Telegram{
 		$me = self::get_instance();
 		if ( $me->current_action() !== 'update' ) return;
 		if ( ! wp_verify_nonce( @ $_POST['_wpnonce'], 'wpcf7tg_settings_page-options' ) ) return;
-		
+
+		// Pre releases
+		$this->pre_releases = ! empty( $_POST['wpcf7_telegram_pre_releases'] );
+		update_option( 'wpcf7_telegram_pre_releases', $this->pre_releases, false );
+
+		// Token
 		$me->save_bot_token();
 	}
 	
@@ -197,6 +236,13 @@ class wpcf7_Telegram{
 		$token = get_option( 'wpcf7_telegram_tkn' );
 		$this->bot_token = empty( $token ) ? '' : $token;
 		
+		return $this;
+	}
+
+	private function load_pre_releases_flag(){
+		$pre_releases = get_option( 'wpcf7_telegram_pre_releases' );
+		$this->pre_releases = ! empty( $pre_releases ) ? true : false;
+
 		return $this;
 	}
 	
@@ -326,6 +372,7 @@ class wpcf7_Telegram{
 				sprintf( $status_format, 'online', __( 'Bot is online', 'cf7-telegram' ), '@' . $check_bot->result->username ) :
 				sprintf( $status_format, 'failed', __( 'Bot is broken', 'cf7-telegram' ), __( 'unknown', 'cf7-telegram' ) );
 		else :
+			echo sprintf( $status_format, 'failed', __( 'Bot is broken', 'cf7-telegram' ), __( 'unknown', 'cf7-telegram' ) );
 			echo $check_bot->get_error_message();
 		endif;
 	}
