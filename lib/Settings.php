@@ -119,7 +119,8 @@ HTML;
 		$updateChecker = PucFactory::buildUpdateChecker(
 			'https://github.com/hokoo/cf7-telegram',
 			WPCF7TG_FILE,
-			'cf7-telegram'
+			'cf7-telegram',
+			1
 		);
 
 		defined( 'WPCF7TG_GITHUB_TOKEN' ) && $updateChecker->setAuthentication( WPCF7TG_GITHUB_TOKEN );
