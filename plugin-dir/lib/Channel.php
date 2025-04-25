@@ -209,7 +209,7 @@ class Channel extends Entity implements wpPostAble{
 
 		foreach ( $chats as $chat ) {
 			/** @var Chat $chat */
-			$this->getBot()->sendMessage( $chat->getChatID(), $message, $mode, false, [ $this ] );
+			$this->getBot()->sendMessage( $chat, $message, $mode, false, [ $this ] );
 		}
 	}
 

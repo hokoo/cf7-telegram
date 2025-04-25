@@ -5,7 +5,7 @@ draw_line(){
 }
 
 fake_posts(){
-  docker-compose -p cf7tg exec php sh -c "\
+  docker-compose -p cf7t exec php sh -c "\
   wp post create --post_type=cf7tg_chat --post_title=\"Chat 0\" --post_status=publish && \
   wp post create --post_type=cf7tg_chat --post_title=\"Chat 1\" --post_status=publish && \
   wp post create --post_type=cf7tg_bot --post_title=\"Bot example\" --post_status=publish && \
@@ -15,7 +15,7 @@ fake_posts(){
 }
 
 set_permalinks(){
-  docker-compose -p cf7tg exec php sh -c "wp rewrite structure '/%year%/%monthnum%/%postname%/'"
+  docker-compose -p cf7t exec php sh -c "wp rewrite structure '/%year%/%monthnum%/%postname%/'"
 }
 
 setup-env(){
@@ -36,9 +36,13 @@ configure-nginx() {
   # configure nginx.conf
   echo "nginx.conf ..."
   [ ! -d ./install/nginx/ ] && mkdir -p ./install/nginx/ && cp -R ./install/.example/ssl ./install/nginx/
-  if [ ! -f ./install/nginx/nginx.conf ]; then
+  if [ ! -f ./install/nginx/dev.conf ]; then
     NGINXCONFIG=$(< ./install/.example/nginx.conf.template)
-    printf "$NGINXCONFIG" $PROJECT_BASE_URL $PROJECT_BASE_URL $PROJECT_BASE_URL $PROJECT_BASE_URL $PROJECT_BASE_URL $PROJECT_BASE_URL > ./install/nginx/nginx.conf
+    printf "$NGINXCONFIG" $PROJECT_BASE_URL $PROJECT_BASE_URL dev $PROJECT_BASE_URL $PROJECT_BASE_URL > ./install/nginx/dev.conf
+  fi
+  if [ ! -f ./install/nginx/betas.conf ]; then
+    NGINXCONFIG=$(< ./install/.example/nginx.conf.template)
+    printf "$NGINXCONFIG" $BETAS_PROJECT_URL $BETAS_PROJECT_URL betas $BETAS_PROJECT_URL $BETAS_PROJECT_URL > ./install/nginx/betas.conf
   fi
   echo "Ok."
 

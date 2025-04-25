@@ -2,6 +2,7 @@ version: "3"
 
 services:
   mysql:
+    platform: "${DOCKER_PLATFORM:-linux/amd64}"
     container_name: "${PROJECT_NAME}_mysql"
     image: mysql:5.7
     stop_grace_period: 30s
@@ -15,7 +16,7 @@ services:
     volumes:
       - ~/mysql-data/itron/cf7-telegram:/var/lib/mysql
     networks:
-      - cf7tgdev-network
+      - cf7t_local
 
   php:
     build:
@@ -24,7 +25,6 @@ services:
         PHP_VER: $PHP_TAG
     container_name: "${PROJECT_NAME}_php"
     environment:
-      PHP_SENDMAIL_PATH: /usr/sbin/sendmail -t -i -S mailhog:1025
       DB_HOST: $DB_HOST
       DB_USER: $DB_USER
       DB_PASSWORD: $DB_PASSWORD
@@ -42,42 +42,46 @@ services:
       PHP_XDEBUG_LOG: /srv/web/xdebug.log
       PHP_EXTENSIONS_DISABLE: $EXTENSIONS_DISABLE
     volumes:
-      - ./:/var/www/html
+      - ./:/srv/web
       - ./install/php-fpm/php.ini:/usr/local/etc/php/conf.d/php-wpcf7-overrides.ini
     extra_hosts:
-      - "cf7tgdev.loc:host-gateway"
+      - "cf7t.local:host-gateway"
+      - "cf7t.betas:host-gateway"
     networks:
-      - cf7tgdev-network
+      - cf7t_local
 
   nginx:
+    platform: "${DOCKER_PLATFORM:-linux/amd64}"
     container_name: "${PROJECT_NAME}_nginx"
     image: nginx:alpine
-    working_dir: /var/www/html/
+    working_dir: /srv/web/
     depends_on:
       - php
     volumes:
-      - ./:/var/www/html/
-      - ./install/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./:/srv/web/
+      - ./install/nginx/dev.conf:/etc/nginx/conf.d/dev.conf
+      - ./install/nginx/betas.conf:/etc/nginx/conf.d/betas.conf
       - ./install/nginx/ssl/:/etc/nginx/ssl/
-      - ./install/php-fpm/error.log:/var/log/php/cf7tgdev.loc.error.log
-      - ./install/nginx/access.log:/var/log/nginx/cf7tgdev.loc.access.log
+      - ./install/php-fpm/error.log:/var/log/php/error.log
+      - ./install/nginx/access.log:/var/log/nginx/access.log
     ports:
       - "80:80"
       - "443:443"
     networks:
-      - cf7tgdev-network
+      - cf7t_local
 
   node:
+    platform: "${DOCKER_PLATFORM:-linux/amd64}"
     container_name: "${PROJECT_NAME}_node"
     image: node:18
     user: node
     command: sh -c "trap 'exit 0' TERM; while :; do sleep 1; done"
-    working_dir: /var/www/html/
+    working_dir: /srv/web/
     volumes:
-      - ./:/var/www/html/
+      - ./:/srv/web/
     networks:
-      - cf7tgdev-network
+      - cf7t_local
 
 networks:
-  cf7tgdev-network:
+  cf7t_local:
     driver: bridge

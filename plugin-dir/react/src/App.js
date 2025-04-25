@@ -1,6 +1,7 @@
 /* global cf7TelegramData, wp */
 
 import React, {useState, useEffect} from 'react';
+import Settings from './components/Settings';
 import Channel from './components/Channel';
 import Bot from './components/Bot';
 import NewBot from './components/NewBot';
@@ -100,54 +101,60 @@ const App = () => {
         <>
         <h1>{wp.i18n.__( 'Telegram notificator settings', 'cf7-telegram' )}</h1>
         <div className="cf7-tg-container">
-            <div className="list-container bots-container">
-                <div className="title-container">
-                    <h3 className="title">{wp.i18n.__( 'Bots', 'cf7-telegram' )}</h3>
-                    <NewBot setBots={setBots}/>
-                </div>
-
-                <div className="bot-list">
-                    {bots.map(bot => (
-                        <Bot
-                            key={bot.id}
-                            bot={bot}
-                            chats={chats}
-                            bot2ChatConnections={bot2ChatConnections}
-                            setBots={setBots}
-                            setBot2ChatConnections={setBot2ChatConnections}
-                            bot2ChannelConnections={bot2ChannelConnections}
-                            setBot2ChannelConnections={setBot2ChannelConnections}
-                            setChat2ChannelConnections={setChat2ChannelConnections}
-                            loadBot2ChatConnections={loadBot2ChatConnections}
-                            loadChats={loadChats}
-                        />
-                    ))}
-                </div>
+            <div className="settings-container">
+                <Settings />
             </div>
 
-            <div className="list-container channels-container">
-                <div className="title-container">
-                    <h3 className="title">{wp.i18n.__( 'Channels', 'cf7-telegram' )}</h3>
-                    <NewChannel setChannels={setChannels}/>
+            <div className="main-container">
+                <div className="list-container bots-container">
+                    <div className="title-container">
+                        <h3 className="title">{wp.i18n.__( 'Bots', 'cf7-telegram' )}</h3>
+                        <NewBot setBots={setBots}/>
+                    </div>
+
+                    <div className="bot-list">
+                        {bots.map(bot => (
+                            <Bot
+                                key={bot.id}
+                                bot={bot}
+                                chats={chats}
+                                bot2ChatConnections={bot2ChatConnections}
+                                setBots={setBots}
+                                setBot2ChatConnections={setBot2ChatConnections}
+                                bot2ChannelConnections={bot2ChannelConnections}
+                                setBot2ChannelConnections={setBot2ChannelConnections}
+                                setChat2ChannelConnections={setChat2ChannelConnections}
+                                loadBot2ChatConnections={loadBot2ChatConnections}
+                                loadChats={loadChats}
+                            />
+                        ))}
+                    </div>
                 </div>
-                <div className="channel-list">
-                    {channels.map(channel => (
-                        <Channel
-                            key={channel.id}
-                            channel={channel}
-                            forms={forms}
-                            setChannels={setChannels}
-                            form2ChannelConnections={form2ChannelConnections}
-                            setForm2ChannelConnections={setForm2ChannelConnections}
-                            bots={bots}
-                            bot2ChannelConnections={bot2ChannelConnections}
-                            setBot2ChannelConnections={setBot2ChannelConnections}
-                            chats={chats}
-                            chat2ChannelConnections={chat2ChannelConnections}
-                            setChat2ChannelConnections={setChat2ChannelConnections}
-                            bot2ChatConnections={bot2ChatConnections}
-                        />
-                    ))}
+
+                <div className="list-container channels-container">
+                    <div className="title-container">
+                        <h3 className="title">{wp.i18n.__( 'Channels', 'cf7-telegram' )}</h3>
+                        <NewChannel setChannels={setChannels}/>
+                    </div>
+                    <div className="channel-list">
+                        {channels.map(channel => (
+                            <Channel
+                                key={channel.id}
+                                channel={channel}
+                                forms={forms}
+                                setChannels={setChannels}
+                                form2ChannelConnections={form2ChannelConnections}
+                                setForm2ChannelConnections={setForm2ChannelConnections}
+                                bots={bots}
+                                bot2ChannelConnections={bot2ChannelConnections}
+                                setBot2ChannelConnections={setBot2ChannelConnections}
+                                chats={chats}
+                                chat2ChannelConnections={chat2ChannelConnections}
+                                setChat2ChannelConnections={setChat2ChannelConnections}
+                                bot2ChatConnections={bot2ChatConnections}
+                            />
+                        ))}
+                    </div>
                 </div>
             </div>
         </div>

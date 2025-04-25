@@ -23,15 +23,18 @@ class Logger {
 	public function write( $data, $title = '', $level = self::LEVEL_INFO ){
 		$data = is_string( $data ) ? $data : json_encode( $data, JSON_UNESCAPED_UNICODE );
 		$source = substr( strrchr( __NAMESPACE__, '\\' ), 1 );
+		$data = [
+			'source'    	=> $source,
+			'date'			=> time(),
+			'level'			=> $level,
+			'msg'			=> $title,
+			'data'			=> $data,
+		];
+
+		do_action( 'logger', $data );
 
 		return Util::getWPDB()->insert( Util::getWPDB()->{$this->table},
-			[
-				'source'    	=> $source,
-				'date'			=> time(),
-				'level'			=> $level,
-				'msg'			=> $title,
-				'data'			=> $data,
-			],
+			$data,
 			[ '%s', '%d', '%d', '%s', '%s' ]
 		);
 

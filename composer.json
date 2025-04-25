@@ -1,6 +1,6 @@
 {
   "name": "hokoo/wpcf7_telegram",
-  "description": "",
+  "description": "Contact Form 7 Telegram Bot Integration",
   "license": "proprietary",
   "authors": [
     {
@@ -17,13 +17,12 @@
   "require": {
     "johnpbloch/wordpress-core-installer": "*",
     "composer/installers": "*",
-    "johnpbloch/wordpress": "5.6",
+    "johnpbloch/wordpress": "^6.6",
     "wpackagist-plugin/contact-form-7": "^6.0",
-    "mobiledetect/mobiledetectlib": "^2.8",
-    "wpackagist-plugin/classic-editor": "^1.5",
+    "wpackagist-plugin/cf7-telegram": "^0.9.2",
     "wpackagist-plugin/wp-smtp": "^1.1",
-    "johnbillion/query-monitor": "^3.7",
-    "wpackagist-plugin/wp-data-logger": "^2.0"
+    "wpackagist-plugin/wp-data-logger": "^2.0",
+    "wpackagist-plugin/wp-crontrol": "^1.19"
   },
   "autoload": {
   },

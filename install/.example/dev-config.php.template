@@ -1,4 +1,8 @@
 <?php
+
+const WP_SITEURL = 'https://%s/';
+const WP_HOME    = 'https://%s/';
+
 define( 'DB_NAME', '%s' );
 define( 'DB_USER', '%s' );
 define( 'DB_PASSWORD', '%s' );
@@ -14,4 +18,4 @@ if ( ! defined('ABSPATH') ) {
 	define( 'ABSPATH', CF7TGDEV_ROOT . '/wordpress/' );
 }
 
-require_once ABSPATH . 'wp-settings.php';
+define( 'WP_CONTENT_DIR', CF7TGDEV_ROOT . '/dev-content/' );

@@ -1,4 +1,5 @@
 name: Build zip
+
 on:
   release:
     types:
@@ -7,23 +8,54 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Check out the source code
         uses: actions/checkout@v3
 
-      - uses: shivammathur/setup-php@v2
-        name: Set up PHP
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
         with:
           php-version: 8.2
           coverage: none
 
+      - name: Set up Node.js 18
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install and build React app
+        working-directory: ./plugin-dir/react
+        run: |
+          npm ci
+          CI=false npm run build
+
+      - name: Clean up react directory
+        run: |
+          # always remove node_modules
+          echo "Removing node_modules..."
+          rm -rf ./plugin-dir/react/node_modules
+
+          # remove everything except build/ if this is a production release
+          if [ "${{ github.event.release.prerelease }}" != "true" ]; then
+            echo "Production release: removing everything except build/"
+            find ./plugin-dir/react -mindepth 1 -maxdepth 1 -not -name 'build' -exec rm -rf {} +
+          else
+            echo "Pre-release: keeping files except node_modules."
+          fi
+
+      - name: Install Composer dependencies
+        working-directory: ./plugin-dir
+        run: |
+          composer install --no-dev --optimize-autoloader
+        env:
+          COMPOSER_ROOT_VERSION: 1.0.0
+
       - name: Remove all files and directories except plugin directory
         run: |
-          find . -mindepth 1 -maxdepth 1 -not -name 'plugin-dir' -exec rm -rf {} +
-          rm -fr plugin-dir/lib plugin-dir/react
+          find . -mindepth 1 -maxdepth 1 -not -name 'plugin-dir' -not -name '.git' -exec rm -rf {} +
           mv plugin-dir cf7-telegram
 
-      # Zip the plugin directory
       - name: Zip the plugin directory
         run: zip -r cf7-telegram-wp-plugin.zip cf7-telegram
 
@@ -32,3 +64,44 @@ jobs:
         with:
           files: ./cf7-telegram-wp-plugin.zip
           repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set target branch
+        id: branch
+        run: echo "branch_name=$([ '${{ github.event.release.prerelease }}' == 'true' ] && echo 'plugin-dist' || echo 'stable')" >> "$GITHUB_OUTPUT"
+
+      - name: Push to release branch
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          export TEMP_DIR=$(mktemp -d)
+          cp -r cf7-telegram/* "$TEMP_DIR/"
+
+          git fetch origin ${{ steps.branch.outputs.branch_name }} || true
+          git worktree add --force dist-worktree origin/${{ steps.branch.outputs.branch_name }}
+
+          rm -rf dist-worktree/*
+          cp -r "$TEMP_DIR/"* dist-worktree/
+
+          cd dist-worktree
+          git add -f vendor
+          git add -f react/build
+          git add .
+          git commit -m "Update plugin build from release ${{ github.event.release.tag_name }}" || echo "No changes to commit"
+          git push origin HEAD:${{ steps.branch.outputs.branch_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Prepare version without "v"
+        id: clean_version
+        run: echo "value=${{ github.event.release.tag_name }}" | sed -E 's/^(v-?|version-)//' >> $GITHUB_OUTPUT
+
+      - name: Deploy to WordPress.org (production only)
+        if: ${{ github.event.release.prerelease == false }}
+        uses: 10up/action-wordpress-plugin-deploy@stable
+        env:
+          SVN_USERNAME: ${{ secrets.WPORG_USERNAME }}
+          SVN_PASSWORD: ${{ secrets.WPORG_PASSWORD }}
+          BUILD_DIR: ./cf7-telegram
+          SLUG: cf7-telegram
+          VERSION: ${{ steps.clean_version.outputs.value }}
