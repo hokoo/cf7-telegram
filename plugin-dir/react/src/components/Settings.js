@@ -69,6 +69,17 @@ const Settings = () => {
                     }}
                 />
             )}
+
+            {ea && (
+                <small
+                    dangerouslySetInnerHTML={{
+                        __html:
+                            wp.i18n.__( 'For better experience, install and activate the following plugins:', 'cf7-telegram' ) +
+                            '<br><a target="_blank" href="https://wordpress.org/plugins/wp-data-logger/">WP Data Logger</a>.<br/>' +
+                            wp.i18n.__( 'Caught a bug? Take a look at the logs under Tools → WP Logger.', 'cf7-telegram' ),
+                    }}
+                />
+            )}
         </label>
     );
 };
