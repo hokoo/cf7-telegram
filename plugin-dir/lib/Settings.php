@@ -79,6 +79,11 @@ HTML;
 				'bots'     => get_rest_url( null, 'wp/v2' . '/cf7tg_bot/' ),
 				'chats'    => get_rest_url( null, 'wp/v2' . '/cf7tg_chat/' ),
 				'forms'    => get_rest_url( null, 'contact-form-7/v1' . '/contact-forms/' ),
+				'settings' => get_rest_url( null, 'wp/v2' . '/settings/' ),
+			],
+
+			'options' => [
+				'early_access' => self::EARLY_FLAG_OPTION,
 			],
 
 			// Put this nonce to X-WP-Nonce header request.
