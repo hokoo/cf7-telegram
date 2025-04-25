@@ -2,13 +2,29 @@
 
 namespace iTRON\cf7Telegram;
 
+use iTRON\cf7Telegram\Controllers\CPT;
+use YahnisElsts\PluginUpdateChecker\v5\PucFactory;
+
 class Settings {
-	 static function init() {
+	const OPTION_PREFIX = 'cf7t_';
+	const EARLY_FLAG_OPTION = self::OPTION_PREFIX . 'early_access';
+
+	 static function init(): void {
 		add_action( 'admin_menu', function () {
 			add_submenu_page( 'wpcf7', 'CF7 Telegram', 'CF7 Telegram', 'wpcf7_read_contact_forms', 'wpcf7_tg', [ self::class, 'plugin_menu_cbf' ] );
 		} );
 		add_action( 'current_screen', [ self::class, 'initScreen' ], 999 );
 		add_action( 'admin_enqueue_scripts', [ self::class, 'admin_enqueue_scripts' ] );
+
+		self::getEarlyFlag() && self::initPreReleases();
+	}
+
+	public static function getEarlyFlag(): bool {
+		return filter_var( get_option( self::EARLY_FLAG_OPTION, false ), FILTER_VALIDATE_BOOLEAN );
+	}
+
+	public static function setEarlyFlag( $value ): void {
+		update_option( self::EARLY_FLAG_OPTION, $value, false );
 	}
 
 	public static function plugin_menu_cbf(){
@@ -88,5 +104,17 @@ HTML;
 
 	private static function get_settings_content() : string {
 		return file_get_contents( self::pluginDir() . '/assets/settings-content.html' );
+	}
+
+	private static function initPreReleases(): void {
+		$updateChecker = PucFactory::buildUpdateChecker(
+			'https://github.com/hokoo/cf7-telegram',
+			WPCF7TG_FILE,
+			'cf7-telegram'
+		);
+
+		defined( 'WPCF7TG_GITHUB_TOKEN' ) && $updateChecker->setAuthentication( WPCF7TG_GITHUB_TOKEN );
+
+		$updateChecker->setBranch( 'pre-releases' );
 	}
 }
