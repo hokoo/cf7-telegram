@@ -212,7 +212,7 @@ class wpcf7_Telegram{
 			return;
 		endif;
 		
-		$token = $_REQUEST['wpcf7_telegram_tkn'];
+		$token = trim( sanitize_text_field( $_REQUEST['wpcf7_telegram_tkn'] ) );
 		$this->set_bot_token( $token );
 		return $this;
 	}
