@@ -59,13 +59,23 @@ class CF7 {
 		if ( false === @$mail['use_html'] ) :
 			$mode = 'Markdown';
 			$output = self::markdown( $output );
-			$output = wp_kses( $output, [] );
+			$formatted_output = wp_kses( $output, [] );
 		else :
-			$output = wp_kses( $output, array(
+			$formatted_output = wp_kses( $output, array(
 				'a'	=> array( 'href' => true ),
 				'b' => [], 'strong' => [], 'i' => [], 'em' => [], 'u' => [], 'ins' => [], 's' => [], 'strike' => [], 'del' => [], 'code' => [], 'pre' => [],
 			) );
 		endif;
+
+		/**
+		 * Filters the output of the message before it is sent to Telegram.
+		 *
+		 * @param string $formatted_output The formatted output of the message.
+		 * @param string $output The original output of the message.
+		 * @param string $mode The mode of the message (HTML or Markdown).
+		 * @return string The filtered output of the message.
+		 */
+		$output = apply_filters( 'wpcf7tg_sendMessage_output', $formatted_output, $output, $mode );
 
 		$targetChannels = $client->getChannels()->filterByIDs( $connections->column( 'to' ) );
 		foreach ( $targetChannels as $channel ) {

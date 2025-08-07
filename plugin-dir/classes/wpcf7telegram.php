@@ -279,13 +279,23 @@ class wpcf7_Telegram{
 		if ( false === @ $mail['use_html'] ) :
 			$mode = 'Markdown';
 			$output = $me->markdown( $output ); 			
-			$output = wp_kses( $output, array() );
+			$formatted_output = wp_kses( $output, array() );
 		else :
-			$output = wp_kses( $output, array(
+			$formatted_output = wp_kses( $output, array(
 				'a'	=> array( 'href' => true ),
 				'b' => array(), 'strong' => array(), 'i' => array(), 'em' => array(), 'u' => array(), 'ins' => array(), 's' => array(), 'strike' => array(), 'del' => array(), 'code' => array(), 'pre' => array(),
 			) );
-		endif;		
+		endif;
+
+		/**
+		 * Filters the output of the message before it is sent to Telegram.
+		 *
+		 * @param string $formatted_output The formatted output of the message.
+		 * @param string $output The original output of the message.
+		 * @param string $mode The mode of the message (HTML or Markdown).
+		 * @return string The filtered output of the message.
+		 */
+		$output = apply_filters( 'wpcf7tg_sendMessage_output', $formatted_output, $output, $mode );
 		
 		foreach( $list as $id => $chat ) :
 			$chat_id = is_numeric( $id ) ? $id : $chat['id'];
