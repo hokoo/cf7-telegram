@@ -389,6 +389,9 @@ class wpcf7_Telegram{
 	
 	function check_updates(){
 		$me = self::get_instance();
+
+		if ( ! $me->has_token() ) return;
+
 		$update_id = get_option( 'wpcf7_telegram_last_update_id' );
 		$param = array(
 			'allowed_updates'	=> array( 'message' ),
@@ -503,11 +506,13 @@ class wpcf7_Telegram{
 
 			// do not to DDOS server if something goes wrong
 			$message = "[TELEGRAM] Server return status {$http_code} : " . $response['response']['message'] ."\n";
+			$message .= "[TELEGRAM] Request URL: {$url}\n";
 		elseif ( $http_code == 401 ) :
 			$message = "[TELEGRAM] Wrong token\n";
 
 		elseif ( $http_code != 200 ) :
 			$message = "[TELEGRAM] Request has failed with error {$response['response']['code']}: {$response['response']['message']}\n";
+			$message .= "[TELEGRAM] Request URL: {$url}\n";
 
 		elseif ( empty( $response['body'] ) ) :
 
