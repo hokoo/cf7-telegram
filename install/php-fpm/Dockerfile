@@ -1,6 +1,6 @@
 ARG PHP_VER
 
-FROM wodby/wordpress-php:${PHP_VER}-4.62.1
+FROM wodby/wordpress-php:${PHP_VER}
 
 LABEL maintaner="Igor Tron <public@itron.pro>"
 

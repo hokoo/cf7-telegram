@@ -3,7 +3,7 @@ version: "3"
 services:
   mysql:
     container_name: "${PROJECT_NAME}_mysql"
-    image: mysql:5.7
+    image: mysql:8.0
     stop_grace_period: 30s
     environment:
       MYSQL_ROOT_PASSWORD: $DB_ROOT_PASSWORD

@@ -15,3 +15,5 @@
 
 # Configs
 /.idea/
+
+.DS_Store
