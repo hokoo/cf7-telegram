@@ -75,7 +75,7 @@ const Settings = () => {
                         __html:
                             sprintf(
                                 wp.i18n.__( 'Got the token? Just drop it into the %s constant in wp-config.php.', 'cf7-telegram' ),
-                                '<code>WPFC7TG_BOT_TOKEN</code>'
+                                '<code>WPCF7TG_GITHUB_TOKEN</code>'
                             )
                     }}
                 />
