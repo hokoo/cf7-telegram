@@ -175,7 +175,7 @@ class wpcf7_Telegram{
 					echo "<br/>";
 					echo sprintf(
 							__( 'Got the token? Just drop it into the %s constant in wp-config.php.', 'cf7-telegram' ),
-						'<code>WPFC7TG_BOT_TOKEN</code>'
+						'<code>WPCF7TG_GITHUB_TOKEN</code>'
 					);
 					echo '</div>';
 				}
