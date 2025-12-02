@@ -67,7 +67,7 @@ jobs:
 
       - name: Set target branch
         id: branch
-        run: echo "branch_name=$([ '${{ github.event.release.prerelease }}' == 'true' ] && echo 'beta-releases' || echo 'plugin-dist')" >> "$GITHUB_OUTPUT"
+        run: echo "branch_name=$([ '${{ github.event.release.prerelease }}' == 'true' ] && echo 'plugin-dist' || echo 'stable')" >> "$GITHUB_OUTPUT"
 
       - name: Push to release branch
         run: |
