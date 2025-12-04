@@ -3,7 +3,7 @@
 * Plugin Name: Contact Form 7 + Telegram
 * Description: Sends messages to Telegram-chat
 * Author: Hokku
-* Version: 0.10.1
+* Version: 0.10.2
 * License: GPL v2 or later
 * License URI: https://www.gnu.org/licenses/gpl-2.0.html
 * Text Domain: cf7-telegram
@@ -14,7 +14,7 @@ use YahnisElsts\PluginUpdateChecker\v5\PucFactory;
 
 define( 'WPCF7TG_PLUGIN_NAME', plugin_basename( __FILE__ ) );
 
-define( 'WPCF7TG_VERSION', '0.10.1' );
+define( 'WPCF7TG_VERSION', '0.10.2' );
 define( 'WPCF7TG_FILE', __FILE__ );
 
 const WPCF7TG_MIGRATION_HOOK = 'cf7tg_migrations';
@@ -66,7 +66,7 @@ add_action(
 			WPCF7TG_MIGRATION_HOOK,
 			[
 				'upgrader' => $upgrader,
-				'prev-version' => WPCF7TG_VERSION,
+				'preVersion' => WPCF7TG_VERSION,
 			]
 		);
 	},
@@ -86,3 +86,11 @@ if ( wpcf7_Telegram::get_instance()->pre_releases ) {
 
 	$updateChecker->setBranch( 'plugin-dist' );
 }
+
+register_activation_hook( WPCF7TG_FILE, function () {
+	update_option( 'cf7tg_version', WPCF7TG_VERSION );
+} );
+
+register_deactivation_hook( WPCF7TG_FILE, function () {
+	delete_option( 'cf7tg_version' );
+} );
