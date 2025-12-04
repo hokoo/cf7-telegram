@@ -125,7 +125,7 @@ class Migration {
 							Logger::LEVEL_ATTENTION,
 						);
 					} else {
-						update_option( 'cf7tg_migration_' . $migration_version, compact( $old_version, $new_version ), false );
+						update_option( 'cf7tg_migration_' . $migration_version, compact( 'old_version', 'new_version' ), false );
 					}
 				}
 			},
