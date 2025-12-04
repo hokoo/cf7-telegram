@@ -59,7 +59,6 @@ class Client {
 
 		$this->registerConnectionsClient();
 		RestApi::init();
-		Migration::init();
 
 		add_action( 'wpcf7_before_send_mail', [ CF7::class, 'handleSubscribe' ], 99999, 3 );
 	}
