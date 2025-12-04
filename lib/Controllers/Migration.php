@@ -4,6 +4,7 @@ namespace iTRON\cf7Telegram\Controllers;
 
 use iTRON\cf7Telegram\Logger;
 use iTRON\cf7Telegram\Settings;
+use iTRON\cf7Telegram\Util;
 
 class Migration {
 	// This is a migration class. It is used to migrate the plugin from one version to another.
@@ -128,7 +129,7 @@ class Migration {
 					}
 				}
 			},
-			(int) ( $migration_version * 10 ),
+			Util::versionToInt( $migration_version ),
 			3 );
 	}
 

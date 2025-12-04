@@ -10,7 +10,7 @@ use iTRON\cf7Telegram\Settings;
 use iTRON\wpConnections\Query\Connection;
 
 Migration::registerMigration(
-	'1.0',
+	'1.0-alpha',
 	function () {
 		list( $old_version, $new_version, $upgrader ) = func_get_args();
 
