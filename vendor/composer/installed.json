@@ -507,12 +507,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/hokoo/wpConnections.git",
-                "reference": "da2df3ca17da1e7b9b475048d88863a8e3c37055"
+                "reference": "9a968a092451dcc1a33de6f778ab5bd2a6db0e72"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/hokoo/wpConnections/zipball/da2df3ca17da1e7b9b475048d88863a8e3c37055",
-                "reference": "da2df3ca17da1e7b9b475048d88863a8e3c37055",
+                "url": "https://api.github.com/repos/hokoo/wpConnections/zipball/9a968a092451dcc1a33de6f778ab5bd2a6db0e72",
+                "reference": "9a968a092451dcc1a33de6f778ab5bd2a6db0e72",
                 "shasum": ""
             },
             "require": {
@@ -531,7 +531,7 @@
                 "wp-coding-standards/wpcs": "^2.3",
                 "yoast/phpunit-polyfills": "^3.0"
             },
-            "time": "2025-04-21T13:26:03+00:00",
+            "time": "2025-11-20T19:09:24+00:00",
             "default-branch": true,
             "type": "library",
             "installation-source": "dist",
