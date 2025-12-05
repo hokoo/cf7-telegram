@@ -15,12 +15,42 @@ import {
 import chat2ChannelRelations from "../App";
 
 export function copyWithTooltip(element, textToCopy = null) {
-    const text = textToCopy || element.innerText;
-    navigator.clipboard.writeText(text).then(() => {
+    const text = textToCopy ?? element.innerText;
+
+    const onCopied = () => {
         element.classList.add("copied");
         setTimeout(() => element.classList.remove("copied"), 1500);
-    });
+    };
+
+    // Modern API navigator.clipboard
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text)
+            .then(onCopied)
+            .catch(err => {
+                console.error('Clipboard error:', err);
+            });
+        return;
+    }
+
+    // Fallback method
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+
+    try {
+        document.execCommand('copy');
+        onCopied();
+    } catch (e) {
+        console.error('Fallback copy failed:', e);
+    } finally {
+        document.body.removeChild(textarea);
+    }
 }
+
 
 export const connectBot2Channel = async (botId, channelId, setBot2ChannelConnections) => {
     const result = await apiConnectBot2Channel(botId, channelId);
