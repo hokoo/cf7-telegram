@@ -3,7 +3,7 @@
 * Plugin Name: Contact Form 7 + Telegram
 * Description: Sends messages to Telegram-chat
 * Author: Hokku
-* Version: 1.0.0-rc14
+* Version: 1.0.0-rc15
 * License: GPL v2 or later
 * License URI: https://www.gnu.org/licenses/gpl-2.0.html
 * Text Domain: cf7-telegram
@@ -17,7 +17,7 @@ use iTRON\cf7Telegram\Settings;
 
 define( 'WPCF7TG_PLUGIN_NAME', plugin_basename( __FILE__ ) );
 
-const WPCF7TG_VERSION = '1.0.0-rc14';
+const WPCF7TG_VERSION = '1.0.0-rc15';
 const WPCF7TG_FILE = __FILE__;
 
 require __DIR__ . '/vendor/autoload.php';

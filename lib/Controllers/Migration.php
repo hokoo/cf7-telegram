@@ -47,6 +47,9 @@ class Migration {
 	/**
 	 * Schedules a migration event if the plugin was updated.
 	 *
+	 * This function is run with the old version right before switching to the new version.
+	 * So that migrations shipped with the new version can be executed by a scheduled event.
+	 *
 	 * @param $upgrader
 	 * @param array $hook_extra
 	 *
@@ -65,8 +68,9 @@ class Migration {
 			return;
 		}
 
+		// Schedule the migration to run later to ensure the plugin files are fully updated.
 		wp_schedule_single_event(
-			time() + 5,
+			time() + 30,
 			self::MIGRATION_HOOK,
 			[
 				$upgrader,
@@ -75,12 +79,12 @@ class Migration {
 		);
 	}
 
-	public function migrate( $upgrader, $prev_version ): void {
+	public function migrate( $upgrader, $preVersion ): void {
 		$this->loadMigrations();
 
 		update_option( 'cf7tg_version', WPCF7TG_VERSION );
 
-		do_action( 'cf7_telegram_migrations', $prev_version, WPCF7TG_VERSION, $upgrader );
+		do_action( 'cf7_telegram_migrations', $preVersion, WPCF7TG_VERSION, $upgrader );
 	}
 
 	public static function registerMigration( $migration_version, callable $migration_function ): void {
@@ -125,7 +129,7 @@ class Migration {
 							Logger::LEVEL_ATTENTION,
 						);
 					} else {
-						update_option( 'cf7tg_migration_' . $migration_version, compact( $old_version, $new_version ), false );
+						update_option( 'cf7tg_migration_' . $migration_version, compact( 'old_version', 'new_version' ), false );
 					}
 				}
 			},
