@@ -44,12 +44,13 @@ Migration::registerMigration(
 		$bot = new Bot();
 		$bot->setToken( $token );
 		$bot->setLastUpdateID( get_option( 'wpcf7_telegram_last_update_id' ) );
-		$bot->savePost();
+		$bot->publish()->savePost();
 
 		// Create a channel.
 		$channel = new Channel();
 		$channel->connectBot( $bot );
 		$channel->setTitle( __( 'Channel Name', 'cf7-telegram' ) );
+		$channel->publish()->savePost();
 
 		// Create chats.
 		foreach ( $chats as $legacy_chat ) {
@@ -61,7 +62,7 @@ Migration::registerMigration(
 			$chat->setUsername( $legacy_chat['username'] ?? '' );
 			$chat->setTitle( '' );
 			$chat->setTitle( $chat->getName() );
-			$chat->savePost();
+			$chat->publish()->savePost();
 
 			Client::getInstance()->getBot2ChatRelation()->createConnection(
 				new Connection( $bot->getPost()->ID, $chat->getPost()->ID )
