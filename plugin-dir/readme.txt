@@ -5,7 +5,7 @@ Tags: contact form telegram,contact form 7,telegram
 Requires at least: 5.6
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 0.10.2
+Stable tag: 0.11
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -49,6 +49,9 @@ The Chat ID parameter is your Telegram-identifier. But this is not your phone nu
 You can see your Chat ID by typing anything to Telegram-Bot <code>@wpcf7Bot</code>.
 
 == Changelog ==
+
+= 0.11 =
+* Final fixes before v1.0 release.
 
 = 0.10.2 =
 * Fixed a migration issue when upgrading to v1.0-alpha.
@@ -131,8 +134,8 @@ You can see your Chat ID by typing anything to Telegram-Bot <code>@wpcf7Bot</cod
 
 == Upgrade Notice ==
 
-= 0.10.0 =
-* ATTENTION! ⚡⚡⚡ Get v0.10 now to preserve your settings when you will be upgrading to v1.0.
+= 0.11 =
+* ATTENTION! ⚡⚡⚡ Get v0.11 now to preserve your settings when you will be upgrading to v1.0.
 * 🔥 Upgrading to v1.0 from v0.10 will be seamless.
 * 😵 Upgrading to v1.0 from v0.8 and earlier will cause losing your settings.
 * 😎 Early access to v1.0 is available for all users.
