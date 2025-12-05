@@ -79,12 +79,12 @@ class Migration {
 		);
 	}
 
-	public function migrate( $upgrader, $prev_version ): void {
+	public function migrate( $upgrader, $preVersion ): void {
 		$this->loadMigrations();
 
 		update_option( 'cf7tg_version', WPCF7TG_VERSION );
 
-		do_action( 'cf7_telegram_migrations', $prev_version, WPCF7TG_VERSION, $upgrader );
+		do_action( 'cf7_telegram_migrations', $preVersion, WPCF7TG_VERSION, $upgrader );
 	}
 
 	public static function registerMigration( $migration_version, callable $migration_function ): void {
