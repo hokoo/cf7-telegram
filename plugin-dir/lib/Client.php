@@ -5,6 +5,7 @@ namespace iTRON\cf7Telegram;
 use iTRON\cf7Telegram\Collections\ChannelCollection;
 use iTRON\cf7Telegram\Controllers\CF7;
 use iTRON\cf7Telegram\Controllers\CPT;
+use iTRON\cf7Telegram\Controllers\Migration;
 use iTRON\cf7Telegram\Controllers\RestApi;
 use iTRON\wpConnections;
 use iTRON\wpConnections\Exceptions\RelationNotFound;
@@ -57,7 +58,6 @@ class Client {
 		$this->logger = new Logger();
 
 		$this->registerConnectionsClient();
-		CPT::init();
 		RestApi::init();
 
 		add_action( 'wpcf7_before_send_mail', [ CF7::class, 'handleSubscribe' ], 99999, 3 );

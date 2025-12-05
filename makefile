@@ -5,13 +5,13 @@ setup.env:
 	bash ./install/setup-env.sh
 
 docker.up:
-	docker-compose -p cf7tg up -d
+	docker-compose -p cf7t up -d
 
 docker.down:
-	docker-compose -p cf7tg down
+	docker-compose -p cf7t down
 
 docker.build.php:
-	docker-compose -p cf7tg up -d --build php
+	docker-compose -p cf7t up -d --build php
 
 git.wpc:
 	bash ./install/gitwpc.sh
@@ -20,28 +20,28 @@ clear.all:
 	bash ./install/clear.sh
 
 npm.build:
-	docker-compose -p cf7tg exec node bash -c "cd ./plugin-dir/react && npm run dev-build"
+	docker-compose -p cf7t exec node bash -c "cd ./plugin-dir/react && npm run dev-build"
 
 php.connect:
-	docker-compose -p cf7tg exec php bash
+	docker-compose -p cf7t exec php bash
 
 php.connect.root:
-	docker-compose -p cf7tg exec --user=root php bash
+	docker-compose -p cf7t exec --user=root php bash
 
 node.connect:
-	docker-compose -p cf7tg exec node bash
+	docker-compose -p cf7t exec node bash
 
 node.connect.root:
-	docker-compose -p cf7tg exec --user=root node bash
+	docker-compose -p cf7t exec --user=root node bash
 
 php.log:
-	docker-compose -p cf7tg exec php sh -c 'tail -n 50 -f /var/log/php/error.log'
+	docker-compose -p cf7t exec php sh -c 'tail -n 50 -f /var/log/php/error.log'
 
 i18n.make.json:
 ifeq ($(origin LOCALE), undefined)
 	@echo "❌ Specify the LOCALE variable. Example: make i18n.make.json LOCALE=ru_RU"
 else
-	@docker-compose -p cf7tg exec php sh -c '\
+	@docker-compose -p cf7t exec php sh -c '\
 		cd ./plugin-dir && \
 		echo "🔄 Updating localization files for locale: $(LOCALE)"; \
 		wp i18n make-json ./languages/cf7-telegram-$(LOCALE).po --no-purge && \

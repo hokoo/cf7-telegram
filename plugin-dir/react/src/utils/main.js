@@ -108,3 +108,8 @@ export const deleteChannel = async (channelId, setChannels) => {
         setChannels(prev => prev.filter(channel => channel.id !== channelId));
     }
 }
+
+export function sprintf(template, ...args) {
+    let i = 0;
+    return template.replace(/%s/g, () => args[i++]);
+}

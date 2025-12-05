@@ -103,4 +103,52 @@ class Util {
 
 		return $chat;
 	}
+
+	/**
+	 * Converts a version string to an integer for comparison.
+	 *
+	 * @param string $version Version string (e.g., "1.2.3-beta4").
+	 *
+	 * @return int Integer representation of the version.
+	 *
+	 * @throws \InvalidArgumentException If the version string is invalid.
+	 */
+	static function versionToInt(string $version): int {
+		// Regex: major.minor[.patch][-tagN]
+		if (!preg_match(
+			'/^(\d+)(?:\.(\d+))?(?:\.(\d+))?(?:-([a-z]+)(\d+)?)?$/i',
+			$version,
+			$m
+		)) {
+			throw new \InvalidArgumentException("Invalid version: $version");
+		}
+
+		$major = (int)($m[1] ?? 0);
+		$minor = (int)($m[2] ?? 0);
+		$patch = (int)($m[3] ?? 0);
+
+		$tag   = strtolower($m[4] ?? '');
+		$tagNo = (int)($m[5] ?? 0);
+
+		// Order: dev < alpha < beta < rc < (no tag = stable)
+		$tagRankMap = [
+			'dev'   => 0,
+			'alpha' => 1,
+			'a'     => 1,
+			'beta'  => 2,
+			'b'     => 2,
+			'rc'    => 3,
+			''      => 4, // stable
+		];
+
+		$tagRank = $tagRankMap[$tag] ?? 4;
+
+		// Encode: MMM MMM MMM T NNN
+		return $major * 10000000000
+		       + $minor * 10000000
+		       + $patch * 10000
+		       + $tagRank * 1000
+		       + $tagNo;
+	}
+
 }

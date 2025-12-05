@@ -1,4 +1,4 @@
-body.contact-1_page_wpcf7_tg {
+body[class*="page_wpcf7_tg"] {
   background-color: #0e1621;
 
 
@@ -23,11 +23,61 @@ ul#adminmenu a.wp-has-current-submenu:after, ul#adminmenu > li.current > a.curre
 
 .cf7-tg-container {
   display: flex;
+  flex-direction: column;
   width: 100%;
   gap: 32px;
 
+  @media (min-width: 1440px) {
+      flex-direction: row;
+  }
+
+  .settings-container {
+
+    .early-access {
+      transition: all 0.05s ease 0.4s;
+      cursor: pointer;
+      color: #656565;
+
+      &.checked {
+        color: #CCC;
+      }
+
+      &[disabled] {
+        opacity: 0.2;
+        pointer-events: none;
+        transition: none;
+      }
+
+      &:not(.checked) {
+        input {
+          background-color: #CCC;
+        }
+      }
+
+      small {
+        margin-top: 4px;
+        display: block;
+      }
+    }
+
+    @media (min-width: 1440px) {
+      order: 1;
+      flex: 1;
+    }
+  }
+
+  .main-container {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    flex: 3 1;
+
+    @media (min-width: 1120px) {
+      flex-direction: row;
+    }
+  }
+
   .list-container {
-    width: 375px;
     display: flex;
     flex-direction: column;
     gap: 20px;
@@ -117,6 +167,7 @@ ul#adminmenu a.wp-has-current-submenu:after, ul#adminmenu > li.current > a.curre
   }
 
   .bots-container {
+    width: 375px;
 
     .bot-list {
       display: flex;
@@ -359,6 +410,11 @@ ul#adminmenu a.wp-has-current-submenu:after, ul#adminmenu > li.current > a.curre
 
   .channels-container {
     flex: 1;
+    max-width: 508px;
+
+    @media (min-width: 1880px) {
+      max-width: 1026px;
+    }
 
     .channel-list {
       display: flex;
