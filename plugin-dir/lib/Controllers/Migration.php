@@ -47,6 +47,9 @@ class Migration {
 	/**
 	 * Schedules a migration event if the plugin was updated.
 	 *
+	 * This function is run with the old version right before switching to the new version.
+	 * So that migrations shipped with the new version can be executed by a scheduled event.
+	 *
 	 * @param $upgrader
 	 * @param array $hook_extra
 	 *
@@ -65,8 +68,9 @@ class Migration {
 			return;
 		}
 
+		// Schedule the migration to run later to ensure the plugin files are fully updated.
 		wp_schedule_single_event(
-			time() + 5,
+			time() + 30,
 			self::MIGRATION_HOOK,
 			[
 				$upgrader,
