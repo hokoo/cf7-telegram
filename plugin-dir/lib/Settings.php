@@ -3,6 +3,7 @@
 namespace iTRON\cf7Telegram;
 
 use iTRON\cf7Telegram\Controllers\CPT;
+use iTRON\cf7Telegram\Controllers\Migration;
 use YahnisElsts\PluginUpdateChecker\v5\PucFactory;
 
 class Settings {
@@ -31,17 +32,26 @@ class Settings {
 		return CPT::get_instance()->cf7_orig_capabilities['edit_posts'];
 	}
 
-	public static function plugin_menu_cbf(){
-		$s = <<<HTML
-		<div id="cf7-telegram-container">
-			<div class="wrap">
-				%s
-			</div>
-		</div>
+        public static function plugin_menu_cbf(){
+                $migration_notice = '';
+
+                if ( wp_next_scheduled( Migration::MIGRATION_HOOK ) ) {
+                        $migration_notice = sprintf(
+                                '<div class="notice cf7t-notice notice-info"><p>%s</p></div>',
+                                esc_html__( 'Data migration to the new plugin version is in progress. Please reload the page after a few seconds.', 'cf7-telegram' )
+                        );
+                }
+
+                $s = <<<HTML
+                <div id="cf7-telegram-container">
+                        <div class="wrap">
+                                %s
+                        </div>
+                </div>
 HTML;
 
-		printf( $s, self::get_settings_content() );
-	}
+                printf( $s, $migration_notice . self::get_settings_content() );
+        }
 
 	public static function initScreen(){
 		$screen = get_current_screen();
