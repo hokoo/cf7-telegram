@@ -37,7 +37,7 @@ class Settings {
 
                 if ( wp_next_scheduled( Migration::MIGRATION_HOOK ) ) {
                         $migration_notice = sprintf(
-                                '<div class="notice notice-info"><p>%s</p></div>',
+                                '<div class="notice cf7t-notice notice-info"><p>%s</p></div>',
                                 esc_html__( 'Data migration to the new plugin version is in progress. Please reload the page after a few seconds.', 'cf7-telegram' )
                         );
                 }
