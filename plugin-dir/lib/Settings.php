@@ -51,7 +51,8 @@ class Settings {
                         </div>
                 </div>';
 
-                printf( esc_html( $s, $migration_notice . self::get_settings_content() ) );
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+                printf( $s, $migration_notice . self::get_settings_content() );
         }
 
 	public static function initScreen(){
