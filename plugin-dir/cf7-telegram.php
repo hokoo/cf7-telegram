@@ -1,7 +1,7 @@
 <?php
 /*
-* Plugin Name: Contact Form 7 + Telegram
-* Description: Sends messages to Telegram-chat
+* Plugin Name: Message Bridge for Contact Form 7 and Telegram
+* Description: Sends CF7 messages to Telegram-chat
 * Author: Hokku
 * Version: 1.0.0-rc15
 * License: GPL v2 or later
