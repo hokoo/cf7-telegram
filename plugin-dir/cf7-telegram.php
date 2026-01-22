@@ -8,6 +8,7 @@
 * License URI: https://www.gnu.org/licenses/gpl-2.0.html
 * Text Domain: cf7-telegram
 * Domain Path: /languages
+* Requires Plugins: contact-form-7
 */
 
 use iTRON\cf7Telegram\Client;
