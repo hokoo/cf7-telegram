@@ -2,6 +2,8 @@
 
 namespace iTRON\cf7Telegram\Controllers\RestApi;
 
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+
 use Exception;
 use iTRON\cf7Telegram\Bot;
 use iTRON\wpPostAble\Exceptions\wppaCreatePostException;

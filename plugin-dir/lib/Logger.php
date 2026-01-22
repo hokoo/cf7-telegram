@@ -2,6 +2,8 @@
 
 namespace iTRON\cf7Telegram;
 
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+
 use wpdb;
 
 class Logger {
@@ -31,6 +33,8 @@ class Logger {
 			'data'			=> $data,
 		];
 
+		// Trigger action OF OTHER plugins.
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 		do_action( 'logger', $data );
 
 		return Util::getWPDB()->insert( Util::getWPDB()->{$this->table},

@@ -22,7 +22,8 @@
     "wpackagist-plugin/cf7-telegram": "^0.9.2",
     "wpackagist-plugin/wp-smtp": "^1.1",
     "wpackagist-plugin/wp-data-logger": "^2.0",
-    "wpackagist-plugin/wp-crontrol": "^1.19"
+    "wpackagist-plugin/wp-crontrol": "^1.19",
+    "wpackagist-plugin/plugin-check": "^1.8"
   },
   "autoload": {
   },

@@ -2,6 +2,8 @@
 
 namespace iTRON\cf7Telegram;
 
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+
 use iTRON\cf7Telegram\Collections\ChannelCollection;
 use iTRON\cf7Telegram\Collections\ChatCollection;
 use iTRON\cf7Telegram\Controllers\CF7;
@@ -250,6 +252,7 @@ class Bot extends Entity implements wpPostAble{
 			);
 
 			if ( $throwOnError ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped
 				throw new Telegram( $e->getMessage(), $e->getCode(), $e );
 			}
 		}

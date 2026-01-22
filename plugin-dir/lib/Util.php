@@ -2,6 +2,8 @@
 
 namespace iTRON\cf7Telegram;
 
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+
 use Illuminate\Support\Collection;
 use iTRON\wpPostAble\Exceptions\wppaCreatePostException;
 use iTRON\wpPostAble\Exceptions\wppaLoadPostException;
@@ -120,7 +122,7 @@ class Util {
 			$version,
 			$m
 		)) {
-			throw new \InvalidArgumentException("Invalid version: $version");
+			throw new \InvalidArgumentException( esc_html( "Invalid version: $version" ) );
 		}
 
 		$major = (int)($m[1] ?? 0);

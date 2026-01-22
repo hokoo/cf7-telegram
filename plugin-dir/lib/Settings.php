@@ -2,6 +2,8 @@
 
 namespace iTRON\cf7Telegram;
 
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+
 use iTRON\cf7Telegram\Controllers\CPT;
 use iTRON\cf7Telegram\Controllers\Migration;
 use YahnisElsts\PluginUpdateChecker\v5\PucFactory;
@@ -42,15 +44,14 @@ class Settings {
                         );
                 }
 
-                $s = <<<HTML
+                $s = '
                 <div id="cf7-telegram-container">
                         <div class="wrap">
                                 %s
                         </div>
-                </div>
-HTML;
+                </div>';
 
-                printf( $s, $migration_notice . self::get_settings_content() );
+                printf( esc_html( $s, $migration_notice . self::get_settings_content() ) );
         }
 
 	public static function initScreen(){
