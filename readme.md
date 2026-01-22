@@ -8,17 +8,17 @@ Call all commands from root project directory.
 
 ## Installation & Use
 
+To setup the development environment, run
 ```bash
 make setup.all
-make docker.up
-make docker.down
 ```
 
 Don't forget update your hosts file
-`127.0.0.1     cf7tgdev.loc`.
 
-## Development
-Working directory `cf7-telegram`.
+```
+127.0.0.1   cf7t.local
+127.0.0.1   cf7t.betas
+```
 
 ## Clear installation
 
