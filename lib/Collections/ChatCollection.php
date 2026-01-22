@@ -2,6 +2,8 @@
 
 namespace iTRON\cf7Telegram\Collections;
 
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+
 class ChatCollection extends Collection {
 
 	function __construct( array $data = [] ) {

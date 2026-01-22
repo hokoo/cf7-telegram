@@ -2,26 +2,58 @@
 
 namespace iTRON\cf7Telegram;
 
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+
+use iTRON\cf7Telegram\Controllers\CPT;
+use iTRON\cf7Telegram\Controllers\Migration;
+use YahnisElsts\PluginUpdateChecker\v5\PucFactory;
+
 class Settings {
-	 static function init() {
+	const OPTION_PREFIX = 'cf7t_';
+	const EARLY_FLAG_OPTION = self::OPTION_PREFIX . 'early_access';
+
+	 static function init(): void {
 		add_action( 'admin_menu', function () {
-			add_submenu_page( 'wpcf7', 'CF7 Telegram', 'CF7 Telegram', 'wpcf7_read_contact_forms', 'wpcf7_tg', [ self::class, 'plugin_menu_cbf' ] );
+			add_submenu_page( 'wpcf7', 'CF7 Telegram', 'CF7 Telegram', self::getCaps(), 'wpcf7_tg', [ self::class, 'plugin_menu_cbf' ] );
 		} );
 		add_action( 'current_screen', [ self::class, 'initScreen' ], 999 );
 		add_action( 'admin_enqueue_scripts', [ self::class, 'admin_enqueue_scripts' ] );
+
+		self::getEarlyFlag() && self::initPreReleases();
 	}
 
-	public static function plugin_menu_cbf(){
-		$s = <<<HTML
-		<div id="cf7-telegram-container">
-			<div class="wrap">
-				%s
-			</div>
-		</div>
-HTML;
-
-		printf( $s, self::get_settings_content() );
+	public static function getEarlyFlag(): bool {
+		return filter_var( get_option( self::EARLY_FLAG_OPTION, false ), FILTER_VALIDATE_BOOLEAN );
 	}
+
+	public static function setEarlyFlag( $value ): void {
+		update_option( self::EARLY_FLAG_OPTION, $value, false );
+	}
+
+	public static function getCaps(): string {
+		return CPT::get_instance()->cf7_orig_capabilities['edit_posts'];
+	}
+
+        public static function plugin_menu_cbf(){
+                $migration_notice = '';
+
+                if ( wp_next_scheduled( Migration::MIGRATION_HOOK ) ) {
+                        $migration_notice = sprintf(
+                                '<div class="notice cf7t-notice notice-info"><p>%s</p></div>',
+                                esc_html__( 'Data migration to the new plugin version is in progress. Please reload the page after a few seconds.', 'cf7-telegram' )
+                        );
+                }
+
+                $s = '
+                <div id="cf7-telegram-container">
+                        <div class="wrap">
+                                %s
+                        </div>
+                </div>';
+
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+                printf( $s, $migration_notice . self::get_settings_content() );
+        }
 
 	public static function initScreen(){
 		$screen = get_current_screen();
@@ -63,6 +95,11 @@ HTML;
 				'bots'     => get_rest_url( null, 'wp/v2' . '/cf7tg_bot/' ),
 				'chats'    => get_rest_url( null, 'wp/v2' . '/cf7tg_chat/' ),
 				'forms'    => get_rest_url( null, 'contact-form-7/v1' . '/contact-forms/' ),
+				'settings' => get_rest_url( null, 'wp/v2' . '/settings/' ),
+			],
+
+			'options' => [
+				'early_access' => self::EARLY_FLAG_OPTION,
 			],
 
 			// Put this nonce to X-WP-Nonce header request.
@@ -87,6 +124,19 @@ HTML;
 	}
 
 	private static function get_settings_content() : string {
-		return file_get_contents( self::pluginDir() . '/assets/settings-content.html' );
+		return file_get_contents( self::pluginDir() . '/react/public/settings-content.html' ) ?: '';
+	}
+
+	private static function initPreReleases(): void {
+		$updateChecker = PucFactory::buildUpdateChecker(
+			'https://github.com/hokoo/cf7-telegram',
+			WPCF7TG_FILE,
+			'cf7-telegram',
+			1
+		);
+
+		defined( 'WPCF7TG_GITHUB_TOKEN' ) && $updateChecker->setAuthentication( WPCF7TG_GITHUB_TOKEN );
+
+		$updateChecker->setBranch( 'plugin-dist' );
 	}
 }

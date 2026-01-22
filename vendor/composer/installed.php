@@ -67,7 +67,7 @@
         'hokoo/wpconnections' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-            'reference' => 'da2df3ca17da1e7b9b475048d88863a8e3c37055',
+            'reference' => '9a968a092451dcc1a33de6f778ab5bd2a6db0e72',
             'type' => 'library',
             'install_path' => __DIR__ . '/../hokoo/wpconnections',
             'aliases' => array(
