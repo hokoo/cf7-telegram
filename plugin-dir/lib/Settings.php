@@ -42,13 +42,12 @@ class Settings {
                         );
                 }
 
-                $s = <<<HTML
+                $s = '
                 <div id="cf7-telegram-container">
                         <div class="wrap">
                                 %s
                         </div>
-                </div>
-HTML;
+                </div>';
 
                 printf( $s, $migration_notice . self::get_settings_content() );
         }
