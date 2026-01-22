@@ -43,6 +43,8 @@ class Client {
 	 * @throws Exception
 	 */
 	public function __wakeup() {
+		// Prevent deserialization of the instance.
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
         trigger_error( 'Deserializing of iTRON\cf7Telegram\Client() instance is prohibited.', E_USER_NOTICE );
     }
 

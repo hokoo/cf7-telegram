@@ -252,6 +252,7 @@ class Bot extends Entity implements wpPostAble{
 			);
 
 			if ( $throwOnError ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped
 				throw new Telegram( $e->getMessage(), $e->getCode(), $e );
 			}
 		}

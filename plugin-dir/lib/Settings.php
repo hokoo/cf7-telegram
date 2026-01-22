@@ -51,7 +51,7 @@ class Settings {
                         </div>
                 </div>';
 
-                printf( $s, $migration_notice . self::get_settings_content() );
+                printf( esc_html( $s, $migration_notice . self::get_settings_content() ) );
         }
 
 	public static function initScreen(){

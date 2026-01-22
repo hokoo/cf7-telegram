@@ -118,7 +118,7 @@ class Chat extends Entity implements WPPostAble{
 		$timestamp = $this->getParam( 'timestamp_connected' );
 
 		// Return pretty date.
-		return date( 'd.m.Y H:i', strtotime( $timestamp ) );
+		return gmdate( 'd.m.Y H:i', strtotime( $timestamp ) );
 	}
 
 	/**

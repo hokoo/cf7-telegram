@@ -122,7 +122,7 @@ class Util {
 			$version,
 			$m
 		)) {
-			throw new \InvalidArgumentException("Invalid version: $version");
+			throw new \InvalidArgumentException( esc_html( "Invalid version: $version" ) );
 		}
 
 		$major = (int)($m[1] ?? 0);

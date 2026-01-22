@@ -39,7 +39,7 @@ function wpcf7tg_plugin_update_message( $data, $response ) {
 	) :
 		printf(
 			'<div class="update-message">%s</div>',
-			wpautop( $data['upgrade_notice'] )
+			wp_kses_post( wpautop( $data['upgrade_notice'] ) )
 		);
 	endif;
 }

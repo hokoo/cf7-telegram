@@ -26,6 +26,8 @@ class Migration {
 	}
 
 	public function __wakeup() {
+		// Prevent deserialization of the instance.
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
 		trigger_error( 'Deserializing of iTRON\cf7Telegram\Controllers\Migration instance is prohibited.',
 			E_USER_NOTICE );
 	}
@@ -86,11 +88,11 @@ class Migration {
 
 		update_option( 'cf7tg_version', WPCF7TG_VERSION );
 
-		do_action( 'cf7_telegram_migrations', $preVersion, WPCF7TG_VERSION, $upgrader );
+		do_action( 'cf7tg_telegram_migrations', $preVersion, WPCF7TG_VERSION, $upgrader );
 	}
 
 	public static function registerMigration( $migration_version, callable $migration_function ): void {
-		add_action( 'cf7_telegram_migrations',
+		add_action( 'cf7tg_telegram_migrations',
 			function ( $old_version, $new_version, $upgrader ) use ( $migration_version, $migration_function ) {
 				if (
 					version_compare(
@@ -103,7 +105,7 @@ class Migration {
 						'>='
 					)
 				) {
-					do_action( 'cf7_telegram_migration', $migration_version, $old_version, $new_version );
+					do_action( 'cf7tg_telegram_migration', $migration_version, $old_version, $new_version );
 
 					try {
 						call_user_func( $migration_function, $old_version, $new_version, $upgrader );
