@@ -99,7 +99,7 @@ jobs:
 
       - name: Prepare version without "v"
         id: clean_version
-        run: echo "value=${{ github.event.release.tag_name }}" | sed -E 's/^(v-?|version-)//' >> $GITHUB_OUTPUT
+        run: echo "value=${{ github.event.release.tag_name }}" | sed -E 's/^value=(v|version)-?/value=/' >> $GITHUB_OUTPUT
 
       - name: Deploy to WordPress.org (production only)
         if: ${{ github.event.release.prerelease == false }}
