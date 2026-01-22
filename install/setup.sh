@@ -31,7 +31,7 @@ docker-compose -p cf7t exec php sh -c "cd ./plugin-dir && composer install"
 
 # Create symlink for the plugin
 echo "Symlinking plugin..."
-docker-compose -p cf7t exec php sh -c "ln -s /var/www/html/plugin-dir /var/www/html/dev-content/plugins/cf7-telegram"
+docker-compose -p cf7t exec php sh -c "ln -s /srv/web/plugin-dir /srv/web/dev-content/plugins/cf7-telegram"
 echo -e "${ICYAN}Result: ${RYELLOW}$(ls -l ./dev-content/plugins/ | grep cf7-telegram)${COLOR_OFF}"
 
 echo "WP setup preparing..."

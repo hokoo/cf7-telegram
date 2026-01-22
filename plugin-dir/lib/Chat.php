@@ -2,6 +2,8 @@
 
 namespace iTRON\cf7Telegram;
 
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+
 use iTRON\wpConnections\Connection;
 use iTRON\wpConnections\Exceptions\ConnectionNotFound;
 use iTRON\wpConnections\Exceptions\RelationNotFound;
@@ -116,7 +118,7 @@ class Chat extends Entity implements WPPostAble{
 		$timestamp = $this->getParam( 'timestamp_connected' );
 
 		// Return pretty date.
-		return date( 'd.m.Y H:i', strtotime( $timestamp ) );
+		return gmdate( 'd.m.Y H:i', strtotime( $timestamp ) );
 	}
 
 	/**

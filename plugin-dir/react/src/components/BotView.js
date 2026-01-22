@@ -70,7 +70,7 @@ const BotView = ({
                         {!online && isTokenEmpty && ! bot.isTokenDefinedByConst && (
                             <div
                                 className="php-const-hint copyable"
-                                title={wp.i18n.__( 'You can define token in wp-config.php', 'cf7-telegram' )}
+                                title={wp.i18n.__( 'Click to copy PHP code', 'cf7-telegram' )}
                                 onClick={(e) => copyWithTooltip(e.target, `const ${bot.phpConst} = 'your_token';`)}
                             >
                                 {wp.i18n.__( 'set by PHP const', 'cf7-telegram' )}

@@ -2,8 +2,11 @@
 
 namespace iTRON\cf7Telegram\Controllers;
 
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+
 use iTRON\cf7Telegram\Logger;
 use iTRON\cf7Telegram\Settings;
+use iTRON\cf7Telegram\Util;
 
 class Migration {
 	// This is a migration class. It is used to migrate the plugin from one version to another.
@@ -23,6 +26,8 @@ class Migration {
 	}
 
 	public function __wakeup() {
+		// Prevent deserialization of the instance.
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
 		trigger_error( 'Deserializing of iTRON\cf7Telegram\Controllers\Migration instance is prohibited.',
 			E_USER_NOTICE );
 	}
@@ -46,6 +51,9 @@ class Migration {
 	/**
 	 * Schedules a migration event if the plugin was updated.
 	 *
+	 * This function is run with the old version right before switching to the new version.
+	 * So that migrations shipped with the new version can be executed by a scheduled event.
+	 *
 	 * @param $upgrader
 	 * @param array $hook_extra
 	 *
@@ -64,8 +72,9 @@ class Migration {
 			return;
 		}
 
+		// Schedule the migration to run later to ensure the plugin files are fully updated.
 		wp_schedule_single_event(
-			time() + 5,
+			time() + 30,
 			self::MIGRATION_HOOK,
 			[
 				$upgrader,
@@ -74,16 +83,16 @@ class Migration {
 		);
 	}
 
-	public function migrate( $upgrader, $prev_version ): void {
+	public function migrate( $upgrader, $preVersion ): void {
 		$this->loadMigrations();
 
 		update_option( 'cf7tg_version', WPCF7TG_VERSION );
 
-		do_action( 'cf7_telegram_migrations', $prev_version, WPCF7TG_VERSION, $upgrader );
+		do_action( 'cf7tg_telegram_migrations', $preVersion, WPCF7TG_VERSION, $upgrader );
 	}
 
 	public static function registerMigration( $migration_version, callable $migration_function ): void {
-		add_action( 'cf7_telegram_migrations',
+		add_action( 'cf7tg_telegram_migrations',
 			function ( $old_version, $new_version, $upgrader ) use ( $migration_version, $migration_function ) {
 				if (
 					version_compare(
@@ -91,12 +100,12 @@ class Migration {
 						$migration_version,
 						'<'
 					) && version_compare(
-						$new_version,
+						self::stripPrerelease( $new_version ),
 						$migration_version,
 						'>='
 					)
 				) {
-					do_action( 'cf7_telegram_migration', $migration_version, $old_version, $new_version );
+					do_action( 'cf7tg_telegram_migration', $migration_version, $old_version, $new_version );
 
 					try {
 						call_user_func( $migration_function, $old_version, $new_version, $upgrader );
@@ -124,11 +133,11 @@ class Migration {
 							Logger::LEVEL_ATTENTION,
 						);
 					} else {
-						update_option( 'cf7tg_migration_' . $migration_version, compact( $old_version, $new_version ), false );
+						update_option( 'cf7tg_migration_' . $migration_version, compact( 'old_version', 'new_version' ), false );
 					}
 				}
 			},
-			(int) ( $migration_version * 10 ),
+			Util::versionToInt( $migration_version ),
 			3 );
 	}
 
@@ -136,5 +145,9 @@ class Migration {
 		foreach ( glob( Settings::pluginDir() . '/inc/migrations/*.php' ) as $file ) {
 			require_once $file;
 		}
+	}
+
+	public static function stripPrerelease( string $version ): string {
+		return preg_replace( '/[-+].*/', '', $version );
 	}
 }

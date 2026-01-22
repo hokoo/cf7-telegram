@@ -56,6 +56,11 @@ jobs:
           find . -mindepth 1 -maxdepth 1 -not -name 'plugin-dir' -not -name '.git' -exec rm -rf {} +
           mv plugin-dir cf7-telegram
 
+      # Remove all hidden files from the plugin directory
+      - name: Remove hidden files from plugin directory and subdirectories
+        run: |
+          find cf7-telegram -type f -name ".*" -exec rm -f {} +
+
       - name: Zip the plugin directory
         run: zip -r cf7-telegram-wp-plugin.zip cf7-telegram
 
@@ -85,6 +90,7 @@ jobs:
 
           cd dist-worktree
           git add -f vendor
+          git add -f react/build
           git add .
           git commit -m "Update plugin build from release ${{ github.event.release.tag_name }}" || echo "No changes to commit"
           git push origin HEAD:${{ steps.branch.outputs.branch_name }}

@@ -1,17 +1,27 @@
 <?php
 
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+
 use iTRON\cf7Telegram\Controllers\Migration;
 use iTRON\cf7Telegram\Bot;
 use iTRON\cf7Telegram\Channel;
 use iTRON\cf7Telegram\Chat;
 use iTRON\cf7Telegram\Client;
 use iTRON\cf7Telegram\Form;
+use iTRON\cf7Telegram\Settings;
 use iTRON\wpConnections\Query\Connection;
 
 Migration::registerMigration(
-	'1.0',
+	'1.0-alpha',
 	function () {
 		list( $old_version, $new_version, $upgrader ) = func_get_args();
+
+		// Refactor the early access option flag.
+		update_option(
+			Settings::EARLY_FLAG_OPTION,
+			get_option( 'wpcf7_telegram_pre_releases', false ),
+			false
+		);
 
 		// Try to load a single token.
 		$const = defined( 'WPFC7TG_BOT_TOKEN' ) ? WPFC7TG_BOT_TOKEN : false;
@@ -36,12 +46,13 @@ Migration::registerMigration(
 		$bot = new Bot();
 		$bot->setToken( $token );
 		$bot->setLastUpdateID( get_option( 'wpcf7_telegram_last_update_id' ) );
-		$bot->savePost();
+		$bot->publish()->savePost();
 
 		// Create a channel.
 		$channel = new Channel();
 		$channel->connectBot( $bot );
 		$channel->setTitle( __( 'Channel Name', 'cf7-telegram' ) );
+		$channel->publish()->savePost();
 
 		// Create chats.
 		foreach ( $chats as $legacy_chat ) {
@@ -53,7 +64,7 @@ Migration::registerMigration(
 			$chat->setUsername( $legacy_chat['username'] ?? '' );
 			$chat->setTitle( '' );
 			$chat->setTitle( $chat->getName() );
-			$chat->savePost();
+			$chat->publish()->savePost();
 
 			Client::getInstance()->getBot2ChatRelation()->createConnection(
 				new Connection( $bot->getPost()->ID, $chat->getPost()->ID )

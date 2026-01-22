@@ -4,7 +4,7 @@ FROM wodby/wordpress-php:${PHP_VER}-4.62.1
 
 LABEL maintaner="Igor Tron <public@itron.pro>"
 
-WORKDIR /var/www/html
+WORKDIR /srv/web
 
 USER root
 

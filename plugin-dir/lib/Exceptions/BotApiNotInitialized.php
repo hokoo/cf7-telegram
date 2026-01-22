@@ -2,7 +2,7 @@
 
 namespace iTRON\cf7Telegram\Exceptions;
 
-use iTRON\cf7Telegram\Exceptions\Exception;
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 
 class BotApiNotInitialized extends Exception {
 	public function __construct() {
