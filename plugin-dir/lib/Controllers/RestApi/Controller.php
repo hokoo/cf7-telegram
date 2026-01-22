@@ -2,6 +2,8 @@
 
 namespace iTRON\cf7Telegram\Controllers\RestApi;
 
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+
 use WP_REST_Posts_Controller;
 
 abstract class Controller extends WP_REST_Posts_Controller{

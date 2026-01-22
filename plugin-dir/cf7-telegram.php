@@ -11,6 +11,8 @@
 * Requires Plugins: contact-form-7
 */
 
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+
 use iTRON\cf7Telegram\Client;
 use iTRON\cf7Telegram\Controllers\CPT;
 use iTRON\cf7Telegram\Controllers\Migration;

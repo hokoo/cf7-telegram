@@ -2,6 +2,8 @@
 
 namespace iTRON\cf7Telegram;
 
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+
 abstract class Entity {
 	protected Client $client;
 

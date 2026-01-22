@@ -2,6 +2,8 @@
 
 namespace iTRON\cf7Telegram;
 
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+
 use Illuminate\Support\Collection;
 use iTRON\wpPostAble\Exceptions\wppaCreatePostException;
 use iTRON\wpPostAble\Exceptions\wppaLoadPostException;

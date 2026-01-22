@@ -2,6 +2,8 @@
 
 namespace iTRON\cf7Telegram;
 
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+
 use iTRON\wpConnections\Connection;
 use iTRON\wpConnections\Exceptions\ConnectionNotFound;
 use iTRON\wpConnections\Exceptions\RelationNotFound;
