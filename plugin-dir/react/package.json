@@ -14,8 +14,8 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build",
-    "dev-build": "REACT_APP_DEV_BUILD=true react-scripts build",
+    "build": "react-scripts build && node scripts/postbuild-stable.js",
+    "dev-build": "REACT_APP_DEV_BUILD=true react-scripts build && node scripts/postbuild-stable.js",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
