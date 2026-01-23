@@ -65,22 +65,10 @@ class Settings {
 	public static function admin_enqueue_scripts(){
 		if ( ! did_action( 'wpcf7_telegram_settings' ) ) return;
 
-		$json_manifest = self::pluginDir() . '/react/build/asset-manifest.json';
-		if ( ! file_exists( $json_manifest ) ) {
-			wp_die( 'React build not found' );
-		}
-
-		$manifest = json_decode( file_get_contents( $json_manifest ), true );
-
-		wp_enqueue_style( 'cf7-telegram-admin-styles', self::pluginUrl() . '/react/build/' . $manifest['files']['main.css'], null, WPCF7TG_VERSION );
+		wp_enqueue_style( 'cf7-telegram-admin-styles', self::pluginUrl() . '/react/build/static/css/main.css', null, WPCF7TG_VERSION );
 		wp_enqueue_style( 'gf-styles', 'https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap', null, WPCF7TG_VERSION );
-		wp_enqueue_script( 'cf7-telegram-admin', self::pluginUrl() . '/react/build/' . $manifest['files']['main.js'], null, WPCF7TG_VERSION, true );
-
-		wp_set_script_translations(
-			'cf7-telegram-admin',
-			'cf7-telegram',
-			self::pluginDir() . '/languages'
-		);
+		wp_enqueue_script( 'cf7-telegram-admin', self::pluginUrl() . '/react/build/static/js/main.js', ['wp-i18n'], WPCF7TG_VERSION, true );
+		wp_set_script_translations( 'cf7-telegram-admin', 'cf7-telegram' );
 
 		wp_localize_script( 'cf7-telegram-admin', 'cf7TelegramData', array(
 			'routes' => [
