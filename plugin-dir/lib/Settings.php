@@ -6,14 +6,13 @@ if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 
 use iTRON\cf7Telegram\Controllers\CPT;
 use iTRON\cf7Telegram\Controllers\Migration;
-use iTRON\cf7Telegram\Client;
 use YahnisElsts\PluginUpdateChecker\v5\PucFactory;
 
 class Settings {
 	const OPTION_PREFIX = 'cf7t_';
 	const EARLY_FLAG_OPTION = self::OPTION_PREFIX . 'early_access';
 
- static function init(): void {
+	static function init(): void {
 		add_action( 'admin_menu', function () {
 			add_submenu_page( 'wpcf7', 'CF7 Telegram', 'CF7 Telegram', self::getCaps(), 'wpcf7_tg', [ self::class, 'plugin_menu_cbf' ] );
 		} );
@@ -40,11 +39,9 @@ class Settings {
                 $migration_notice = '';
 
                 if ( wp_next_scheduled( Migration::MIGRATION_HOOK ) ) {
-						$action_button = self::get_migration_action_button();
                         $migration_notice = sprintf(
-                                '<div class="notice cf7t-notice notice-info"><p>%s</p>%s</div>',
+                                '<div class="notice cf7t-notice notice-info"><p>%s</p></div>',
                                 esc_html__( 'Data migration to the new plugin version is in progress. Please reload the page after a few seconds.', 'cf7-telegram' ),
-								$action_button
                         );
                 }
 
@@ -127,57 +124,16 @@ class Settings {
 		return untrailingslashit( plugin_dir_path( WPCF7TG_FILE ) );
 	}
 
-	private static function get_migration_action_button(): string {
-		if ( ! self::shouldShowMigrationActionButton() ) {
-			return '';
+	static function shouldShowMigrationActionButton(): bool {
+		if ( ( ! defined( 'WPFC7TG_BOT_TOKEN' ) ) && empty( get_option( 'wpcf7_telegram_tkn' ) ) ) {
+			return false;
 		}
 
-		$action = esc_url( admin_url( 'admin-post.php' ) );
-		$nonce = wp_nonce_field( 'cf7tg_migration_action', 'cf7tg_migration_nonce', true, false );
-		$label = esc_html__( 'Run migration', 'cf7-telegram' );
-
-		return sprintf(
-			'<p><form method="post" action="%s">%s<input type="hidden" name="action" value="cf7tg_migration_action"/><button type="submit" class="button button-primary">%s</button></form></p>',
-			$action,
-			$nonce,
-			$label
-		);
-	}
-
-	private static function shouldShowMigrationActionButton(): bool {
-		return self::hasLegacyToken() && self::hasNoBots() && self::hasNoChannels();
-	}
-
-	private static function hasLegacyToken(): bool {
-		if ( defined( 'WPFC7TG_BOT_TOKEN' ) && WPFC7TG_BOT_TOKEN ) {
-			return true;
+		if ( Client::getInstance()->getBots()->count() || Client::getInstance()->getChannels()->count() ) {
+			return false;
 		}
 
-		return ! empty( get_option( 'wpcf7_telegram_tkn' ) );
-	}
-
-	private static function hasNoBots(): bool {
-		$query = new \WP_Query( [
-			'post_type'      => Client::CPT_BOT,
-			'post_status'    => 'any',
-			'fields'         => 'ids',
-			'posts_per_page' => 1,
-			'no_found_rows'  => true,
-		] );
-
-		return empty( $query->posts );
-	}
-
-	private static function hasNoChannels(): bool {
-		$query = new \WP_Query( [
-			'post_type'      => Client::CPT_CHANNEL,
-			'post_status'    => 'any',
-			'fields'         => 'ids',
-			'posts_per_page' => 1,
-			'no_found_rows'  => true,
-		] );
-
-		return empty( $query->posts );
+		return true;
 	}
 
 	public static function handle_migration_action(): void {
