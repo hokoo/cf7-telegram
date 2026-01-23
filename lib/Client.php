@@ -4,6 +4,7 @@ namespace iTRON\cf7Telegram;
 
 if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 
+use iTRON\cf7Telegram\Collections\BotCollection;
 use iTRON\cf7Telegram\Collections\ChannelCollection;
 use iTRON\cf7Telegram\Controllers\CF7;
 use iTRON\cf7Telegram\Controllers\CPT;
@@ -122,6 +123,23 @@ class Client {
 
 		return $this->channels;
 	}
+
+	/**
+	 * Get all Bots.
+	 *
+	 * @return BotCollection
+	 */
+	public function getBots(): BotCollection {
+		$q = new WP_Query( [
+			'post_type'     => self::CPT_BOT,
+			'fields'        => 'ids',
+			'posts_per_page'=> -1,
+		] );
+		$bots = new BotCollection();
+		$bots->createByIDs( $q->posts );
+		return $bots;
+	}
+
 
 	public function getConnectionsClient(): wpConnections\Client {
 		if ( empty( self::$connectionsClient ) ) {

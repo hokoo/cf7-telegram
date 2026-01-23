@@ -13,6 +13,7 @@ class Migration {
 	// Singleton. Use getInstance() method for instance creating.
 
 	const MIGRATION_HOOK = 'cf7tg_migrations';
+	const FIX_1_0_FLAG = 'cf7tg_fix_1.0_migration';
 
 	private static Migration $instance;
 
