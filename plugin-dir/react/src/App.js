@@ -97,6 +97,10 @@ const App = () => {
 
     if (loading) return <div>{wp.i18n.__( 'Loading data...', 'cf7-telegram' )}</div>;
 
+    const canShowMigrationAction = Boolean(cf7TelegramData?.migration?.show_action_button)
+        && bots.length === 0
+        && channels.length === 0;
+
     return (
         <>
         <h1>{wp.i18n.__( 'Telegram notificator settings', 'cf7-telegram' )}</h1>
@@ -158,6 +162,25 @@ const App = () => {
                 </div>
             </div>
         </div>
+
+        {canShowMigrationAction && (
+            <div className="cf7-tg-migration-action">
+                <form method="post" action={cf7TelegramData?.migration?.action_url}>
+                    <input type="hidden" name="action" value="cf7tg_migration_action" />
+                    <input
+                        type="hidden"
+                        name="cf7tg_migration_nonce"
+                        value={cf7TelegramData?.migration?.nonce}
+                    />
+                    <p>
+                        {wp.i18n.__( 'We detected settings from an older version that couldn’t be migrated automatically. Click the button below to migrate them to the new version.', 'cf7-telegram' )}
+                    </p>
+                    <button type="submit" className="button button-primary">
+                        {wp.i18n.__( 'Run migration', 'cf7-telegram' )}
+                    </button>
+                </form>
+            </div>
+        )}
 
         <style>
             {`.copyable::after { content: '` + wp.i18n.__( 'Copied!', 'cf7-telegram' ) + `' !important }`}
