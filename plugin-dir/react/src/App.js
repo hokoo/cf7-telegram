@@ -172,6 +172,9 @@ const App = () => {
                         name="cf7tg_migration_nonce"
                         value={cf7TelegramData?.migration?.nonce}
                     />
+                    <p>
+                        {wp.i18n.__( 'We detected settings from an older version that couldn’t be migrated automatically. Click the button below to migrate them to the new version.', 'cf7-telegram' )}
+                    </p>
                     <button type="submit" className="button button-primary">
                         {wp.i18n.__( 'Run migration', 'cf7-telegram' )}
                     </button>
