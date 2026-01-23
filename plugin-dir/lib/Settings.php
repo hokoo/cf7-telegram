@@ -135,6 +135,10 @@ class Settings {
 			return false;
 		}
 
+		if ( ! empty( get_option( Migration::FIX_1_0_FLAG, false ) ) ) {
+			return false;
+		}
+
 		return true;
 	}
 
@@ -146,6 +150,26 @@ class Settings {
 		check_admin_referer( 'cf7tg_migration_action', 'cf7tg_migration_nonce' );
 
 		$redirect = wp_get_referer() ?: admin_url( 'admin.php?page=wpcf7_tg' );
+
+		// Exit if a migration was already performed.
+		if ( ! empty( get_option( Migration::FIX_1_0_FLAG, false ) ) ) {
+			wp_safe_redirect( $redirect );
+			exit;
+		}
+
+		// Set 'fix_1.0_migration' flag to true to indicate migration is needed.
+		update_option( Migration::FIX_1_0_FLAG, true, false );
+
+		// Schedule the migration manually.
+		wp_schedule_single_event(
+			time(),
+			Migration::MIGRATION_HOOK,
+			[
+				[],
+				'0.9',
+			]
+		);
+
 		wp_safe_redirect( $redirect );
 		exit;
 	}
