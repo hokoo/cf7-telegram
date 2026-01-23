@@ -109,6 +109,12 @@ class Settings {
 				'empty' => Bot::getEmptyToken(),
 			],
 
+			'migration' => [
+				'show_action_button' => self::shouldShowMigrationActionButton(),
+				'action_url' => admin_url( 'admin-post.php' ),
+				'nonce' => wp_create_nonce( 'cf7tg_migration_action' ),
+			],
+
 			'intervals' => [
 				'ping'      => defined( 'WPCF7TG_PING_INTERVAL' ) ? WPCF7TG_PING_INTERVAL : 5000,
 				'bot_fetch' => defined( 'WPCF7TG_UPDATES_INTERVAL' ) ? WPCF7TG_UPDATES_INTERVAL : 30000,
@@ -126,10 +132,6 @@ class Settings {
 
 	static function shouldShowMigrationActionButton(): bool {
 		if ( ( ! defined( 'WPFC7TG_BOT_TOKEN' ) ) && empty( get_option( 'wpcf7_telegram_tkn' ) ) ) {
-			return false;
-		}
-
-		if ( Client::getInstance()->getBots()->count() || Client::getInstance()->getChannels()->count() ) {
 			return false;
 		}
 
