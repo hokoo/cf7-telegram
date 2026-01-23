@@ -6,18 +6,20 @@ if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 
 use iTRON\cf7Telegram\Controllers\CPT;
 use iTRON\cf7Telegram\Controllers\Migration;
+use iTRON\cf7Telegram\Client;
 use YahnisElsts\PluginUpdateChecker\v5\PucFactory;
 
 class Settings {
 	const OPTION_PREFIX = 'cf7t_';
 	const EARLY_FLAG_OPTION = self::OPTION_PREFIX . 'early_access';
 
-	 static function init(): void {
+ static function init(): void {
 		add_action( 'admin_menu', function () {
 			add_submenu_page( 'wpcf7', 'CF7 Telegram', 'CF7 Telegram', self::getCaps(), 'wpcf7_tg', [ self::class, 'plugin_menu_cbf' ] );
 		} );
 		add_action( 'current_screen', [ self::class, 'initScreen' ], 999 );
 		add_action( 'admin_enqueue_scripts', [ self::class, 'admin_enqueue_scripts' ] );
+		add_action( 'admin_post_cf7tg_migration_action', [ self::class, 'handle_migration_action' ] );
 
 		self::getEarlyFlag() && self::initPreReleases();
 	}
@@ -38,9 +40,11 @@ class Settings {
                 $migration_notice = '';
 
                 if ( wp_next_scheduled( Migration::MIGRATION_HOOK ) ) {
+						$action_button = self::get_migration_action_button();
                         $migration_notice = sprintf(
-                                '<div class="notice cf7t-notice notice-info"><p>%s</p></div>',
-                                esc_html__( 'Data migration to the new plugin version is in progress. Please reload the page after a few seconds.', 'cf7-telegram' )
+                                '<div class="notice cf7t-notice notice-info"><p>%s</p>%s</div>',
+                                esc_html__( 'Data migration to the new plugin version is in progress. Please reload the page after a few seconds.', 'cf7-telegram' ),
+								$action_button
                         );
                 }
 
@@ -121,6 +125,71 @@ class Settings {
 
 	public static function pluginDir(): string {
 		return untrailingslashit( plugin_dir_path( WPCF7TG_FILE ) );
+	}
+
+	private static function get_migration_action_button(): string {
+		if ( ! self::shouldShowMigrationActionButton() ) {
+			return '';
+		}
+
+		$action = esc_url( admin_url( 'admin-post.php' ) );
+		$nonce = wp_nonce_field( 'cf7tg_migration_action', 'cf7tg_migration_nonce', true, false );
+		$label = esc_html__( 'Run migration', 'cf7-telegram' );
+
+		return sprintf(
+			'<p><form method="post" action="%s">%s<input type="hidden" name="action" value="cf7tg_migration_action"/><button type="submit" class="button button-primary">%s</button></form></p>',
+			$action,
+			$nonce,
+			$label
+		);
+	}
+
+	private static function shouldShowMigrationActionButton(): bool {
+		return self::hasLegacyToken() && self::hasNoBots() && self::hasNoChannels();
+	}
+
+	private static function hasLegacyToken(): bool {
+		if ( defined( 'WPFC7TG_BOT_TOKEN' ) && WPFC7TG_BOT_TOKEN ) {
+			return true;
+		}
+
+		return ! empty( get_option( 'wpcf7_telegram_tkn' ) );
+	}
+
+	private static function hasNoBots(): bool {
+		$query = new \WP_Query( [
+			'post_type'      => Client::CPT_BOT,
+			'post_status'    => 'any',
+			'fields'         => 'ids',
+			'posts_per_page' => 1,
+			'no_found_rows'  => true,
+		] );
+
+		return empty( $query->posts );
+	}
+
+	private static function hasNoChannels(): bool {
+		$query = new \WP_Query( [
+			'post_type'      => Client::CPT_CHANNEL,
+			'post_status'    => 'any',
+			'fields'         => 'ids',
+			'posts_per_page' => 1,
+			'no_found_rows'  => true,
+		] );
+
+		return empty( $query->posts );
+	}
+
+	public static function handle_migration_action(): void {
+		if ( ! current_user_can( self::getCaps() ) ) {
+			wp_die( esc_html__( 'You do not have permission to perform this action.', 'cf7-telegram' ) );
+		}
+
+		check_admin_referer( 'cf7tg_migration_action', 'cf7tg_migration_nonce' );
+
+		$redirect = wp_get_referer() ?: admin_url( 'admin.php?page=wpcf7_tg' );
+		wp_safe_redirect( $redirect );
+		exit;
 	}
 
 	private static function get_settings_content() : string {
