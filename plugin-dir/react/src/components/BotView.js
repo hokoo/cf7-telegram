@@ -1,6 +1,6 @@
 /* global wp */
 
-import React, {useEffect, useRef} from 'react';
+import React from 'react';
 import {copyWithTooltip} from '../utils/main';
 import {getChatStatus, getToggleButtonLabel} from '../utils/chatStatus';
 
@@ -27,6 +27,7 @@ const BotView = ({
 
     let status = online === true ? 'online' : online === false ? 'offline' : 'unknown';
     let truncatedName = nameValue.slice(0, 18);
+    const fullBotName = `@${nameValue}`;
 
     isEditingToken && renderEditTokenCount.current < 1 && setTokenValue('');
     isEditingToken && renderEditTokenCount.current++;
@@ -41,7 +42,7 @@ const BotView = ({
                     <div className="bot-title">
                         <div
                             className={`bot-name ${status} copyable`}
-                            onClick={(e) => copyWithTooltip(e.target)}
+                            onClick={(e) => copyWithTooltip(e.currentTarget, fullBotName)}
                             title={wp.i18n.__( 'Click to copy bot name', 'cf7-telegram' )}
                         >
                             @{truncatedName}{truncatedName !== nameValue && '...'}
@@ -49,7 +50,7 @@ const BotView = ({
 
                         <div
                             className={`bot-command copyable`}
-                            onClick={(e) => copyWithTooltip(e.target)}
+                            onClick={(e) => copyWithTooltip(e.currentTarget)}
                             title={wp.i18n.__( 'Click to copy bot command', 'cf7-telegram' )}
                             >
                             /cf7tg_start
@@ -71,7 +72,7 @@ const BotView = ({
                             <div
                                 className="php-const-hint copyable"
                                 title={wp.i18n.__( 'Click to copy PHP code', 'cf7-telegram' )}
-                                onClick={(e) => copyWithTooltip(e.target, `const ${bot.phpConst} = 'your_token';`)}
+                                onClick={(e) => copyWithTooltip(e.currentTarget, `const ${bot.phpConst} = 'your_token';`)}
                             >
                                 {wp.i18n.__( 'set by PHP const', 'cf7-telegram' )}
                             </div>
