@@ -9,6 +9,49 @@ import {
     apiDeleteBot, apiFetchUpdates, apiPingBot, apiSaveBot, fetchBot
 } from "../utils/api";
 
+const disconnectBotRelations = async ({
+    botId,
+    bot2ChatConnections,
+    setBot2ChatConnections,
+    bot2ChannelConnections,
+    setBot2ChannelConnections,
+}) => {
+    let connections = bot2ChatConnections.filter(c => c.data.from === botId);
+    for (const connection of connections) {
+        await disconnectConnectionBot2Chat(connection.data.id, setBot2ChatConnections);
+    }
+
+    connections = bot2ChannelConnections.filter(c => c.data.from === botId);
+    for (const connection of connections) {
+        await disconnectConnectionBot2Channel(connection.data.id, setBot2ChannelConnections);
+    }
+};
+
+export const saveBotTokenAndDisconnect = async ({
+    botId,
+    token,
+    pingBot,
+    bot2ChatConnections,
+    setBot2ChatConnections,
+    bot2ChannelConnections,
+    setBot2ChannelConnections,
+}) => {
+    await apiSaveBot(botId, '', token.trim());
+
+    const isBotOnline = await pingBot({force: true, skipEditingCheck: true});
+    if (!isBotOnline) {
+        throw new Error('Bot did not come online after token update.');
+    }
+
+    await disconnectBotRelations({
+        botId,
+        bot2ChatConnections,
+        setBot2ChatConnections,
+        bot2ChannelConnections,
+        setBot2ChannelConnections,
+    });
+};
+
 const Bot = ({
     bot,
     chats,
@@ -18,8 +61,7 @@ const Bot = ({
     bot2ChannelConnections,
     setBot2ChannelConnections,
     setChat2ChannelConnections,
-    loadBot2ChatConnections,
-    loadChats
+    loadChatData
 }) => {
     const [isEditingToken, setIsEditingToken] = useState(false);
     const [nameValue, setNameValue] = useState(bot.title.rendered);
@@ -115,15 +157,8 @@ const Bot = ({
         try {
             let updates = await apiFetchUpdates(bot.id);
 
-            if (updates.hasNewConnections) {
-                // This means that new or an existing chat has been connected to another bot.
-                // Anyway, fetch bot2Chat connections first.
-                loadBot2ChatConnections();
-            }
-
-            if (updates.hasNewChats) {
-                // If there are new chats, we need to fetch the chats again.
-                loadChats();
+            if (updates.hasNewConnections || updates.hasNewChats) {
+                await loadChatData();
             }
         } catch (err) {
             console.error('Fetch updates failed', err);
@@ -132,23 +167,23 @@ const Bot = ({
         }
     }
 
-    const pingBot = async () => {
+    const pingBot = async ({force = false, skipEditingCheck = false} = {}) => {
         try {
             // Skip if the bot token is editing now.
-            if (isEditingToken) {
+            if (!skipEditingCheck && isEditingToken) {
                 // Throw an error so that the next ping will be scheduled.
                 throw new Error('Token is being edited');
             }
 
             // Skip if the bot is already online.
-            if (online === true) {
-                return;
+            if (!force && online === true) {
+                return true;
             }
 
             let pingedBot = await apiPingBot(bot.id);
 
             if (isUnmountedRef.current) {
-                return;
+                return pingedBot.online;
             }
 
             setOnline(pingedBot.online);
@@ -156,23 +191,29 @@ const Bot = ({
             if (pingedBot.online) {
                 setNameValue(pingedBot.botName);
 
-                let fetched = await fetchBot(bot.id);
+                try {
+                    let fetched = await fetchBot(bot.id);
 
-                // No need check bot name since it automatically updates by backend.
-
-                setBots(prev => prev.map(b => (
-                    b.id === bot.id ? {
-                        ...b,
-                        title: fetched.title,
-                        online: true
-                    } : b
-                )));
+                    // No need check bot name since it automatically updates by backend.
+                    setBots(prev => prev.map(b => (
+                        b.id === bot.id ? {
+                            ...b,
+                            title: fetched.title,
+                            online: true
+                        } : b
+                    )));
+                } catch (err) {
+                    console.error('Failed to refresh bot data', err);
+                }
             }
+
+            return pingedBot.online;
         } catch (err) {
             console.error('Ping failed', err);
             if (!isUnmountedRef.current) {
                 setOnline(false);
             }
+            return false;
         } finally {
             setLastPing(Date.now());
         }
@@ -223,29 +264,24 @@ const Bot = ({
         setError(null);
 
         try {
-            await apiSaveBot(bot.id, '', tokenValue.trim())
+            const nextToken = tokenValue.trim();
+            await saveBotTokenAndDisconnect({
+                botId: bot.id,
+                token: nextToken,
+                pingBot,
+                bot2ChatConnections,
+                setBot2ChatConnections,
+                bot2ChannelConnections,
+                setBot2ChannelConnections,
+            });
 
+            setTokenValue(nextToken);
             setIsTokenEmpty(false);
             setIsEditingToken(false);
-
-            await pingBot();
-
         } catch (err) {
             console.error(err);
             setError(wp.i18n.__( 'Failed to update bot', 'cf7-telegram' ));
         } finally {
-            // Disconnect all chats.
-            let connections = bot2ChatConnections.filter(c => c.data.from === bot.id);
-            for (const connection of connections) {
-                await disconnectConnectionBot2Chat(connection.data.id, setBot2ChatConnections);
-            }
-
-            // Disconnect all channels.
-            connections = bot2ChannelConnections.filter(c => c.data.from === bot.id);
-            for (const connection of connections) {
-                await disconnectConnectionBot2Channel(connection.data.id, setBot2ChannelConnections);
-            }
-
             setSaving(false);
         }
     };
