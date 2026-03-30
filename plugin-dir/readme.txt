@@ -1,11 +1,11 @@
 === Message Bridge for Contact Form 7 and Telegram ===
-Contributors: hokku
+Contributors: hokku, igortron
 Donate link: https://www.paypal.me/igortron
 Tags: contact form telegram,contact form 7,telegram
 Requires at least: 5.6
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 1.0.4
+Stable tag: 1.0.5
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -34,6 +34,9 @@ Use it to customize the allowed Markdown tags.
 This plugin uses [API Telegram](https://core.telegram.org/api "Telegram docs") and sends remote HTTP requests to Telegram servers to deliver notifications.
 
 == Changelog ==
+
+= 1.0.5 =
+* Race condition in chats loading fixed.
 
 = 1.0.4 =
 * Minor fixes.
