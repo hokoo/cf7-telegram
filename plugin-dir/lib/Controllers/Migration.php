@@ -12,8 +12,9 @@ class Migration {
 	// This is a migration class. It is used to migrate the plugin from one version to another.
 	// Singleton. Use getInstance() method for instance creating.
 
-	const MIGRATION_HOOK = 'cf7tg_migrations';
-	const FIX_1_0_FLAG = 'cf7tg_fix_1.0_migration';
+		const MIGRATION_HOOK = 'cf7tg_migrations';
+		const FIX_1_0_FLAG = 'cf7tg_fix_1.0_migration';
+		const RUNNING_TRANSIENT = 'cf7tg_migration_running';
 
 	private static Migration $instance;
 
@@ -85,11 +86,59 @@ class Migration {
 	}
 
 	public function migrate( $upgrader, $preVersion ): void {
-		$this->loadMigrations();
+		self::markRunning( (string) $preVersion );
 
-		update_option( 'cf7tg_version', WPCF7TG_VERSION );
+		try {
+			$this->loadMigrations();
 
-		do_action( 'cf7tg_telegram_migrations', $preVersion, WPCF7TG_VERSION, $upgrader );
+			update_option( 'cf7tg_version', WPCF7TG_VERSION );
+
+			do_action( 'cf7tg_telegram_migrations', $preVersion, WPCF7TG_VERSION, $upgrader );
+		} finally {
+			self::clearRunning();
+		}
+	}
+
+	public static function getScheduledTimestamp() {
+		return wp_next_scheduled( self::MIGRATION_HOOK );
+	}
+
+	public static function isScheduled(): bool {
+		return false !== self::getScheduledTimestamp();
+	}
+
+	public static function markRunning( string $preVersion ): void {
+		set_transient(
+			self::RUNNING_TRANSIENT,
+			[
+				'started_at'     => time(),
+				'previous_version' => $preVersion,
+				'target_version' => WPCF7TG_VERSION,
+			],
+			15 * MINUTE_IN_SECONDS
+		);
+	}
+
+	public static function getRunningState(): array {
+		$state = get_transient( self::RUNNING_TRANSIENT );
+
+		return is_array( $state ) ? $state : [];
+	}
+
+	public static function isRunning(): bool {
+		return [] !== self::getRunningState();
+	}
+
+	public static function clearRunning(): void {
+		delete_transient( self::RUNNING_TRANSIENT );
+	}
+
+	public static function getCompletionOption( string $migration_version ): string {
+		return 'cf7tg_migration_' . $migration_version;
+	}
+
+	public static function isCompleted( string $migration_version ): bool {
+		return ! empty( get_option( self::getCompletionOption( $migration_version ) ) );
 	}
 
 	public static function registerMigration( $migration_version, callable $migration_function ): void {
@@ -123,7 +172,7 @@ class Migration {
 						);
 					}
 
-					if ( ! empty( get_option( 'cf7tg_migration_' . $migration_version ) ) ) {
+					if ( self::isCompleted( $migration_version ) ) {
 						( new Logger() )->write(
 							[
 								'migration_v' => $migration_version,
@@ -134,7 +183,7 @@ class Migration {
 							Logger::LEVEL_ATTENTION,
 						);
 					} else {
-						update_option( 'cf7tg_migration_' . $migration_version, compact( 'old_version', 'new_version' ), false );
+						update_option( self::getCompletionOption( $migration_version ), compact( 'old_version', 'new_version' ), false );
 					}
 				}
 			},
