@@ -360,6 +360,7 @@ class Bot extends Entity implements wpPostAble{
 	 */
 	public function fetchUpdates(): RestBotUpdates {
 		$result = new RestBotUpdates();
+		$maxFetchedUpdateID = $this->getLastUpdateID();
 
 		if ( ! $this->acquireFetchUpdatesLock() ) {
 			return $result;
@@ -401,19 +402,26 @@ class Bot extends Entity implements wpPostAble{
 
 			$processedChatIDs = [];
 
-			try {
-				foreach ( $updates as $update ) {
+			foreach ( $updates as $update ) {
+				$updateID = (int) ( $update->updateId ?? $update->get( 'update_id' ) ?? 0 );
+				$maxFetchedUpdateID = max( $maxFetchedUpdateID, $updateID );
+
+				try {
 					$message = $update->getMessage();
 
 					if ( $message->isEmpty() || ! $message->hasCommand() ) {
 						continue;
 					}
 
-					if ( '/' . CF7::CMD !== trim( $message->get( 'text' ) ) ) {
+					if ( '/' . CF7::CMD !== trim( (string) $message->get( 'text' ) ) ) {
 						continue;
 					}
 
-					$tgChatID = (string) $update->getChat()->get( 'id' );
+					$tgChatID = Util::sanitizeTelegramChatID( $update->getChat()->get( 'id' ) );
+
+					if ( '' === $tgChatID ) {
+						throw new \UnexpectedValueException( 'Telegram chat ID is empty after sanitization.' );
+					}
 
 					if ( isset( $processedChatIDs[ $tgChatID ] ) ) {
 						continue;
@@ -430,35 +438,56 @@ class Bot extends Entity implements wpPostAble{
 					$wpChatID = $chat->getPost()->ID ?? null;
 
 					if ( ! $this->getChats()->contains( $chat ) ) {
-						$this->connectChat( $chat );
+						$connection = $this->connectChat( $chat );
+
+						if ( ! $connection ) {
+							throw new \RuntimeException( 'Bot-chat connection was not created.' );
+						}
+
 						$chat->setPending( $this );
-						$chat->setDate( $update->message->date );
+						$chat->setDate( (string) $update->message->date );
 						$chat->savePost();
 
 						$result->hasNewConnections = true;
 					}
+				} catch ( \Throwable $e ) {
+					$this->logger->write(
+						[
+							'botTitle'        => $this->getTitle(),
+							'wpPostID'        => $this->getPost()->ID,
+							'botTokenFirst13' => substr( $this->getToken(), 0, 13 ),
+							'updateID'        => $updateID,
+							'tgChatID'        => $tgChatID ?? '',
+							'wpChatID'        => $wpChatID ?? '',
+							'error'           => $e->getMessage(),
+						],
+						'Bot has failed to process a single update',
+						Logger::LEVEL_WARNING
+					);
 				}
-			} catch ( \Error|\Exception $e ) {
-				$this->logger->write(
-					[
-						'botTitle'        => $this->getTitle(),
-						'wpPostID'        => $this->getPost()->ID,
-						'botTokenFirst13' => substr( $this->getToken(), 0, 13 ),
-						'tgChatID'        => $tgChatID ?? '',
-						'wpChatID'        => $wpChatID ?? '',
-						'error'           => $e->getMessage(),
-					],
-					'Bot has failed to fetch updates'
-				);
-
-				throw new Telegram( 'Failed to process updates' );
 			}
-
-			$updateID = max( array_column( $updates, 'update_id' ) );
-			$this->setLastUpdateID( max( $updateID, $this->getLastUpdateID() ) );
 
 			return $result;
 		} finally {
+			if ( $maxFetchedUpdateID > $this->getLastUpdateID() ) {
+				try {
+					$this->setLastUpdateID( $maxFetchedUpdateID );
+				} catch ( \Throwable $e ) {
+					$this->logger->write(
+						[
+							'botTitle'        => $this->getTitle(),
+							'wpPostID'        => $this->getPost()->ID,
+							'botTokenFirst13' => substr( $this->getToken(), 0, 13 ),
+							'lastUpdateID'    => $this->getLastUpdateID(),
+							'newLastUpdateID' => $maxFetchedUpdateID,
+							'error'           => $e->getMessage(),
+						],
+						'Bot has failed to persist last update ID',
+						Logger::LEVEL_CRITICAL
+					);
+				}
+			}
+
 			$this->releaseFetchUpdatesLock();
 		}
 	}

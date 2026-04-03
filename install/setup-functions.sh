@@ -33,16 +33,20 @@ setup-env(){
 }
 
 configure-nginx() {
+  local project_host="${PROJECT_HOST:-cf7t.local}"
+  local betas_project_host="${BETAS_PROJECT_HOST:-cf7t.betas}"
+  local https_port="${HTTPS_PORT:-443}"
+
   # configure nginx.conf
   echo "nginx.conf ..."
   [ ! -d ./install/nginx/ ] && mkdir -p ./install/nginx/ && cp -R ./install/.example/ssl ./install/nginx/
   if [ ! -f ./install/nginx/dev.conf ]; then
     NGINXCONFIG=$(< ./install/.example/nginx.conf.template)
-    printf "$NGINXCONFIG" $PROJECT_BASE_URL $PROJECT_BASE_URL dev $PROJECT_BASE_URL $PROJECT_BASE_URL > ./install/nginx/dev.conf
+    printf "$NGINXCONFIG" "$project_host" "$project_host" dev "$project_host" "$project_host" "$https_port" > ./install/nginx/dev.conf
   fi
   if [ ! -f ./install/nginx/betas.conf ]; then
     NGINXCONFIG=$(< ./install/.example/nginx.conf.template)
-    printf "$NGINXCONFIG" $BETAS_PROJECT_URL $BETAS_PROJECT_URL betas $BETAS_PROJECT_URL $BETAS_PROJECT_URL > ./install/nginx/betas.conf
+    printf "$NGINXCONFIG" "$betas_project_host" "$betas_project_host" betas "$betas_project_host" "$betas_project_host" "$https_port" > ./install/nginx/betas.conf
   fi
   echo "Ok."
 

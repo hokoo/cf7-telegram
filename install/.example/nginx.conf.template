@@ -96,5 +96,5 @@ server {
 
 	server_name %s *.%s;
 
-	return 301 https://$host$request_uri;
+	return 301 https://$host:%s$request_uri;
 }

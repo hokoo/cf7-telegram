@@ -103,6 +103,9 @@ case "$item" in
 esac
 
 echo -e "${ICYAN}Do not forget update the hosts file with lines:"
-echo -e "${BIGREEN}127.0.0.1 cf7t.local${COLOR_OFF}"
-echo -e "${BIGREEN}127.0.0.1 cf7t.betas${COLOR_OFF}"
+echo -e "${BIGREEN}${BIND_IP:-127.0.0.1} ${PROJECT_HOST:-cf7t.local}${COLOR_OFF}"
+echo -e "${BIGREEN}${BIND_IP:-127.0.0.1} ${BETAS_PROJECT_HOST:-cf7t.betas}${COLOR_OFF}"
+echo -e "${ICYAN}Open the sites via:${COLOR_OFF}"
+echo -e "${BIGREEN}https://${PROJECT_BASE_URL:-cf7t.local:8445}${COLOR_OFF}"
+echo -e "${BIGREEN}https://${BETAS_PROJECT_URL:-cf7t.betas:8445}${COLOR_OFF}"
 echo "Done."

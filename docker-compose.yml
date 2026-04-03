@@ -12,7 +12,7 @@ services:
       MYSQL_USER: $DB_USER
       MYSQL_PASSWORD: $DB_PASSWORD
     ports:
-      - "3066:3306"
+      - "${BIND_IP:-127.0.0.1}:${MYSQL_PORT:-3067}:3306"
     volumes:
       - ~/mysql-data/itron/cf7-telegram:/var/lib/mysql
     networks:
@@ -45,8 +45,8 @@ services:
       - ./:/srv/web
       - ./install/php-fpm/php.ini:/usr/local/etc/php/conf.d/php-wpcf7-overrides.ini
     extra_hosts:
-      - "cf7t.local:host-gateway"
-      - "cf7t.betas:host-gateway"
+      - "${PROJECT_HOST:-cf7t.local}:host-gateway"
+      - "${BETAS_PROJECT_HOST:-cf7t.betas}:host-gateway"
     networks:
       - cf7t_local
 
@@ -65,8 +65,8 @@ services:
       - ./install/php-fpm/error.log:/var/log/php/error.log
       - ./install/nginx/access.log:/var/log/nginx/access.log
     ports:
-      - "80:80"
-      - "443:443"
+      - "${BIND_IP:-127.0.0.1}:${HTTP_PORT:-8082}:80"
+      - "${BIND_IP:-127.0.0.1}:${HTTPS_PORT:-8445}:443"
     networks:
       - cf7t_local
 
