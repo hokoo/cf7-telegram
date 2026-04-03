@@ -11,6 +11,7 @@ use iTRON\wpPostAble\Exceptions\wppaSavePostException;
 use wpdb;
 
 class Util {
+	private const TELEGRAM_CHAT_TYPES = [ 'private', 'group', 'supergroup', 'channel' ];
 
 	/**
 	 * Runs the SQL query for installing/upgrading a table.
@@ -66,6 +67,35 @@ class Util {
 		return $wpdb;
 	}
 
+	static function sanitizeTelegramText( $value, bool $collapseWhitespace = true ): string {
+		if ( is_null( $value ) ) {
+			return '';
+		}
+
+		if ( is_bool( $value ) || is_array( $value ) || is_object( $value ) ) {
+			return '';
+		}
+
+		$value = wp_check_invalid_utf8( (string) $value, true );
+		$value = wp_strip_all_tags( $value, false );
+		$value = preg_replace( '/[\x00-\x1F\x7F]+/u', ' ', $value ) ?? '';
+
+		if ( $collapseWhitespace ) {
+			$value = preg_replace( '/\s+/u', ' ', $value ) ?? $value;
+		}
+
+		return trim( $value );
+	}
+
+	static function sanitizeTelegramChatID( $chatID ): string {
+		return preg_replace( '/\s+/u', '', self::sanitizeTelegramText( $chatID, false ) ) ?? '';
+	}
+
+	static function sanitizeTelegramChatType( $chatType ): string {
+		$chatType = sanitize_key( (string) $chatType );
+		return in_array( $chatType, self::TELEGRAM_CHAT_TYPES, true ) ? $chatType : '';
+	}
+
 	/**
 	 * @throws wppaLoadPostException
 	 * @throws wppaCreatePostException
@@ -92,15 +122,33 @@ class Util {
 	 * @throws wppaSavePostException
 	 */
 	static function createChat( Collection $tg_chat ): Chat {
+		$chatID    = self::sanitizeTelegramChatID( $tg_chat->get( 'id' ) );
+		$chatType  = self::sanitizeTelegramChatType( $tg_chat->get( 'type' ) );
+		$firstName = self::sanitizeTelegramText( $tg_chat->get( 'first_name' ) ?? '' );
+		$lastName  = self::sanitizeTelegramText( $tg_chat->get( 'last_name' ) ?? '' );
+		$username  = self::sanitizeTelegramText( $tg_chat->get( 'username' ) ?? '' );
+		$title     = self::sanitizeTelegramText( $tg_chat->get( 'title' ) ?? '' );
+
+		if ( '' === $title ) {
+			$title = trim( $firstName . ' ' . $lastName );
+		}
+
+		if ( '' === $title && '' !== $username ) {
+			$title = '@' . ltrim( $username, '@' );
+		}
+
+		if ( '' === $title ) {
+			$title = $chatID ?: __( 'Telegram Chat', 'cf7-telegram' );
+		}
+
 		$chat = new Chat();
 		$chat
-			->setChatID( $tg_chat->get( 'id' ) )
-			->setChatType( $tg_chat->get( 'type' ) )
-			->setFirstName( $tg_chat->get( 'first_name' ) ?? '' )
-			->setLastName( $tg_chat->get( 'last_name' ) ?? '' )
-			->setUsername( $tg_chat->get( 'username' ) ?? '' )
-			->setTitle( '' )
-			->setTitle( $tg_chat->get( 'title' ) ?? $chat->getName() )
+			->setChatID( $chatID )
+			->setChatType( $chatType )
+			->setFirstName( $firstName )
+			->setLastName( $lastName )
+			->setUsername( $username )
+			->setTitle( $title )
 			->publish();
 
 		return $chat;

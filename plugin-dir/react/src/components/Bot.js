@@ -88,8 +88,8 @@ const Bot = ({
     useEffect(() => {
         return () => {
             isUnmountedRef.current = true;
-            pingTimeoutRef.current || clearTimeout(pingTimeoutRef.current);
-            updatesTimeoutRef.current || clearTimeout(updatesTimeoutRef.current);
+            if (pingTimeoutRef.current) clearTimeout(pingTimeoutRef.current);
+            if (updatesTimeoutRef.current) clearTimeout(updatesTimeoutRef.current);
         };
     }, []);
 
@@ -105,13 +105,13 @@ const Bot = ({
         }
 
         return () => {
-            pingTimeoutRef.current || clearTimeout(pingTimeoutRef.current);
+            if (pingTimeoutRef.current) clearTimeout(pingTimeoutRef.current);
         };
     }, [lastPing]);
 
     useEffect(() => {
         if (online === true) {
-            pingTimeoutRef.current || clearTimeout(pingTimeoutRef.current);
+            if (pingTimeoutRef.current) clearTimeout(pingTimeoutRef.current);
         }
     }, [lastPing]);
 
