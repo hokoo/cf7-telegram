@@ -35,6 +35,9 @@ This plugin uses [API Telegram](https://core.telegram.org/api "Telegram docs") a
 
 == Changelog ==
 
+= 1.0.8 =
+- Harden Telegram chat sanitization and update polling.
+
 = 1.0.7 =
 - Prevent duplicate chat subscriptions when bot updates are fetched concurrently.
 
