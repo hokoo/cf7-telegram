@@ -2,6 +2,8 @@
 
 namespace iTRON\cf7Telegram;
 
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+
 use iTRON\cf7Telegram\Controllers\CPT;
 use iTRON\cf7Telegram\Controllers\Migration;
 use YahnisElsts\PluginUpdateChecker\v5\PucFactory;
@@ -10,12 +12,13 @@ class Settings {
 	const OPTION_PREFIX = 'cf7t_';
 	const EARLY_FLAG_OPTION = self::OPTION_PREFIX . 'early_access';
 
-	 static function init(): void {
+	static function init(): void {
 		add_action( 'admin_menu', function () {
 			add_submenu_page( 'wpcf7', 'CF7 Telegram', 'CF7 Telegram', self::getCaps(), 'wpcf7_tg', [ self::class, 'plugin_menu_cbf' ] );
 		} );
 		add_action( 'current_screen', [ self::class, 'initScreen' ], 999 );
 		add_action( 'admin_enqueue_scripts', [ self::class, 'admin_enqueue_scripts' ] );
+		add_action( 'admin_post_cf7tg_migration_action', [ self::class, 'handle_migration_action' ] );
 
 		self::getEarlyFlag() && self::initPreReleases();
 	}
@@ -38,18 +41,18 @@ class Settings {
                 if ( wp_next_scheduled( Migration::MIGRATION_HOOK ) ) {
                         $migration_notice = sprintf(
                                 '<div class="notice cf7t-notice notice-info"><p>%s</p></div>',
-                                esc_html__( 'Data migration to the new plugin version is in progress. Please reload the page after a few seconds.', 'cf7-telegram' )
+                                esc_html__( 'Data migration to the new plugin version is in progress. Please reload the page after a few seconds.', 'cf7-telegram' ),
                         );
                 }
 
-                $s = <<<HTML
+                $s = '
                 <div id="cf7-telegram-container">
                         <div class="wrap">
                                 %s
                         </div>
-                </div>
-HTML;
+                </div>';
 
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
                 printf( $s, $migration_notice . self::get_settings_content() );
         }
 
@@ -62,22 +65,10 @@ HTML;
 	public static function admin_enqueue_scripts(){
 		if ( ! did_action( 'wpcf7_telegram_settings' ) ) return;
 
-		$json_manifest = self::pluginDir() . '/react/build/asset-manifest.json';
-		if ( ! file_exists( $json_manifest ) ) {
-			wp_die( 'React build not found' );
-		}
-
-		$manifest = json_decode( file_get_contents( $json_manifest ), true );
-
-		wp_enqueue_style( 'cf7-telegram-admin-styles', self::pluginUrl() . '/react/build/' . $manifest['files']['main.css'], null, WPCF7TG_VERSION );
+		wp_enqueue_style( 'cf7-telegram-admin-styles', self::pluginUrl() . '/react/build/static/css/main.css', null, WPCF7TG_VERSION );
 		wp_enqueue_style( 'gf-styles', 'https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap', null, WPCF7TG_VERSION );
-		wp_enqueue_script( 'cf7-telegram-admin', self::pluginUrl() . '/react/build/' . $manifest['files']['main.js'], null, WPCF7TG_VERSION, true );
-
-		wp_set_script_translations(
-			'cf7-telegram-admin',
-			'cf7-telegram',
-			self::pluginDir() . '/languages'
-		);
+		wp_enqueue_script( 'cf7-telegram-admin', self::pluginUrl() . '/react/build/static/js/main.js', ['wp-i18n'], WPCF7TG_VERSION, true );
+		wp_set_script_translations( 'cf7-telegram-admin', 'cf7-telegram' );
 
 		wp_localize_script( 'cf7-telegram-admin', 'cf7TelegramData', array(
 			'routes' => [
@@ -106,6 +97,12 @@ HTML;
 				'empty' => Bot::getEmptyToken(),
 			],
 
+			'migration' => [
+				'show_action_button' => self::shouldShowMigrationActionButton(),
+				'action_url' => admin_url( 'admin-post.php' ),
+				'nonce' => wp_create_nonce( 'cf7tg_migration_action' ),
+			],
+
 			'intervals' => [
 				'ping'      => defined( 'WPCF7TG_PING_INTERVAL' ) ? WPCF7TG_PING_INTERVAL : 5000,
 				'bot_fetch' => defined( 'WPCF7TG_UPDATES_INTERVAL' ) ? WPCF7TG_UPDATES_INTERVAL : 30000,
@@ -121,8 +118,52 @@ HTML;
 		return untrailingslashit( plugin_dir_path( WPCF7TG_FILE ) );
 	}
 
+	static function shouldShowMigrationActionButton(): bool {
+		if ( ( ! defined( 'WPFC7TG_BOT_TOKEN' ) ) && empty( get_option( 'wpcf7_telegram_tkn' ) ) ) {
+			return false;
+		}
+
+		if ( ! empty( get_option( Migration::FIX_1_0_FLAG, false ) ) ) {
+			return false;
+		}
+
+		return true;
+	}
+
+	public static function handle_migration_action(): void {
+		if ( ! current_user_can( self::getCaps() ) ) {
+			wp_die( esc_html__( 'You do not have permission to perform this action.', 'cf7-telegram' ) );
+		}
+
+		check_admin_referer( 'cf7tg_migration_action', 'cf7tg_migration_nonce' );
+
+		$redirect = wp_get_referer() ?: admin_url( 'admin.php?page=wpcf7_tg' );
+
+		// Exit if a migration was already performed.
+		if ( ! empty( get_option( Migration::FIX_1_0_FLAG, false ) ) ) {
+			wp_safe_redirect( $redirect );
+			exit;
+		}
+
+		// Set 'fix_1.0_migration' flag to true to indicate migration is needed.
+		update_option( Migration::FIX_1_0_FLAG, true, false );
+
+		// Schedule the migration manually.
+		wp_schedule_single_event(
+			time(),
+			Migration::MIGRATION_HOOK,
+			[
+				[],
+				'0.9',
+			]
+		);
+
+		wp_safe_redirect( $redirect );
+		exit;
+	}
+
 	private static function get_settings_content() : string {
-		return file_get_contents( self::pluginDir() . '/react/public/settings-content.html' ) ?: '';
+		return file_get_contents( self::pluginDir() . '/react/build/settings-content.html' ) ?: '';
 	}
 
 	private static function initPreReleases(): void {

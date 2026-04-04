@@ -2,6 +2,8 @@
 
 namespace iTRON\cf7Telegram\Collections;
 
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+
 use iTRON\wpConnections\ConnectionCollection;
 use iTRON\wpPostAble\wpPostAble;
 use Ramsey\Collection\CollectionInterface;

@@ -1,14 +1,17 @@
 <?php
 /*
-* Plugin Name: Contact Form 7 + Telegram
-* Description: Sends messages to Telegram-chat
+* Plugin Name: Message Bridge for Contact Form 7 and Telegram
+* Description: Sends CF7 messages to Telegram-chat
 * Author: Hokku
-* Version: 1.0.0-rc15
+* Version: 1.0.8
 * License: GPL v2 or later
 * License URI: https://www.gnu.org/licenses/gpl-2.0.html
 * Text Domain: cf7-telegram
 * Domain Path: /languages
+* Requires Plugins: contact-form-7
 */
+
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 
 use iTRON\cf7Telegram\Client;
 use iTRON\cf7Telegram\Controllers\CPT;
@@ -17,7 +20,7 @@ use iTRON\cf7Telegram\Settings;
 
 define( 'WPCF7TG_PLUGIN_NAME', plugin_basename( __FILE__ ) );
 
-const WPCF7TG_VERSION = '1.0.0-rc15';
+const WPCF7TG_VERSION = '1.0.8';
 const WPCF7TG_FILE = __FILE__;
 
 require __DIR__ . '/vendor/autoload.php';
@@ -36,7 +39,7 @@ function wpcf7tg_plugin_update_message( $data, $response ) {
 	) :
 		printf(
 			'<div class="update-message">%s</div>',
-			wpautop( $data['upgrade_notice'] )
+			wp_kses_post( wpautop( $data['upgrade_notice'] ) )
 		);
 	endif;
 }

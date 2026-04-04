@@ -1,54 +1,68 @@
-=== Contact Form 7 + Telegram ===
-Contributors: hokku
+=== Message Bridge for Contact Form 7 and Telegram ===
+Contributors: hokku, igortron
 Donate link: https://www.paypal.me/igortron
 Tags: contact form telegram,contact form 7,telegram
 Requires at least: 5.6
-Tested up to: 6.8
+Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 0.10.0
+Stable tag: 1.0.8
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-This plugin allows to post CF7-messages to you through Telegram-bot. Just use shortcode [telegram] in your CF7-form.
+Deliver Contact Form 7 submissions to Telegram instantly via a bot.
 
 == Description ==
 
-This plugin allows to send Contact Form 7 messages to your Telegram-chat. For this you need to make several simple steps.
+This plugin lets you send Contact Form 7 messages to Telegram chats via a bot. Setup takes just a few steps:
 
-1. Create the Telegram-Bot and save the Bot-Token parameter on the settings page Contact Form 7 - CF7 Telegram or to <code>WPFC7TG_BOT_TOKEN</code> constant.
-2. Paste the shortcode <code>[telegram]</code> in your contact form template for activate sending to Telegram.
-
-Now you can to add users or group to subscriber list. 
-To add a user send the <code>/cf7tg_start</code> command to your bot.
-To add a group add your bot to the group and send the <code>/cf7tg_start</code> command to your group.
-
-After this, you will see the requests on the Contact Form 7 - CF7 Telegram settings page. Approve or decline them.
+1. Create a Telegram bot ([how to](https://core.telegram.org/bots#3-how-do-i-create-a-bot "Telegram docs")).
+2. Create a bot in the plugin UI.
+3. Paste the bot token into the bot form (PHP constants also available).
+4. Create a channel in the plugin UI — it links your Contact Form 7 forms to Telegram chats.
+5. Add users to the subscriber list by sending the <code>/cf7tg_start</code> command to your bot. To add a group, first add the bot to the group, then send <code>/cf7tg_start</code> in that group.
+6. Approve or decline subscription requests on the Contact Form 7 → CF7 Telegram settings page.
+7. Configure the channel: choose which forms to send messages from.
 
 = Hooks and constants =
 
-Filter <code>wpcf7tg_skip_tg</code>.
-Use for skipping sending message.
+Filter <code>wpcf7tg_skip_tg</code>
+Use it to skip sending a Telegram message.
 
-Filter <code>wpcf7tg_markdown</code>.
-Use for customizing markdown tag set.
+Filter <code>wpcf7tg_markdown</code>
+Use it to customize the allowed Markdown tags.
 
-Constant <code>WPFC7TG_BOT_TOKEN</code>.
-Use for define the bot token value in the program files.
-
-This plugin uses [API Telegram](https://core.telegram.org/api "Telegram docs") and makes remote HTTP-requests to Telegram servers for sending your notifications.
-
-== Frequently Asked Questions ==
-
-= How to create the Telegram-Bot? =
-
-It is very simple. Please, follow to  [official documentation](https://core.telegram.org/bots#3-how-do-i-create-a-bot "Telegram docs").
-
-= What is Chat ID & how to get it? =
-
-The Chat ID parameter is your Telegram-identifier. But this is not your phone number or Telegram-login (@xxxxxxxx). 
-You can see your Chat ID by typing anything to Telegram-Bot <code>@wpcf7Bot</code>.
+This plugin uses [API Telegram](https://core.telegram.org/api "Telegram docs") and sends remote HTTP requests to Telegram servers to deliver notifications.
 
 == Changelog ==
+
+= 1.0.8 =
+- Harden Telegram chat sanitization and update polling.
+
+= 1.0.7 =
+- Prevent duplicate chat subscriptions when bot updates are fetched concurrently.
+
+= 1.0.6 =
+- Fix truncated bot name copy.
+
+= 1.0.5 =
+* Race condition in chats loading fixed.
+
+= 1.0.4 =
+* Minor fixes.
+
+= 1.0.3 =
+* Fix translation loading issue.
+
+= 1.0.2 =
+* Manual migration button added.
+* Migration process improved.
+
+= 1.0.1 =
+* Fix react template.
+
+= 1.0.0 =
+* New UI for managing channels and bot token.
+* New plugin name was chosen to comply with new WordPress guidelines.
 
 = 0.10.0 =
 * Beta testing is available for everyone.

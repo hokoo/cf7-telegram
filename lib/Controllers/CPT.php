@@ -2,6 +2,8 @@
 
 namespace iTRON\cf7Telegram\Controllers;
 
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+
 use iTRON\cf7Telegram\Client;
 use iTRON\cf7Telegram\Controllers\RestApi\BotController;
 use iTRON\cf7Telegram\Controllers\RestApi\ChannelController;

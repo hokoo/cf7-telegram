@@ -2,6 +2,8 @@
 
 namespace iTRON\cf7Telegram;
 
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+
 use iTRON\wpConnections\Connection;
 use iTRON\wpConnections\Exceptions\ConnectionNotFound;
 use iTRON\wpConnections\Exceptions\RelationNotFound;
@@ -33,7 +35,7 @@ class Chat extends Entity implements WPPostAble{
 	}
 
 	public function setChatID( string $chatID ): Chat {
-		$this->setParam( 'chatID', trim( $chatID ) );
+		$this->setParam( 'chatID', Util::sanitizeTelegramChatID( $chatID ) );
 		return $this;
 	}
 
@@ -42,7 +44,7 @@ class Chat extends Entity implements WPPostAble{
 	}
 
 	public function setChatType( string $chatType ): Chat {
-		$this->setParam( 'chatType', trim( $chatType ) );
+		$this->setParam( 'chatType', Util::sanitizeTelegramChatType( $chatType ) );
 		return $this;
 	}
 
@@ -51,7 +53,7 @@ class Chat extends Entity implements WPPostAble{
 	}
 
 	public function setUsername( string $username ): Chat {
-		$this->setParam( 'username', trim( $username ) );
+		$this->setParam( 'username', Util::sanitizeTelegramText( $username ) );
 		return $this;
 	}
 
@@ -60,7 +62,7 @@ class Chat extends Entity implements WPPostAble{
 	}
 
 	public function setFirstName( string $firstName ): Chat {
-		$this->setParam( 'firstName', trim( $firstName ) );
+		$this->setParam( 'firstName', Util::sanitizeTelegramText( $firstName ) );
 		return $this;
 	}
 
@@ -69,7 +71,7 @@ class Chat extends Entity implements WPPostAble{
 	}
 
 	public function setLastName( string $lastName ): Chat {
-		$this->setParam( 'lastName', trim( $lastName ) );
+		$this->setParam( 'lastName', Util::sanitizeTelegramText( $lastName ) );
 		return $this;
 	}
 
@@ -116,7 +118,7 @@ class Chat extends Entity implements WPPostAble{
 		$timestamp = $this->getParam( 'timestamp_connected' );
 
 		// Return pretty date.
-		return date( 'd.m.Y H:i', strtotime( $timestamp ) );
+		return gmdate( 'd.m.Y H:i', strtotime( $timestamp ) );
 	}
 
 	/**

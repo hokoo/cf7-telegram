@@ -1,5 +1,7 @@
 <?php
 
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+
 use iTRON\cf7Telegram\Controllers\Migration;
 use iTRON\cf7Telegram\Bot;
 use iTRON\cf7Telegram\Channel;
@@ -82,13 +84,24 @@ Migration::registerMigration(
 		}
 
 		// Removing the [telegram] shortcode from the forms.
+		$pattern = '/\[telegram\]/';
+		$replacement = '';
+
 		foreach ( $forms as $cf7_form_id ) {
 			$form = new Form( $cf7_form_id );
 			$form->getPost()->post_content = preg_replace(
-				'/\[telegram\]/',
-				'',
+				$pattern,
+				$replacement,
 				$form->getPost()->post_content
 			);
+
+			$meta_form = $form->getMetaField( '_form' );
+			$form->setMetaField( '_form', preg_replace(
+				$pattern,
+				$replacement,
+				$meta_form
+			) );
+
 			$form->savePost();
 		}
 	}

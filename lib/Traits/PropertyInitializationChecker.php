@@ -2,6 +2,8 @@
 
 namespace iTRON\cf7Telegram\Traits;
 
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+
 trait PropertyInitializationChecker {
 	public function isPropertyInitialized(string $propertyName): bool
 	{

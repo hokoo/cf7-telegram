@@ -2,6 +2,9 @@
 
 namespace iTRON\cf7Telegram;
 
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+
+use iTRON\cf7Telegram\Collections\BotCollection;
 use iTRON\cf7Telegram\Collections\ChannelCollection;
 use iTRON\cf7Telegram\Controllers\CF7;
 use iTRON\cf7Telegram\Controllers\CPT;
@@ -41,6 +44,8 @@ class Client {
 	 * @throws Exception
 	 */
 	public function __wakeup() {
+		// Prevent deserialization of the instance.
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
         trigger_error( 'Deserializing of iTRON\cf7Telegram\Client() instance is prohibited.', E_USER_NOTICE );
     }
 
@@ -53,8 +58,6 @@ class Client {
 	}
 
 	public function init() {
-		load_plugin_textdomain( 'cf7-telegram', false,  dirname( WPCF7TG_PLUGIN_NAME ) . '/languages' );
-
 		$this->logger = new Logger();
 
 		$this->registerConnectionsClient();
@@ -120,6 +123,23 @@ class Client {
 
 		return $this->channels;
 	}
+
+	/**
+	 * Get all Bots.
+	 *
+	 * @return BotCollection
+	 */
+	public function getBots(): BotCollection {
+		$q = new WP_Query( [
+			'post_type'     => self::CPT_BOT,
+			'fields'        => 'ids',
+			'posts_per_page'=> -1,
+		] );
+		$bots = new BotCollection();
+		$bots->createByIDs( $q->posts );
+		return $bots;
+	}
+
 
 	public function getConnectionsClient(): wpConnections\Client {
 		if ( empty( self::$connectionsClient ) ) {

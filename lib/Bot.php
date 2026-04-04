@@ -2,6 +2,8 @@
 
 namespace iTRON\cf7Telegram;
 
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+
 use iTRON\cf7Telegram\Collections\ChannelCollection;
 use iTRON\cf7Telegram\Collections\ChatCollection;
 use iTRON\cf7Telegram\Controllers\CF7;
@@ -195,6 +197,8 @@ class Bot extends Entity implements wpPostAble{
 			return null;
 		}
 
+		unset( $this->chats );
+
 		return $connection;
 	}
 
@@ -206,6 +210,7 @@ class Bot extends Entity implements wpPostAble{
 		$this->client
 			->getBot2ChatRelation()
 			->detachConnections( new Query\Connection( $this->getPost()->ID, $chatID ) );
+		unset( $this->chats );
 
 		// Disconnect the chat from all channels of the bot.
 		foreach ( $this->getChannels()->getIterator() as $channel ) {
@@ -250,6 +255,7 @@ class Bot extends Entity implements wpPostAble{
 			);
 
 			if ( $throwOnError ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped
 				throw new Telegram( $e->getMessage(), $e->getCode(), $e );
 			}
 		}
@@ -269,6 +275,30 @@ class Bot extends Entity implements wpPostAble{
 
 		}
 		return $this->api;
+	}
+
+	private function getFetchUpdatesLockKey(): string {
+		return sprintf( 'cf7tg_fetch_updates_lock_%d', $this->getPost()->ID );
+	}
+
+	private function acquireFetchUpdatesLock( int $ttl = 60 ): bool {
+		$lockKey  = $this->getFetchUpdatesLockKey();
+		$lockedAt = (int) get_option( $lockKey, 0 );
+		$now      = time();
+
+		if ( $lockedAt && ( $now - $lockedAt ) < $ttl ) {
+			return false;
+		}
+
+		if ( $lockedAt ) {
+			delete_option( $lockKey );
+		}
+
+		return add_option( $lockKey, $now, '', false );
+	}
+
+	private function releaseFetchUpdatesLock(): void {
+		delete_option( $this->getFetchUpdatesLockKey() );
 	}
 
 	/**
@@ -330,90 +360,135 @@ class Bot extends Entity implements wpPostAble{
 	 */
 	public function fetchUpdates(): RestBotUpdates {
 		$result = new RestBotUpdates();
+		$maxFetchedUpdateID = $this->getLastUpdateID();
 
-		try {
-			$updates = $this->getAPI()->getUpdates( [
-				'offset'  => $this->getLastUpdateID() + 1,
-				'limit'   => 10,
-				'timeout' => 0,
-			] );
-		} catch ( TelegramSDKException $e ) {
-			$this->logger->write(
-				[
-					'botTitle'          => $this->getTitle(),
-					'wpPostID'          => $this->getPost()->ID,
-					'botTokenFirst13'   => substr( $this->getToken(), 0, 13 ),
-					'error'             => $e->getMessage(),
-				],
-				'Bot has failed to fetch updates'
-			);
-		}
-
-		if ( empty( $updates ) ) {
+		if ( ! $this->acquireFetchUpdatesLock() ) {
 			return $result;
 		}
 
-		/**
-		 * When a new chat is found as an update, it should be immediately connected to the bot.
-		 * In case the chat is not exists, it should be created and connected.
-		 * In case the chat is already exists but not connected, it should be connected.
-		 *
-		 * During the process, all channels of the bot should be connected to the chat if not yet.
-		 * When the chat is being connected to the channel, status 'pending' should be set to the connection.
-		 *
-		 * In case the chat is already connected, it should be ignored.
-		 */
-
 		try {
+			try {
+				$updates = $this->getAPI()->getUpdates( [
+					'offset'  => $this->getLastUpdateID() + 1,
+					'limit'   => 10,
+					'timeout' => 0,
+				] );
+			} catch ( TelegramSDKException $e ) {
+				$this->logger->write(
+					[
+						'botTitle'          => $this->getTitle(),
+						'wpPostID'          => $this->getPost()->ID,
+						'botTokenFirst13'   => substr( $this->getToken(), 0, 13 ),
+						'error'             => $e->getMessage(),
+					],
+					'Bot has failed to fetch updates'
+				);
+			}
+
+			if ( empty( $updates ) ) {
+				return $result;
+			}
+
+			/**
+			 * When a new chat is found as an update, it should be immediately connected to the bot.
+			 * In case the chat is not exists, it should be created and connected.
+			 * In case the chat is already exists but not connected, it should be connected.
+			 *
+			 * During the process, all channels of the bot should be connected to the chat if not yet.
+			 * When the chat is being connected to the channel, status 'pending' should be set to the connection.
+			 *
+			 * In case the chat is already connected, it should be ignored.
+			 */
+
+			$processedChatIDs = [];
+
 			foreach ( $updates as $update ) {
-				$message = $update->getMessage();
+				$updateID = (int) ( $update->updateId ?? $update->get( 'update_id' ) ?? 0 );
+				$maxFetchedUpdateID = max( $maxFetchedUpdateID, $updateID );
 
-				if ( $message->isEmpty() || ! $message->hasCommand() ) {
-					continue;
-				}
+				try {
+					$message = $update->getMessage();
 
-				if ( '/' . CF7::CMD !== trim( $message->get( 'text' ) ) ) {
-					continue;
-				}
+					if ( $message->isEmpty() || ! $message->hasCommand() ) {
+						continue;
+					}
 
-				$tgChatID = $update->getChat()->get( 'id' );
-				$chat     = Util::getChatByTelegramID( $tgChatID );
+					if ( '/' . CF7::CMD !== trim( (string) $message->get( 'text' ) ) ) {
+						continue;
+					}
 
-				if ( ! $chat ) {
-					$chat                = Util::createChat( $update->getChat() );
-					$result->hasNewChats = true;
-				}
+					$tgChatID = Util::sanitizeTelegramChatID( $update->getChat()->get( 'id' ) );
 
-				$wpChatID = $chat->getPost()->ID ?? null;
+					if ( '' === $tgChatID ) {
+						throw new \UnexpectedValueException( 'Telegram chat ID is empty after sanitization.' );
+					}
 
-				if ( ! $this->getChats()->contains( $chat ) ) {
-					$this->connectChat( $chat );
-					$chat->setPending( $this );
-					$chat->setDate( $update->message->date );
-					$chat->savePost();
+					if ( isset( $processedChatIDs[ $tgChatID ] ) ) {
+						continue;
+					}
 
-					$result->hasNewConnections = true;
+					$processedChatIDs[ $tgChatID ] = true;
+					$chat                          = Util::getChatByTelegramID( $tgChatID );
+
+					if ( ! $chat ) {
+						$chat                = Util::createChat( $update->getChat() );
+						$result->hasNewChats = true;
+					}
+
+					$wpChatID = $chat->getPost()->ID ?? null;
+
+					if ( ! $this->getChats()->contains( $chat ) ) {
+						$connection = $this->connectChat( $chat );
+
+						if ( ! $connection ) {
+							throw new \RuntimeException( 'Bot-chat connection was not created.' );
+						}
+
+						$chat->setPending( $this );
+						$chat->setDate( (string) $update->message->date );
+						$chat->savePost();
+
+						$result->hasNewConnections = true;
+					}
+				} catch ( \Throwable $e ) {
+					$this->logger->write(
+						[
+							'botTitle'        => $this->getTitle(),
+							'wpPostID'        => $this->getPost()->ID,
+							'botTokenFirst13' => substr( $this->getToken(), 0, 13 ),
+							'updateID'        => $updateID,
+							'tgChatID'        => $tgChatID ?? '',
+							'wpChatID'        => $wpChatID ?? '',
+							'error'           => $e->getMessage(),
+						],
+						'Bot has failed to process a single update',
+						Logger::LEVEL_WARNING
+					);
 				}
 			}
-		} catch ( \Error|\Exception $e ) {
-			$this->logger->write(
-				[
-					'botTitle'        => $this->getTitle(),
-					'wpPostID'        => $this->getPost()->ID,
-					'botTokenFirst13' => substr( $this->getToken(), 0, 13 ),
-					'tgChatID'        => $tgChatID ?? '',
-					'wpChatID'        => $wpChatID ?? '',
-					'error'           => $e->getMessage(),
-				],
-				'Bot has failed to fetch updates'
-			);
 
-			throw new Telegram( 'Failed to process updates' );
+			return $result;
+		} finally {
+			if ( $maxFetchedUpdateID > $this->getLastUpdateID() ) {
+				try {
+					$this->setLastUpdateID( $maxFetchedUpdateID );
+				} catch ( \Throwable $e ) {
+					$this->logger->write(
+						[
+							'botTitle'        => $this->getTitle(),
+							'wpPostID'        => $this->getPost()->ID,
+							'botTokenFirst13' => substr( $this->getToken(), 0, 13 ),
+							'lastUpdateID'    => $this->getLastUpdateID(),
+							'newLastUpdateID' => $maxFetchedUpdateID,
+							'error'           => $e->getMessage(),
+						],
+						'Bot has failed to persist last update ID',
+						Logger::LEVEL_CRITICAL
+					);
+				}
+			}
+
+			$this->releaseFetchUpdatesLock();
 		}
-
-		$updateID = max( array_column( $updates, 'update_id' ) );
-		$this->setLastUpdateID( max( $updateID, $this->getLastUpdateID() ) );
-
-		return $result;
 	}
 }

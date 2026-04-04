@@ -1,6 +1,6 @@
 /* global cf7TelegramData, wp */
 
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useCallback} from 'react';
 import Settings from './components/Settings';
 import Channel from './components/Channel';
 import Bot from './components/Bot';
@@ -20,6 +20,17 @@ import {
     apiDeleteChat
 } from './utils/api';
 
+const mapBot2ChatConnections = (connections) => connections.map(rel => {
+    const status = rel.data?.meta?.status?.[0];
+    return {
+        ...rel,
+        data: {
+            ...rel.data,
+            muted: status === 'muted'
+        }
+    };
+});
+
 const App = () => {
     const [client, setClient] = useState([]);
     const [forms, setForms] = useState([]);
@@ -32,38 +43,29 @@ const App = () => {
     const [bot2ChatConnections, setBot2ChatConnections] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    const loadChatData = useCallback(async () => {
+        const [connections, loadedChats] = await Promise.all([
+            fetchBotsForChats(),
+            fetchChats()
+        ]);
+
+        setBot2ChatConnections(mapBot2ChatConnections(connections));
+        setChats(loadedChats);
+    }, []);
+
     // Run once when the component mounts.
     useEffect(() => {
         fetchClient().then(setClient);
         fetchForms().then(setForms);
         fetchBots().then(setBots);
 
-        // That's crucial to load the bot2ChatConnections first so that chat-garbage-collector would not delete chats.
-        loadBot2ChatConnections();
-        loadChats();
+        // Load chats and relations together so the garbage collector never sees a partial snapshot.
+        loadChatData();
 
         fetchFormsForChannels().then(setForm2ChannelConnections);
         fetchBotsForChannels().then(setBot2ChannelConnections);
         fetchChatsForChannels().then(setChat2ChannelConnections);
-    }, []);
-
-    const loadChats = () => {
-        fetchChats().then(setChats);
-    }
-
-    const loadBot2ChatConnections = () => {
-        fetchBotsForChats().then((connections) => {
-            const mapped = connections.map(rel => {
-                const status = rel.data?.meta?.status?.[0];
-                return {
-                    ...rel, data: {
-                        ...rel.data, muted: status === 'muted'
-                    }
-                };
-            });
-            setBot2ChatConnections(mapped);
-        });
-    };
+    }, [loadChatData]);
 
     useEffect(() => {
         fetchChannels()
@@ -97,6 +99,10 @@ const App = () => {
 
     if (loading) return <div>{wp.i18n.__( 'Loading data...', 'cf7-telegram' )}</div>;
 
+    const canShowMigrationAction = Boolean(cf7TelegramData?.migration?.show_action_button)
+        && bots.length === 0
+        && channels.length === 0;
+
     return (
         <>
         <h1>{wp.i18n.__( 'Telegram notificator settings', 'cf7-telegram' )}</h1>
@@ -124,8 +130,7 @@ const App = () => {
                                 bot2ChannelConnections={bot2ChannelConnections}
                                 setBot2ChannelConnections={setBot2ChannelConnections}
                                 setChat2ChannelConnections={setChat2ChannelConnections}
-                                loadBot2ChatConnections={loadBot2ChatConnections}
-                                loadChats={loadChats}
+                                loadChatData={loadChatData}
                             />
                         ))}
                     </div>
@@ -158,6 +163,25 @@ const App = () => {
                 </div>
             </div>
         </div>
+
+        {canShowMigrationAction && (
+            <div className="cf7-tg-migration-action">
+                <form method="post" action={cf7TelegramData?.migration?.action_url}>
+                    <input type="hidden" name="action" value="cf7tg_migration_action" />
+                    <input
+                        type="hidden"
+                        name="cf7tg_migration_nonce"
+                        value={cf7TelegramData?.migration?.nonce}
+                    />
+                    <p>
+                        {wp.i18n.__( 'We detected settings from an older version that couldn’t be migrated automatically. Click the button below to migrate them to the new version.', 'cf7-telegram' )}
+                    </p>
+                    <button type="submit" className="button button-primary">
+                        {wp.i18n.__( 'Run migration', 'cf7-telegram' )}
+                    </button>
+                </form>
+            </div>
+        )}
 
         <style>
             {`.copyable::after { content: '` + wp.i18n.__( 'Copied!', 'cf7-telegram' ) + `' !important }`}
