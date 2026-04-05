@@ -1018,6 +1018,7 @@ class ComposerStaticInit8208a12f6cf01d2cbda31ab04c26c3aa
         'iTRON\\cf7Telegram\\Exceptions\\Telegram' => __DIR__ . '/../..' . '/lib/Exceptions/Telegram.php',
         'iTRON\\cf7Telegram\\Form' => __DIR__ . '/../..' . '/lib/Form.php',
         'iTRON\\cf7Telegram\\Logger' => __DIR__ . '/../..' . '/lib/Logger.php',
+        'iTRON\\cf7Telegram\\Maintenance' => __DIR__ . '/../..' . '/lib/Maintenance.php',
         'iTRON\\cf7Telegram\\RestBotUpdates' => __DIR__ . '/../..' . '/lib/RestBotUpdates.php',
         'iTRON\\cf7Telegram\\Settings' => __DIR__ . '/../..' . '/lib/Settings.php',
         'iTRON\\cf7Telegram\\Traits\\PropertyInitializationChecker' => __DIR__ . '/../..' . '/lib/Traits/PropertyInitializationChecker.php',
