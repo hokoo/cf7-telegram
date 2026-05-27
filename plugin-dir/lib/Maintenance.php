@@ -65,7 +65,10 @@ class Maintenance {
 			return;
 		}
 
-		wp_schedule_event( time() + self::getCleanupInterval(), self::CRON_SCHEDULE, self::CRON_HOOK );
+		$now = time();
+
+		wp_schedule_single_event( $now, self::CRON_HOOK );
+		wp_schedule_event( $now + self::getCleanupInterval(), self::CRON_SCHEDULE, self::CRON_HOOK );
 	}
 
 	public static function hasCleanupLock( int $ttl = self::CLEANUP_LOCK_TTL ): bool {
