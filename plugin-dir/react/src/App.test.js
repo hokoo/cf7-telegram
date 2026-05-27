@@ -14,7 +14,6 @@ import {
     fetchFormsForChannels,
 } from './utils/api';
 
-jest.mock('./components/Settings', () => () => <div>Settings</div>);
 jest.mock('./components/Channel', () => () => <div>Channel</div>);
 jest.mock('./components/Bot', () => () => <div>Bot</div>);
 jest.mock('./components/NewBot', () => () => <div>NewBot</div>);
