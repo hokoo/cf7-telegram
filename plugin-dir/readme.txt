@@ -35,6 +35,9 @@ This plugin uses [API Telegram](https://core.telegram.org/api "Telegram docs") a
 
 == Changelog ==
 
+= 1.0.10 =
+- Add maintenance cleanup for orphan chats and broken relations.
+
 = 1.0.9 =
 - Remove external update controls.
 
