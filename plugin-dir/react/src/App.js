@@ -1,7 +1,6 @@
 /* global cf7TelegramData, wp */
 
 import React, {useState, useEffect, useCallback} from 'react';
-import Settings from './components/Settings';
 import Channel from './components/Channel';
 import Bot from './components/Bot';
 import NewBot from './components/NewBot';
@@ -107,10 +106,6 @@ const App = () => {
         <>
         <h1>{wp.i18n.__( 'Telegram notificator settings', 'cf7-telegram' )}</h1>
         <div className="cf7-tg-container">
-            <div className="settings-container">
-                <Settings />
-            </div>
-
             <div className="main-container">
                 <div className="list-container bots-container">
                     <div className="title-container">

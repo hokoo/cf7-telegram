@@ -6,11 +6,9 @@ if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 
 use iTRON\cf7Telegram\Controllers\CPT;
 use iTRON\cf7Telegram\Controllers\Migration;
-use YahnisElsts\PluginUpdateChecker\v5\PucFactory;
 
 class Settings {
 	const OPTION_PREFIX = 'cf7t_';
-	const EARLY_FLAG_OPTION = self::OPTION_PREFIX . 'early_access';
 
 	static function init(): void {
 		add_action( 'admin_menu', function () {
@@ -19,16 +17,6 @@ class Settings {
 		add_action( 'current_screen', [ self::class, 'initScreen' ], 999 );
 		add_action( 'admin_enqueue_scripts', [ self::class, 'admin_enqueue_scripts' ] );
 		add_action( 'admin_post_cf7tg_migration_action', [ self::class, 'handle_migration_action' ] );
-
-		self::getEarlyFlag() && self::initPreReleases();
-	}
-
-	public static function getEarlyFlag(): bool {
-		return filter_var( get_option( self::EARLY_FLAG_OPTION, false ), FILTER_VALIDATE_BOOLEAN );
-	}
-
-	public static function setEarlyFlag( $value ): void {
-		update_option( self::EARLY_FLAG_OPTION, $value, false );
 	}
 
 	public static function getCaps(): string {
@@ -84,11 +72,6 @@ class Settings {
 				'bots'     => get_rest_url( null, 'wp/v2' . '/cf7tg_bot/' ),
 				'chats'    => get_rest_url( null, 'wp/v2' . '/cf7tg_chat/' ),
 				'forms'    => get_rest_url( null, 'contact-form-7/v1' . '/contact-forms/' ),
-				'settings' => get_rest_url( null, 'wp/v2' . '/settings/' ),
-			],
-
-			'options' => [
-				'early_access' => self::EARLY_FLAG_OPTION,
 			],
 
 			// Put this nonce to X-WP-Nonce header request.
@@ -164,18 +147,5 @@ class Settings {
 
 	private static function get_settings_content() : string {
 		return file_get_contents( self::pluginDir() . '/react/build/settings-content.html' ) ?: '';
-	}
-
-	private static function initPreReleases(): void {
-		$updateChecker = PucFactory::buildUpdateChecker(
-			'https://github.com/hokoo/cf7-telegram',
-			WPCF7TG_FILE,
-			'cf7-telegram',
-			1
-		);
-
-		defined( 'WPCF7TG_GITHUB_TOKEN' ) && $updateChecker->setAuthentication( WPCF7TG_GITHUB_TOKEN );
-
-		$updateChecker->setBranch( 'plugin-dist' );
 	}
 }
