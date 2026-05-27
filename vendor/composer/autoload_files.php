@@ -15,5 +15,4 @@ return array(
     '23c18046f52bef3eea034657bafda50f' => $vendorDir . '/symfony/polyfill-php81/bootstrap.php',
     '37a3dc5111fe8f707ab4c132ef1dbc62' => $vendorDir . '/guzzlehttp/guzzle/src/functions_include.php',
     '72579e7bd17821bb1321b87411366eae' => $vendorDir . '/illuminate/support/helpers.php',
-    '256558b1ddf2fa4366ea7d7602798dd1' => $vendorDir . '/yahnis-elsts/plugin-update-checker/load-v5p5.php',
 );

@@ -16,15 +16,6 @@ class RestApi {
 	}
 
 	public static function registerFields(): void {
-		register_setting( 'options', Settings::EARLY_FLAG_OPTION, [
-			'type'          => 'boolean',
-			'show_in_rest'  => true,
-			'default'       => false,
-			'auth_callback' => function() {
-				return current_user_can( Settings::getCaps() );
-			},
-		] );
-
 		register_rest_field( Client::CPT_BOT, 'token', array(
 			'get_callback' => function( $object ) {
 				$bot = new Bot( $object['id'] );
