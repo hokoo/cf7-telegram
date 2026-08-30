@@ -821,6 +821,7 @@ return array(
     'iTRON\\cf7Telegram\\Exceptions\\Telegram' => $baseDir . '/lib/Exceptions/Telegram.php',
     'iTRON\\cf7Telegram\\Form' => $baseDir . '/lib/Form.php',
     'iTRON\\cf7Telegram\\Logger' => $baseDir . '/lib/Logger.php',
+    'iTRON\\cf7Telegram\\Maintenance' => $baseDir . '/lib/Maintenance.php',
     'iTRON\\cf7Telegram\\RestBotUpdates' => $baseDir . '/lib/RestBotUpdates.php',
     'iTRON\\cf7Telegram\\Settings' => $baseDir . '/lib/Settings.php',
     'iTRON\\cf7Telegram\\Traits\\PropertyInitializationChecker' => $baseDir . '/lib/Traits/PropertyInitializationChecker.php',
