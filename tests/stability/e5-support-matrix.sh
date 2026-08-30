@@ -232,6 +232,11 @@ probe_image() {
 	local log_file="${LOG_DIR}/${row_id}-image-probe.log"
 	local exit_code
 
+	if docker image inspect "${image}" >"${log_file}" 2>&1; then
+		emit "${row_id}" "image_probe" "pass" "Official WordPress CLI Docker image is available in the local image cache." "$(jq -nc --arg image "${image}" --arg log "${log_file}" '{image:$image,probe:"docker image inspect",source:"local-cache",log:$log}')"
+		return 0
+	fi
+
 	set +e
 	timeout "${IMAGE_PROBE_TIMEOUT}" docker manifest inspect "${image}" >"${log_file}" 2>&1
 	exit_code="$?"
