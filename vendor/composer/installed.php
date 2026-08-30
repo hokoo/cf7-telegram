@@ -1,7 +1,7 @@
 <?php return array(
     'root' => array(
         'name' => 'hokoo/wpcf7_telegram_app',
-        'pretty_version' => '1.0.0',
+        'pretty_version' => '1.0.0+no-version-set',
         'version' => '1.0.0.0',
         'reference' => null,
         'type' => 'wordpress-plugin',
@@ -56,7 +56,7 @@
             'dev_requirement' => false,
         ),
         'hokoo/wpcf7_telegram_app' => array(
-            'pretty_version' => '1.0.0',
+            'pretty_version' => '1.0.0+no-version-set',
             'version' => '1.0.0.0',
             'reference' => null,
             'type' => 'wordpress-plugin',

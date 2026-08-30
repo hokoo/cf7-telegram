@@ -112,9 +112,9 @@ class Client {
 	public function getChannels(): ChannelCollection {
 		if ( ! isset( $this->channels ) ) {
 			$q = new WP_Query( [
-				'post_type'     => self::CPT_CHANNEL,
-				'fields'        => 'ids',
-				'posts_per_pge' => -1,
+				'post_type'      => self::CPT_CHANNEL,
+				'fields'         => 'ids',
+				'posts_per_page' => -1,
 			] );
 
 			$this->channels = new ChannelCollection();

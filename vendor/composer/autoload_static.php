@@ -4,7 +4,7 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInit3ca7c964d14ee7f08f567d72cf48cca7
+class ComposerStaticInitCf7Telegram
 {
     public static $files = array (
         '0e6d7bf4a5811bfa5cf40c5ccd6fae6a' => __DIR__ . '/..' . '/symfony/polyfill-mbstring/bootstrap.php',
@@ -1002,6 +1002,7 @@ class ComposerStaticInit3ca7c964d14ee7f08f567d72cf48cca7
         'iTRON\\cf7Telegram\\Collections\\ChatCollection' => __DIR__ . '/../..' . '/lib/Collections/ChatCollection.php',
         'iTRON\\cf7Telegram\\Collections\\Collection' => __DIR__ . '/../..' . '/lib/Collections/Collection.php',
         'iTRON\\cf7Telegram\\Collections\\FormCollection' => __DIR__ . '/../..' . '/lib/Collections/FormCollection.php',
+        'iTRON\\cf7Telegram\\Compatibility' => __DIR__ . '/../..' . '/lib/Compatibility.php',
         'iTRON\\cf7Telegram\\Controllers\\CF7' => __DIR__ . '/../..' . '/lib/Controllers/CF7.php',
         'iTRON\\cf7Telegram\\Controllers\\CPT' => __DIR__ . '/../..' . '/lib/Controllers/CPT.php',
         'iTRON\\cf7Telegram\\Controllers\\Migration' => __DIR__ . '/../..' . '/lib/Controllers/Migration.php',
@@ -1018,6 +1019,7 @@ class ComposerStaticInit3ca7c964d14ee7f08f567d72cf48cca7
         'iTRON\\cf7Telegram\\Form' => __DIR__ . '/../..' . '/lib/Form.php',
         'iTRON\\cf7Telegram\\Logger' => __DIR__ . '/../..' . '/lib/Logger.php',
         'iTRON\\cf7Telegram\\Maintenance' => __DIR__ . '/../..' . '/lib/Maintenance.php',
+        'iTRON\\cf7Telegram\\Migrations\\LegacyImporter' => __DIR__ . '/../..' . '/lib/Migrations/LegacyImporter.php',
         'iTRON\\cf7Telegram\\RestBotUpdates' => __DIR__ . '/../..' . '/lib/RestBotUpdates.php',
         'iTRON\\cf7Telegram\\Settings' => __DIR__ . '/../..' . '/lib/Settings.php',
         'iTRON\\cf7Telegram\\Traits\\PropertyInitializationChecker' => __DIR__ . '/../..' . '/lib/Traits/PropertyInitializationChecker.php',
@@ -1071,9 +1073,9 @@ class ComposerStaticInit3ca7c964d14ee7f08f567d72cf48cca7
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInit3ca7c964d14ee7f08f567d72cf48cca7::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInit3ca7c964d14ee7f08f567d72cf48cca7::$prefixDirsPsr4;
-            $loader->classMap = ComposerStaticInit3ca7c964d14ee7f08f567d72cf48cca7::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInitCf7Telegram::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInitCf7Telegram::$prefixDirsPsr4;
+            $loader->classMap = ComposerStaticInitCf7Telegram::$classMap;
 
         }, null, ClassLoader::class);
     }
