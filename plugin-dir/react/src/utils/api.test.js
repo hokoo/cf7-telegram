@@ -1,4 +1,4 @@
-import {fetchChats} from './api';
+import {apiCreateBot, fetchChats} from './api';
 
 const response = (data, totalPages, ok = true) => ({
     ok,
@@ -18,6 +18,7 @@ describe('fetchChats', () => {
             nonce: 'test-nonce',
             routes: {
                 chats: 'https://example.test/wp-json/wp/v2/cf7tg_chat/',
+                bots: 'https://example.test/wp-json/wp/v2/cf7tg_bot/',
             },
         };
 
@@ -84,5 +85,14 @@ describe('fetchChats', () => {
         expect(global.fetch).toHaveBeenCalledTimes(2);
         expect(fetchUrl(0).searchParams.get('page')).toBe('1');
         expect(fetchUrl(1).searchParams.get('page')).toBe('2');
+    });
+
+    it('creates an empty bot without sending a placeholder token for validation', async () => {
+        global.fetch.mockResolvedValueOnce(response({id: 10}, 1));
+
+        await expect(apiCreateBot('Bot Name')).resolves.toEqual({id: 10});
+
+        const request = global.fetch.mock.calls[0][1];
+        expect(JSON.parse(request.body)).toEqual({title: 'Bot Name', status: 'publish'});
     });
 });

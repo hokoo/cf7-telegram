@@ -3,31 +3,13 @@
 import React, {useState, useEffect, useRef} from 'react';
 import BotView from './BotView';
 import {
-    connectChat2Channel, disconnectConnectionBot2Channel, disconnectConnectionBot2Chat, setBot2ChatConnectionStatus
+    connectChat2Channel, disconnectConnectionBot2Chat, setBot2ChatConnectionStatus
 } from "../utils/main";
 import {
-    apiDeleteBot, apiFetchUpdates, apiPingBot, apiSaveBot, fetchBot
+    apiDeleteBot, apiFetchUpdates, apiPingBot, apiUpdateBotToken, fetchBot
 } from "../utils/api";
 
-const disconnectBotRelations = async ({
-    botId,
-    bot2ChatConnections,
-    setBot2ChatConnections,
-    bot2ChannelConnections,
-    setBot2ChannelConnections,
-}) => {
-    let connections = bot2ChatConnections.filter(c => c.data.from === botId);
-    for (const connection of connections) {
-        await disconnectConnectionBot2Chat(connection.data.id, setBot2ChatConnections);
-    }
-
-    connections = bot2ChannelConnections.filter(c => c.data.from === botId);
-    for (const connection of connections) {
-        await disconnectConnectionBot2Channel(connection.data.id, setBot2ChannelConnections);
-    }
-};
-
-export const saveBotTokenAndDisconnect = async ({
+export const saveBotTokenTransactionally = async ({
     botId,
     token,
     pingBot,
@@ -36,20 +18,28 @@ export const saveBotTokenAndDisconnect = async ({
     bot2ChannelConnections,
     setBot2ChannelConnections,
 }) => {
-    await apiSaveBot(botId, '', token.trim());
+    const result = await apiUpdateBotToken(botId, token.trim());
 
-    const isBotOnline = await pingBot({force: true, skipEditingCheck: true});
-    if (!isBotOnline) {
-        throw new Error('Bot did not come online after token update.');
+    await pingBot({force: true, skipEditingCheck: true});
+
+    if (result.relationsReset) {
+        setBot2ChatConnections(previous => previous.filter(connection => connection.data.from !== botId));
+        setBot2ChannelConnections(previous => previous.filter(connection => connection.data.from !== botId));
     }
 
-    await disconnectBotRelations({
-        botId,
-        bot2ChatConnections,
-        setBot2ChatConnections,
-        bot2ChannelConnections,
-        setBot2ChannelConnections,
-    });
+    return result;
+};
+
+export const getUpdateDiagnostic = (updates) => {
+    if (updates?.hasWebhookConflict) {
+        return 'webhook_conflict';
+    }
+
+    if (updates?.errors?.length) {
+        return 'update_error';
+    }
+
+    return null;
 };
 
 const Bot = ({
@@ -156,12 +146,23 @@ const Bot = ({
         isFetchingRef.current = true;
         try {
             let updates = await apiFetchUpdates(bot.id);
+            const diagnostic = getUpdateDiagnostic(updates);
+            if ('webhook_conflict' === diagnostic) {
+                setError(wp.i18n.__( 'Telegram webhook is active. Disable it before checking for new chats.', 'cf7-telegram' ));
+                return;
+            }
+
+            if ('update_error' === diagnostic) {
+                setError(wp.i18n.__( 'Telegram updates could not be checked.', 'cf7-telegram' ));
+                return;
+            }
 
             if (updates.hasNewConnections || updates.hasNewChats) {
                 await loadChatData();
             }
         } catch (err) {
             console.error('Fetch updates failed', err);
+            setError(wp.i18n.__( 'Telegram updates could not be checked.', 'cf7-telegram' ));
         } finally {
             isFetchingRef.current = false;
         }
@@ -225,7 +226,7 @@ const Bot = ({
             return;
         }
 
-        if ( online && ! window.confirm( wp.i18n.__( 'Changing the bot token will disconnect all its chats and channels. Continue?', 'cf7-telegram' ) ) ) {
+        if ( online && ! window.confirm( wp.i18n.__( 'Changing the token to another Telegram bot will disconnect this bot from its chats and channels. Continue?', 'cf7-telegram' ) ) ) {
             return;
         }
 
@@ -265,7 +266,7 @@ const Bot = ({
 
         try {
             const nextToken = tokenValue.trim();
-            await saveBotTokenAndDisconnect({
+            await saveBotTokenTransactionally({
                 botId: bot.id,
                 token: nextToken,
                 pingBot,

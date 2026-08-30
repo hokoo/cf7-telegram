@@ -254,9 +254,12 @@ export const apiDeleteChannel = async (channelId) => {
 export const apiCreateBot = async (title, token) => {
     let newBotData = {
         title: title,
-        token: token ?? '',
         status: 'publish',
     };
+
+    if (token?.trim()) {
+        newBotData.token = token.trim();
+    }
 
     return await apiRequest(
         cf7TelegramData.routes.bots,
@@ -291,6 +294,14 @@ export const apiSaveBot = async (botId, title, token) => {
         `${cf7TelegramData.routes.bots}${botId}`,
         'POST',
         botData
+    );
+}
+
+export const apiUpdateBotToken = async (botId, token) => {
+    return await apiRequest(
+        `${cf7TelegramData.routes.bots}${botId}/token`,
+        'POST',
+        {token}
     );
 }
 
