@@ -333,7 +333,7 @@ class LegacyImporter {
 			$report['channels']['reused']++;
 		} else {
 			$channel = new Channel();
-			$channel->setTitle( __( self::DEFAULT_CHANNEL_TITLE, 'cf7-telegram' ) );
+			$channel->setTitle( __( 'Channel Name', 'cf7-telegram' ) );
 			$report['channels']['created']++;
 		}
 

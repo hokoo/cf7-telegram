@@ -721,7 +721,7 @@ class Maintenance {
 			return $mode;
 		}
 
-		throw new \InvalidArgumentException( sprintf( 'Unsupported repair mode: %s', $mode ) );
+		throw new \InvalidArgumentException( sprintf( 'Unsupported repair mode: %s', esc_html( $mode ) ) );
 	}
 
 	private static function hasReportableRepairResult( array $result ): bool {

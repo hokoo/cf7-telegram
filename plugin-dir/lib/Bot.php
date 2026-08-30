@@ -194,7 +194,8 @@ class Bot extends Entity implements wpPostAble{
 				Logger::LEVEL_WARNING
 			);
 
-			throw new Telegram( $result->description, $result->errorCode );
+			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped
+			throw new Telegram( TelegramRedactor::text( (string) $result->description, $token ), $result->errorCode );
 		}
 
 		$identity = $this->telegramBotIdentity( $result->result );

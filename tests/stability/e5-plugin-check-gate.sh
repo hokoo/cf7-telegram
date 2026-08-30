@@ -4,6 +4,7 @@ set -Eeuo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 SOURCE_MANIFEST="${SCRIPT_DIR}/e1-version-sources.json"
+PLUGIN_CHECK_JSON_FILTER="${SCRIPT_DIR}/e5-plugin-check-results.jq"
 
 PLUGIN_SLUG="${PLUGIN_SLUG:-cf7-telegram}"
 RUN_ID="$(date -u +%Y%m%dT%H%M%SZ)-$$"
@@ -432,7 +433,7 @@ run_plugin_check() {
 		exit_code="$?"
 	fi
 
-	if jq -e 'type == "array"' "${PLUGIN_CHECK_STDOUT}" >"${PLUGIN_CHECK_RAW_JSON}" 2>/dev/null; then
+	if jq -e -f "${PLUGIN_CHECK_JSON_FILTER}" "${PLUGIN_CHECK_STDOUT}" >"${PLUGIN_CHECK_RAW_JSON}" 2>/dev/null; then
 		:
 	elif grep -q 'Success: Checks complete. No errors found.' "${PLUGIN_CHECK_STDOUT}"; then
 		printf '[]\n' > "${PLUGIN_CHECK_RAW_JSON}"
