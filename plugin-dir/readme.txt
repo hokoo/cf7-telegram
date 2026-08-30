@@ -37,6 +37,7 @@ This plugin uses [API Telegram](https://core.telegram.org/api "Telegram docs") a
 
 = 1.0.10 =
 - Add maintenance cleanup for orphan chats and broken relations.
+- Fix fatal error on CF7 submission when a channel has chats but no connected bot (#56).
 
 = 1.0.9 =
 - Remove external update controls.
