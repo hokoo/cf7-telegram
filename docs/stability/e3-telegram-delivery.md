@@ -36,9 +36,9 @@ Verified on 2026-08-31:
 - `composer audit`: no known security advisories;
 - `composer check-platform-reqs --no-dev`: pass;
 - PHP lint for changed PHP files and `git diff --check`: pass;
-- `scripts/build-release-zip.sh`: pass twice with byte-identical output;
-- candidate ZIP SHA-256: `31a4715c271ab2a1f8c21d242c2bfb27e1d84fede3c1a1b5daff17a3a1660c76`;
-- candidate ZIP size: `272387` bytes;
+- `scripts/build-release-zip.sh`: pass twice with byte-identical output; its default epoch follows release inputs, so documentation-only commits do not change ZIP bytes;
+- candidate ZIP SHA-256: `1ebdd01e48d55680d72a8b8bcfb17f5d042d2957135de6d3287df60c9b81fe15`;
+- candidate ZIP size: `272570` bytes;
 - candidate ZIP contains no Telegram SDK, Guzzle, Illuminate, or Carbon paths;
 - Composer production graph contains only `hokoo/wpconnections`, `hokoo/wppostable`, `psr/log`, `ramsey/collection`, and `symfony/polyfill-php81`.
 
@@ -51,12 +51,14 @@ tests/stability/e1-smoke-matrix.sh
 
 Result:
 
-- run id: `20260830T210052Z-38815`;
+- run id: `20260830T212232Z-57584`;
 - WordPress `7.0.4`, Contact Form 7 `6.0.6`, PHP `8.2`;
 - `total_steps=164`, `passed_steps=164`;
 - `failed_steps=0`, `expected_failed_steps=0`;
 - fresh install, activation, reactivation, deactivation, and uninstall passed;
 - upgrade, migration, lifecycle, uninstall, and rollback passed from published `0.10.2`, `0.11`, `1.0.9`, and `1.0.10` artifacts to candidate `1.0.11`.
+
+Independent QA initially found that a WordPress transport error containing the request URL could expose a URL-encoded bot token. Commit `825b4d5` routes every gateway failure through token-aware redaction, covers raw and repeatedly encoded token forms, and adds a regression that returns the actual request URL through `WP_Error`. The PHP suite and production artifact matrix above were rerun after that fix.
 
 ## Residual Ownership
 
