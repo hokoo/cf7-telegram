@@ -114,4 +114,15 @@ The temporary run directories are not repository artifacts. Reproduce the eviden
 
 ## Gate Status
 
-The E2.6 semantic gate is green. Epic closure still requires the E2.7 combined test/build/package gate and independent Epic 2 QA.
+The E2.6 semantic gate is green.
+
+E2.7 verified the combined implementation and production artifact on 2026-08-30:
+
+- PHP suite: `50/50`;
+- React suite: `3/3` suites and `7/7` tests;
+- production build and `scripts/validate-release-zip.sh`: pass for version `1.0.10`;
+- artifact SHA-256: `d5254f0966db5e4614e0676f424c4c988e23ddfd2c8a2de5c06ad951ce52047c`;
+- artifact matrix run id `20260830T185233Z-38408`: `360/360`, no failed or expected-failed steps;
+- tracked worktree after build and matrix: clean.
+
+Epic closure still requires independent Epic 2 QA. Publishing, tagging, and a `1.0.11` version bump remain outside Epic 2.
