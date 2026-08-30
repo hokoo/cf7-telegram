@@ -121,8 +121,16 @@ E2.7 verified the combined implementation and production artifact on 2026-08-30:
 - PHP suite: `51/51`, including constant-only legacy source scheduling and secret non-persistence;
 - React suite: `3/3` suites and `7/7` tests;
 - production build and `scripts/validate-release-zip.sh`: pass for version `1.0.10`;
-- artifact SHA-256: `6befb14de2bf1ebd2afb373ab8e589a841311edfffcd39df509274e2d2152f1c`;
-- post-fix artifact matrix run id `20260830T190418Z-58607`: `360/360`, no failed or expected-failed steps;
+- artifact SHA-256: `52ad8772e5fe77d92feb07cebe21b6162ffdf7c92b2ae581ec831167ee939eb3`;
+- final artifact matrix run id `20260830T191946Z-83427`: `360/360`, no failed or expected-failed steps;
 - tracked worktree after build and matrix: clean.
 
-Epic closure still requires independent Epic 2 QA. Publishing, tagging, and a `1.0.11` version bump remain outside Epic 2.
+Independent Epic 2 QA passed on `93b969a`:
+
+- independent four-baseline run `20260830T190506Z-60294`: `360/360`;
+- independent `damaged-legacy` run `20260830T191035Z-76095`: `96/96`;
+- independent `partial-modern` run `20260830T191148Z-78349`: `59/59`;
+- independent final `legacy-heavy` 1.0.10 run `20260830T192149Z-87942`: `96/96`;
+- real WordPress constant-only lifecycle completed without persisting the secret or emitting missing-table database warnings.
+
+Epic 2 is closed. Publishing, tagging, and a `1.0.11` version bump remain outside Epic 2.
