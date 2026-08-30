@@ -1,6 +1,6 @@
 # Epic 3 Telegram Delivery Gate
 
-Epic 3 replaces the Telegram SDK with a narrow WordPress HTTP gateway and closes the delivery, token lifecycle, update polling, formatting, diagnostics, and chat pagination risks identified by the stability plan. Version `1.0.11` remains the current source and artifact version; versioning and publication are separate release decisions.
+Epic 3 replaces the Telegram SDK with a narrow WordPress HTTP gateway and closes the delivery, token lifecycle, update polling, formatting, diagnostics, and chat pagination risks identified by the stability plan. Version `1.0.12` is the current source and artifact version; tagging and publication are separate release decisions.
 
 ## Approved Contracts
 
@@ -37,8 +37,8 @@ Verified on 2026-08-31:
 - `composer check-platform-reqs --no-dev`: pass;
 - PHP lint for changed PHP files and `git diff --check`: pass;
 - `scripts/build-release-zip.sh`: pass twice with byte-identical output; its default epoch follows release inputs, so documentation-only commits do not change ZIP bytes;
-- candidate ZIP SHA-256: `1ebdd01e48d55680d72a8b8bcfb17f5d042d2957135de6d3287df60c9b81fe15`;
-- candidate ZIP size: `272570` bytes;
+- candidate ZIP SHA-256: `7ce3e30956c2295f0c2766e52ec6acdd111cb975a392f935886ce97ae0b9da81`;
+- candidate ZIP size: `272759` bytes;
 - candidate ZIP contains no Telegram SDK, Guzzle, Illuminate, or Carbon paths;
 - Composer production graph contains only `hokoo/wpconnections`, `hokoo/wppostable`, `psr/log`, `ramsey/collection`, and `symfony/polyfill-php81`.
 
@@ -51,12 +51,12 @@ tests/stability/e1-smoke-matrix.sh
 
 Result:
 
-- run id: `20260830T212232Z-57584`;
+- run id: `20260830T213803Z-74045`;
 - WordPress `7.0.4`, Contact Form 7 `6.0.6`, PHP `8.2`;
 - `total_steps=164`, `passed_steps=164`;
 - `failed_steps=0`, `expected_failed_steps=0`;
 - fresh install, activation, reactivation, deactivation, and uninstall passed;
-- upgrade, migration, lifecycle, uninstall, and rollback passed from published `0.10.2`, `0.11`, `1.0.9`, and `1.0.10` artifacts to candidate `1.0.11`.
+- upgrade, migration, lifecycle, uninstall, and rollback passed from published `0.10.2`, `0.11`, `1.0.9`, and `1.0.10` artifacts to candidate `1.0.12`.
 
 Independent QA initially found that a WordPress transport error containing the request URL could expose a URL-encoded bot token. Commit `825b4d5` routes every gateway failure through token-aware redaction, covers raw and repeatedly encoded token forms, and adds a regression that returns the actual request URL through `WP_Error`. The PHP suite and production artifact matrix above were rerun after that fix.
 
@@ -65,4 +65,4 @@ Independent QA initially found that a WordPress transport error containing the r
 - Pagination and bootstrap coverage for bots, channels, forms, and general REST/UI behavior remains in Epic 4. Chat pagination is closed by Epic 3.
 - Create React App deprecation warnings and `npm audit` findings in the development/build dependency graph remain in Epic 5. They are not shipped as PHP runtime dependencies in the plugin ZIP.
 - Background polling, webhook provisioning/deletion, attachments, and new Telegram formatting modes are outside Epic 3.
-- Tagging, version changes, and WordPress.org publication require a separate release decision.
+- Tagging, further version changes, and WordPress.org publication require a separate release decision.
