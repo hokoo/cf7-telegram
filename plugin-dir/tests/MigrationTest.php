@@ -121,6 +121,16 @@ final class MigrationTest extends Cf7tg_TestCase {
 		$this->assertSame( [], $this->cronEvents( Migration::MIGRATION_HOOK ) );
 	}
 
+	public function testEnsureLegacyMigrationScheduledBackfillsDurableStateForExistingModernInstall(): void {
+		update_option( 'cf7tg_version', '1.0.0', false );
+
+		Migration::getInstance()->ensureLegacyMigrationScheduled();
+
+		$events = $this->cronEvents( Migration::MIGRATION_HOOK );
+		$this->assertSame( 1, count( $events ) );
+		$this->assertSame( [ 'self_heal', '1.0.0', WPCF7TG_VERSION ], $events[0]['args'] );
+	}
+
 	public function testEnsureLegacyMigrationScheduledDoesNotDuplicateExistingMigrationEvent(): void {
 		update_option( 'wpcf7_telegram_tkn', '123456789:REDACTED_TEST_TOKEN', false );
 		wp_schedule_single_event( time(), Migration::MIGRATION_HOOK, [ 'self_heal', '0.0', WPCF7TG_VERSION ] );

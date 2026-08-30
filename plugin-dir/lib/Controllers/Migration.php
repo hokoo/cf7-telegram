@@ -327,7 +327,13 @@ class Migration {
 			return true;
 		}
 
-		return self::hasLegacyMigrationEvidence();
+		return self::hasLegacyMigrationEvidence() || self::hasModernMigrationEvidence();
+	}
+
+	private static function hasModernMigrationEvidence(): bool {
+		$version = get_option( 'cf7tg_version', false );
+
+		return is_scalar( $version ) && '' !== trim( (string) $version );
 	}
 
 	private static function hasLegacyMigrationEvidence(): bool {
