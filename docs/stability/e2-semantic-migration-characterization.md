@@ -12,15 +12,17 @@ Included:
 - migrated bot/chat/channel/form relation count checks;
 - duplicate relation checks;
 - second migration run fingerprint comparison;
-- CF7 `post_content` and `_form` preservation checks, including literal `[telegram]` retention.
+- CF7 `post_content` and `_form` preservation checks, including literal `[telegram]` retention;
+- actual Contact Form 7 render checks proving stored `[telegram]` remains while rendered HTML contains no literal `[telegram]`;
+- conservative cleanup/dry-run repair probes that create a temporary orphan-like `cf7tg_chat`, prove scheduled cleanup and dry-run preserve it, and delete the probe record before final fingerprint output.
 
 Out of scope:
 
 - production migration implementation changes;
 - release ZIP/build artifact updates;
 - React/UI behavior;
-- Telegram API delivery behavior.
-- E2.5 server-owned deletion and dry-run behavior.
+- Telegram API delivery behavior;
+- destructive cleanup apply-mode assertions.
 
 ## Commands
 
@@ -67,9 +69,19 @@ Each E2 run writes:
 
 `fail` means an unexpected harness or environment failure. `expected_fail` means a known downstream Epic 2 implementation dependency is still red.
 
+The E2 JSON files include machine-readable checks for:
+
+- `form_<id>_telegram_tag_no_literal_render_output`, owned by E2.4;
+- `cleanup_scheduled_preserves_orphan_like_chat`, owned by E2.5;
+- `cleanup_dry_run_preserves_orphan_like_chat`, owned by E2.5.
+
+The cleanup probes intentionally store only the temporary post id, booleans, dry-run counters, and sanitized error text. They delete the probe post in `finally` so migrated entity counts and the final characterization fingerprint stay deterministic.
+
 ## Current Characterization
 
-Verified all published baselines on 2026-08-30 against the E2.2 durable runner:
+Verified the completed E2.2-E2.5 implementation on 2026-08-30.
+
+All four published baselines:
 
 ```bash
 CF7TG_E2_CHARACTERIZATION=1 \
@@ -82,17 +94,24 @@ tests/stability/e1-smoke-matrix.sh \
 
 Result:
 
+- run id: `20260830T183937Z-20490`;
+- `total_steps=360`, `passed_steps=360`;
 - `failed_steps=0`;
-- `expected_failed_steps=72`, 18 per baseline;
+- `expected_failed_steps=0`;
 - candidate source: current local `plugin-dir`, not `dist/cf7-telegram-wp-plugin.zip`;
 - `migration_event_scheduled_or_self_healed`: pass on all four baselines;
 - `migration_state_scheduled`, `migration_state_completed`, and `migration_state_second_run_stable`: pass on all four baselines;
-- first migration semantic entity/relation counts: pass for `legacy-heavy`;
-- second-run state/entity/relation fingerprint: pass for the completed `legacy-heavy` path;
-- all remaining expected failures are `[telegram]` content/meta preservation checks owned by E2.4.
+- entity/relation counts and second-run fingerprints: pass;
+- stored form preservation and actual CF7 no-literal render checks: pass;
+- scheduled cleanup and repair dry-run orphan-preservation checks: pass.
 
-## Remaining Dependencies
+Additional fixtures:
 
-- E2.3 must reconcile historical false-success and partial modern state without duplicates, preserve valid malformed fixture rows, and skip invalid rows without fatal errors.
-- E2.4 must implement the approved `[telegram]` preservation/no automatic content mutation and admin recovery contract.
-- E2.5 remains server-owned deletion and dry-run behavior, outside this characterization batch.
+- `damaged-legacy`, run id `20260830T184429Z-29360`: `96/96`, no failed or expected-failed steps;
+- `partial-modern`, run id `20260830T184656Z-33796`: `59/59`, no failed or expected-failed steps.
+
+The temporary run directories are not repository artifacts. Reproduce the evidence with the documented commands; each run emits its own `results/summary.json` and machine-readable E2 files.
+
+## Gate Status
+
+The E2.6 semantic gate is green. Epic closure still requires the E2.7 combined test/build/package gate and independent Epic 2 QA.
