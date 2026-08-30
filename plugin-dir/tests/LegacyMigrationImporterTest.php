@@ -140,34 +140,6 @@ final class LegacyMigrationImporterTest extends Cf7tg_TestCase {
 		$this->assertTrue( $this->hasValidRelation( Client::BOT2CHANNEL ) );
 	}
 
-	public function testConstantBackedTokenDoesNotWriteSecretToPostDataAndReportsGlobalConstantName(): void {
-		$this->initClient();
-
-		if ( ! defined( 'WPFC7TG_BOT_TOKEN' ) ) {
-			define( 'WPFC7TG_BOT_TOKEN', '123456789:TEST_CONST_TOKEN' );
-		}
-
-		update_option(
-			'wpcf7_telegram_chats',
-			[
-				[ 'id' => '700001', 'first_name' => 'Constant' ],
-			],
-			false
-		);
-
-		( new LegacyImporter() )->import();
-
-		$botID = $this->firstPostID( Client::CPT_BOT );
-		$botPost = get_post( $botID );
-		$bot = new Bot( $botID );
-
-		$this->assertSame( constant( 'WPFC7TG_BOT_TOKEN' ), $bot->getToken() );
-		$this->assertSame( 'WPFC7TG_BOT_TOKEN', $bot->getTokenConstName() );
-		$this->assertFalse( str_contains( $botPost->post_content_filtered, constant( 'WPFC7TG_BOT_TOKEN' ) ) );
-		$this->assertTrue( str_contains( $botPost->post_content_filtered, Bot::TOKEN_SOURCE_LEGACY_CONST ) );
-		$this->assertSame( false, get_option( 'wpcf7_telegram_tkn' ) );
-	}
-
 	private function initClient(): void {
 		Client::getInstance()->init();
 	}

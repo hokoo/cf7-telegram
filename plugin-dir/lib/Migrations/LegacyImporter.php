@@ -130,16 +130,11 @@ class LegacyImporter {
 
 	private function resolveTokenSource( array $formIDs ): array {
 		$dbToken = $this->normalizeToken( get_option( 'wpcf7_telegram_tkn', '' ) );
-		$hasLegacySource = '' !== $dbToken
-			|| false !== get_option( 'wpcf7_telegram_chats', false )
-			|| false !== get_option( 'wpcf7_telegram_last_update_id', false )
-			|| ! empty( $formIDs );
-
 		$constantToken = defined( Bot::LEGACY_TOKEN_CONST )
 			? $this->normalizeToken( constant( Bot::LEGACY_TOKEN_CONST ) )
 			: '';
 
-		if ( $hasLegacySource && '' !== $constantToken ) {
+		if ( '' !== $constantToken ) {
 			return [
 				'token'  => $constantToken,
 				'source' => self::SOURCE_GLOBAL_CONSTANT,

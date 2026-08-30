@@ -338,10 +338,21 @@ class Migration {
 
 	private static function hasLegacyMigrationEvidence(): bool {
 		return
+			self::hasUsableLegacyTokenConstant() ||
 			false !== get_option( 'wpcf7_telegram_tkn', false ) ||
 			false !== get_option( 'wpcf7_telegram_chats', false ) ||
 			false !== get_option( 'wpcf7_telegram_last_update_id', false ) ||
 			! empty( get_option( self::FIX_1_0_FLAG, false ) );
+	}
+
+	private static function hasUsableLegacyTokenConstant(): bool {
+		if ( ! defined( 'WPFC7TG_BOT_TOKEN' ) ) {
+			return false;
+		}
+
+		$token = constant( 'WPFC7TG_BOT_TOKEN' );
+
+		return is_scalar( $token ) && '' !== trim( (string) $token );
 	}
 
 	private static function resolveSourceVersion(): string {
