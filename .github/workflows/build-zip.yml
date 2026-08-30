@@ -107,11 +107,60 @@ jobs:
           CF7TG_EXPECTED_CANDIDATE_VERSION: ${{ steps.release_version.outputs.value }}
         run: tests/stability/e5-plugin-check-gate.sh
 
-      - name: Run isolated stability matrix
+      - name: Run isolated current lifecycle smoke
+        if: ${{ github.event_name != 'release' }}
         env:
           CF7TG_CANDIDATE_ZIP: ${{ github.workspace }}/${{ env.ZIP_PATH }}
           CF7TG_EXPECTED_CANDIDATE_VERSION: ${{ steps.release_version.outputs.value }}
         run: tests/stability/e1-smoke-matrix.sh
+
+      - name: Run supported release lifecycle matrix
+        if: ${{ github.event_name == 'release' }}
+        env:
+          CF7TG_CANDIDATE_ZIP: ${{ github.workspace }}/${{ env.ZIP_PATH }}
+          CF7TG_EXPECTED_CANDIDATE_VERSION: ${{ steps.release_version.outputs.value }}
+          CF7TG_E5_SUPPORT_MATRIX_RESULTS_DIR: ${{ github.workspace }}/test-evidence/support-matrix
+        run: tests/stability/e5-support-matrix.sh
+
+      - name: Upload support matrix evidence
+        if: ${{ always() && github.event_name == 'release' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: cf7-telegram-support-matrix-evidence
+          path: test-evidence/support-matrix
+          if-no-files-found: error
+
+      - name: Run real WordPress REST integration smoke
+        if: ${{ github.event_name == 'pull_request' || github.event_name == 'release' }}
+        env:
+          CF7TG_CANDIDATE_ZIP: ${{ github.workspace }}/${{ env.ZIP_PATH }}
+          CF7TG_EXPECTED_CANDIDATE_VERSION: ${{ steps.release_version.outputs.value }}
+          CF7TG_E4_SMOKE_RESULTS_DIR: ${{ github.workspace }}/test-evidence/rest-integration
+        run: tests/stability/e4-rest-ui-smoke.sh
+
+      - name: Run authenticated browser canary
+        if: ${{ github.event_name == 'pull_request' || github.event_name == 'release' }}
+        env:
+          CF7TG_CANDIDATE_ZIP: ${{ github.workspace }}/${{ env.ZIP_PATH }}
+          CF7TG_EXPECTED_CANDIDATE_VERSION: ${{ steps.release_version.outputs.value }}
+          CF7TG_E5_BROWSER_RESULTS_DIR: ${{ github.workspace }}/test-evidence/browser
+        run: tests/stability/e5-browser-smoke.sh
+
+      - name: Upload browser canary evidence
+        if: ${{ always() && (github.event_name == 'pull_request' || github.event_name == 'release') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: cf7-telegram-browser-evidence
+          path: test-evidence/browser
+          if-no-files-found: error
+
+      - name: Upload REST integration evidence
+        if: ${{ always() && (github.event_name == 'pull_request' || github.event_name == 'release') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: cf7-telegram-rest-integration-evidence
+          path: test-evidence/rest-integration
+          if-no-files-found: error
 
       - name: Upload verified zip artifact
         uses: actions/upload-artifact@v4
