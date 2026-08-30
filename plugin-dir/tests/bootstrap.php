@@ -1409,3 +1409,4 @@ function cf7tg_test_cron_events( string $hook ): array {
 cf7tg_test_reset_environment();
 
 require_once dirname( __DIR__ ) . '/vendor/autoload.php';
+require_once __DIR__ . '/TestCase.php';

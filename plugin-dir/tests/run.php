@@ -2,14 +2,45 @@
 
 declare( strict_types=1 );
 
-require_once __DIR__ . '/bootstrap.php';
-require_once __DIR__ . '/TestCase.php';
+$phpunit = dirname( __DIR__ ) . '/vendor/bin/phpunit';
+$arguments = array_slice( $_SERVER['argv'], 1 );
+$forceCompat = in_array( '--compat', $arguments, true );
+$arguments = array_values( array_diff( $arguments, [ '--compat' ] ) );
+$missingExtensions = array_values(
+	array_filter(
+		[ 'dom', 'mbstring', 'xmlwriter' ],
+		static fn( string $extension ): bool => ! extension_loaded( $extension )
+	)
+);
 
-foreach ( glob( __DIR__ . '/*Test.php' ) as $test_file ) {
-	require_once $test_file;
+if ( ! $forceCompat && is_file( $phpunit ) && empty( $missingExtensions ) ) {
+	$command = escapeshellarg( PHP_BINARY ) . ' ' . escapeshellarg( $phpunit );
+
+	foreach ( $arguments as $argument ) {
+		$command .= ' ' . escapeshellarg( $argument );
+	}
+
+	passthru( $command, $status );
+	exit( $status );
 }
 
-$test_classes = array_values(
+if ( ! $forceCompat ) {
+	$reason = ! is_file( $phpunit )
+		? 'PHPUnit is not installed'
+		: 'PHPUnit platform extensions are missing: ' . implode( ', ', $missingExtensions );
+	fwrite( STDERR, $reason . ". Running compatibility test harness.\n" );
+}
+
+require_once __DIR__ . '/bootstrap.php';
+
+$testFiles = glob( __DIR__ . '/*Test.php' );
+sort( $testFiles );
+
+foreach ( $testFiles as $testFile ) {
+	require_once $testFile;
+}
+
+$testClasses = array_values(
 	array_filter(
 		get_declared_classes(),
 		static fn( string $class ): bool => is_subclass_of( $class, 'Cf7tg_TestCase' ) && str_ends_with( $class, 'Test' )
@@ -19,7 +50,7 @@ $test_classes = array_values(
 $failures = [];
 $count = 0;
 
-foreach ( $test_classes as $class ) {
+foreach ( $testClasses as $class ) {
 	$reflection = new ReflectionClass( $class );
 
 	foreach ( $reflection->getMethods( ReflectionMethod::IS_PUBLIC ) as $method ) {
@@ -29,11 +60,11 @@ foreach ( $test_classes as $class ) {
 
 		$count++;
 		$test = $reflection->newInstance();
-		$set_up = $reflection->getMethod( 'setUp' );
-		$set_up->setAccessible( true );
+		$setUp = $reflection->getMethod( 'setUp' );
+		$setUp->setAccessible( true );
 
 		try {
-			$set_up->invoke( $test );
+			$setUp->invoke( $test );
 			$method->invoke( $test );
 			fwrite( STDOUT, '.' );
 		} catch ( Throwable $e ) {
@@ -47,9 +78,9 @@ foreach ( $test_classes as $class ) {
 		}
 
 		if ( $reflection->hasMethod( 'tearDown' ) ) {
-			$tear_down = $reflection->getMethod( 'tearDown' );
-			$tear_down->setAccessible( true );
-			$tear_down->invoke( $test );
+			$tearDown = $reflection->getMethod( 'tearDown' );
+			$tearDown->setAccessible( true );
+			$tearDown->invoke( $test );
 		}
 	}
 }
