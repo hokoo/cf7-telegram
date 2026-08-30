@@ -63,6 +63,175 @@ if ( ! class_exists( 'WP_Post' ) ) {
 	}
 }
 
+if ( ! class_exists( 'WP_HTTP_Response' ) ) {
+	class WP_HTTP_Response {
+		protected $data;
+		protected array $headers = [];
+		protected int $status;
+
+		public function __construct( $data = null, int $status = 200, array $headers = [] ) {
+			$this->data = $data;
+			$this->status = $status;
+			$this->headers = $headers;
+		}
+
+		public function get_data() {
+			return $this->data;
+		}
+
+		public function set_data( $data ): void {
+			$this->data = $data;
+		}
+
+		public function get_headers(): array {
+			return $this->headers;
+		}
+
+		public function header( string $key, string $value, bool $replace = true ): void {
+			if ( $replace || ! isset( $this->headers[ $key ] ) ) {
+				$this->headers[ $key ] = $value;
+				return;
+			}
+
+			$this->headers[ $key ] .= ', ' . $value;
+		}
+
+		public function get_status(): int {
+			return $this->status;
+		}
+	}
+}
+
+if ( ! class_exists( 'WP_REST_Response' ) ) {
+	class WP_REST_Response extends WP_HTTP_Response {
+		public array $links = [];
+
+		public function add_link( string $rel, string $href, array $attributes = [] ): void {
+			$this->links[ $rel ][] = array_merge( [ 'href' => $href ], $attributes );
+		}
+
+		public function get_links(): array {
+			return $this->links;
+		}
+	}
+}
+
+if ( ! class_exists( 'WP_REST_Request' ) ) {
+	class WP_REST_Request implements ArrayAccess {
+		private string $method;
+		private string $route;
+		private array $params = [];
+		private array $attributes = [];
+
+		public function __construct( string $method = 'GET', string $route = '' ) {
+			$this->method = $method;
+			$this->route = $route;
+		}
+
+		public function get_method(): string {
+			return $this->method;
+		}
+
+		public function set_method( string $method ): void {
+			$this->method = $method;
+		}
+
+		public function get_route(): string {
+			return $this->route;
+		}
+
+		public function get_param( string $key ) {
+			return $this->params[ $key ] ?? null;
+		}
+
+		public function set_param( string $key, $value ): void {
+			$this->params[ $key ] = $value;
+		}
+
+		public function get_params(): array {
+			return $this->params;
+		}
+
+		public function get_attributes(): array {
+			return $this->attributes;
+		}
+
+		public function set_attributes( array $attributes ): void {
+			$this->attributes = $attributes;
+		}
+
+		public function offsetExists( $offset ): bool {
+			return array_key_exists( $offset, $this->params );
+		}
+
+		public function offsetGet( $offset ) {
+			return $this->params[ $offset ] ?? null;
+		}
+
+		public function offsetSet( $offset, $value ): void {
+			$this->params[ $offset ] = $value;
+		}
+
+		public function offsetUnset( $offset ): void {
+			unset( $this->params[ $offset ] );
+		}
+	}
+}
+
+if ( ! class_exists( 'WP_REST_Server' ) ) {
+	class WP_REST_Server {
+		public const READABLE = 'GET';
+		public const CREATABLE = 'POST';
+		public const EDITABLE = 'POST, PUT, PATCH';
+		public const DELETABLE = 'DELETE';
+	}
+}
+
+if ( ! class_exists( 'WP_REST_Posts_Controller' ) ) {
+	class WP_REST_Posts_Controller {
+		public string $namespace = 'wp/v2';
+		public string $rest_base;
+		protected string $post_type;
+
+		public function __construct( string $post_type ) {
+			$this->post_type = $post_type;
+			$this->rest_base = $post_type;
+		}
+
+		public function register_routes() {
+			return true;
+		}
+
+		public function get_item( $request ) {
+			$post = get_post( (int) ( $request['id'] ?? 0 ) );
+
+			if ( ! $post instanceof WP_Post || $post->post_type !== $this->post_type ) {
+				return new WP_Error( 'rest_post_invalid_id', 'Invalid post ID.', [ 'status' => 404 ] );
+			}
+
+			return $this->prepare_item_for_response( $post, $request );
+		}
+
+		public function prepare_item_for_response( $post, $request ): WP_REST_Response {
+			return new WP_REST_Response( [
+				'id'     => $post->ID,
+				'status' => $post->post_status,
+				'title'  => [
+					'rendered' => $post->post_title,
+				],
+			] );
+		}
+
+		public function get_item_permissions_check( $request ): bool {
+			return current_user_can( 'read_post' );
+		}
+
+		public function update_item_permissions_check( $request ): bool {
+			return current_user_can( 'edit_posts' );
+		}
+	}
+}
+
 if ( ! class_exists( 'WP_Query' ) ) {
 	class WP_Query {
 		public static array $last_args = [];
@@ -535,6 +704,12 @@ if ( ! function_exists( 'sanitize_text_field' ) ) {
 	}
 }
 
+if ( ! function_exists( 'absint' ) ) {
+	function absint( $maybeint ): int {
+		return abs( (int) $maybeint );
+	}
+}
+
 if ( ! function_exists( '_x' ) ) {
 	function _x( string $text, string $context, string $domain = 'default' ): string {
 		return $text;
@@ -653,6 +828,49 @@ if ( ! function_exists( 'wpcf7_add_form_tag' ) ) {
 if ( ! function_exists( 'is_wp_error' ) ) {
 	function is_wp_error( $thing ): bool {
 		return $thing instanceof WP_Error;
+	}
+}
+
+if ( ! function_exists( 'register_rest_route' ) ) {
+	function register_rest_route( string $namespace, string $route, array $args = [], bool $override = false ): bool {
+		$GLOBALS['wp_rest_routes'][ $namespace . $route ] = [
+			'namespace' => $namespace,
+			'route'     => $route,
+			'args'      => $args,
+			'override'  => $override,
+		];
+
+		return true;
+	}
+}
+
+if ( ! function_exists( 'register_rest_field' ) ) {
+	function register_rest_field( $object_type, string $attribute, array $args = [] ): bool {
+		foreach ( (array) $object_type as $type ) {
+			$GLOBALS['wp_rest_fields'][ (string) $type ][ $attribute ] = $args;
+		}
+
+		return true;
+	}
+}
+
+if ( ! function_exists( 'rest_ensure_response' ) ) {
+	function rest_ensure_response( $response ) {
+		if ( $response instanceof WP_Error || $response instanceof WP_REST_Response ) {
+			return $response;
+		}
+
+		if ( $response instanceof WP_HTTP_Response ) {
+			return new WP_REST_Response( $response->get_data(), $response->get_status(), $response->get_headers() );
+		}
+
+		return new WP_REST_Response( $response );
+	}
+}
+
+if ( ! function_exists( 'rest_url' ) ) {
+	function rest_url( string $path = '' ): string {
+		return 'https://example.test/wp-json/' . ltrim( $path, '/' );
 	}
 }
 
@@ -1147,6 +1365,8 @@ function cf7tg_test_reset_environment(): void {
 	$GLOBALS['wp_query_posts'] = [];
 	$GLOBALS['wp_post_meta'] = [];
 	$GLOBALS['wp_deleted_posts'] = [];
+	$GLOBALS['wp_rest_routes'] = [];
+	$GLOBALS['wp_rest_fields'] = [];
 	$GLOBALS['wp_connection_rows'] = [];
 	$GLOBALS['wp_connection_meta_rows'] = [];
 	$GLOBALS['wpdb_inserts'] = [];
