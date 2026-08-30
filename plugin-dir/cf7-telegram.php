@@ -14,6 +14,7 @@
 if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 
 use iTRON\cf7Telegram\Client;
+use iTRON\cf7Telegram\Compatibility;
 use iTRON\cf7Telegram\Controllers\CPT;
 use iTRON\cf7Telegram\Controllers\Migration;
 use iTRON\cf7Telegram\Maintenance;
@@ -32,6 +33,7 @@ CPT::get_instance()->init();
 Settings::init();
 Migration::init();
 Maintenance::init();
+Compatibility::init();
 
 register_activation_hook( WPCF7TG_FILE, [ Maintenance::class, 'activate' ] );
 register_deactivation_hook( WPCF7TG_FILE, [ Maintenance::class, 'deactivate' ] );

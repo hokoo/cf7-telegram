@@ -1,5 +1,5 @@
 import React from 'react';
-import {act, render, waitFor} from '@testing-library/react';
+import {act, render, screen, waitFor} from '@testing-library/react';
 import App from './App';
 import {
     apiDeleteChat,
@@ -41,7 +41,7 @@ const createDeferred = () => {
     return {promise, resolve};
 };
 
-describe('App chat garbage collector', () => {
+describe('App chat ownership', () => {
     beforeEach(() => {
         jest.clearAllMocks();
 
@@ -55,7 +55,7 @@ describe('App chat garbage collector', () => {
         apiDeleteChat.mockResolvedValue({});
     });
 
-    it('waits for chats and relations before deleting chats', async () => {
+    it('does not delete chats while chats and relations load separately', async () => {
         const chatsDeferred = createDeferred();
         const relationsDeferred = createDeferred();
 
@@ -83,7 +83,7 @@ describe('App chat garbage collector', () => {
         expect(apiDeleteChat).not.toHaveBeenCalled();
     });
 
-    it('still deletes orphan chats after both datasets load', async () => {
+    it('does not delete orphan chats after both datasets load', async () => {
         fetchChats.mockResolvedValueOnce([
             {id: 101, title: {rendered: 'Connected chat'}},
             {id: 202, title: {rendered: 'Orphan chat'}},
@@ -94,10 +94,78 @@ describe('App chat garbage collector', () => {
 
         render(<App />);
 
-        await waitFor(() => expect(apiDeleteChat).toHaveBeenCalledWith(202));
+        await waitFor(() => expect(screen.getByText('Bots')).toBeInTheDocument());
 
         await act(async () => {
             await Promise.resolve();
         });
+
+        expect(apiDeleteChat).not.toHaveBeenCalled();
+    });
+});
+
+describe('App migration recovery', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+
+        global.cf7TelegramData = {
+            intervals: {
+                ping: 5000,
+                bot_fetch: 30000,
+            },
+            migration: {
+                show_action_button: false,
+            },
+        };
+
+        fetchClient.mockResolvedValue([]);
+        fetchForms.mockResolvedValue([]);
+        fetchBots.mockResolvedValue([]);
+        fetchChats.mockResolvedValue([]);
+        fetchChannels.mockResolvedValue([]);
+        fetchFormsForChannels.mockResolvedValue([]);
+        fetchBotsForChannels.mockResolvedValue([]);
+        fetchBotsForChats.mockResolvedValue([]);
+        fetchChatsForChannels.mockResolvedValue([]);
+        apiDeleteChat.mockResolvedValue({});
+    });
+
+    it('shows failed migration retry even when migrated bot and channel records exist', async () => {
+        global.cf7TelegramData.migration = {
+            show_action_button: true,
+            action_url: 'https://example.test/wp-admin/admin-post.php',
+            nonce: 'nonce',
+            status: {
+                is_failed: true,
+                can_retry: true,
+                last_error: {
+                    message: 'Synthetic migration failure.',
+                },
+            },
+        };
+        fetchBots.mockResolvedValueOnce([{id: 10, title: {rendered: 'Bot'}}]);
+        fetchChannels.mockResolvedValueOnce([{id: 20, title: {rendered: 'Channel'}}]);
+
+        render(<App />);
+
+        expect(await screen.findByText('Retry migration')).toBeEnabled();
+        expect(screen.getByText('Synthetic migration failure.')).toBeInTheDocument();
+    });
+
+    it('disables migration submission while retry is already scheduled', async () => {
+        global.cf7TelegramData.migration = {
+            show_action_button: true,
+            action_url: 'https://example.test/wp-admin/admin-post.php',
+            nonce: 'nonce',
+            status: {
+                is_scheduled: true,
+                can_retry: false,
+                last_error: {},
+            },
+        };
+
+        render(<App />);
+
+        expect(await screen.findByText('Run migration')).toBeDisabled();
     });
 });

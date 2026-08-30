@@ -15,6 +15,9 @@ class Maintenance {
 	public const CRON_LAST_ERROR_OPTION = 'cf7tg_cleanup_cron_last_error';
 	public const DEFAULT_INTERVAL = 24 * HOUR_IN_SECONDS; // Seconds.
 	public const CLEANUP_LOCK_TTL = 300; // Seconds.
+	public const REPAIR_MODE_DRY_RUN = 'dry-run';
+	public const REPAIR_MODE_APPLY = 'apply';
+	public const REPAIR_PLAN_SCHEMA = 1;
 
 	private const LEGACY_EARLY_ACCESS_OPTION = 'cf7t_early_access';
 
@@ -28,6 +31,7 @@ class Maintenance {
 		add_filter( 'cron_schedules', [ self::class, 'registerSchedule' ] );
 		add_action( 'init', [ self::class, 'ensureScheduled' ] );
 		add_action( self::CRON_HOOK, [ self::class, 'runScheduledCleanup' ] );
+		add_action( 'before_delete_post', [ self::class, 'cascadeDeletedPost' ], 10, 2 );
 	}
 
 	public static function activate(): void {
@@ -110,13 +114,13 @@ class Maintenance {
 				return;
 			}
 
-			$result = self::cleanupOrphanChatsAndBrokenRelations();
+			$result = self::runRepair();
 
-			if ( $result['deleted_connections'] || $result['deleted_chats'] ) {
-				( new Logger() )->write( $result, 'Scheduled cleanup completed' );
+			if ( self::hasReportableRepairResult( $result ) ) {
+				self::writeLog( self::summarizeRepairResult( $result ), 'Scheduled repair report' );
 			}
 		} catch ( \Throwable $e ) {
-			( new Logger() )->write(
+			self::writeLog(
 				[
 					'error' => $e->getMessage(),
 				],
@@ -147,21 +151,66 @@ class Maintenance {
 		return $active;
 	}
 
-	private static function cleanupOrphanChatsAndBrokenRelations(): array {
-		$deletedConnections = self::deleteBrokenConnections();
-		$deletedChats = self::deleteOrphanChats();
+	public static function buildRepairPlan(): array {
+		$connections = self::getPluginConnections();
+		$brokenConnectionIDs = self::getBrokenConnectionIDs( $connections );
+		$ambiguousOrphanChatIDs = self::getAmbiguousOrphanChatIDs( $connections );
 
 		return [
-			'deleted_connections' => $deletedConnections,
-			'deleted_chats'       => $deletedChats,
+			'schema'    => self::REPAIR_PLAN_SCHEMA,
+			'planned'   => [
+				'delete_connection_ids' => $brokenConnectionIDs,
+				'delete_connections'    => count( $brokenConnectionIDs ),
+				'delete_chat_ids'       => [],
+				'delete_chats'          => 0,
+			],
+			'preserved' => [
+				'ambiguous_orphan_chat_ids' => $ambiguousOrphanChatIDs,
+				'ambiguous_orphan_chats'    => count( $ambiguousOrphanChatIDs ),
+			],
 		];
 	}
 
-	private static function deleteBrokenConnections(): int {
-		$connections = self::getPluginConnections();
+	public static function runRepair( string $mode = self::REPAIR_MODE_DRY_RUN ): array {
+		$mode = self::normalizeRepairMode( $mode );
+		$plan = self::buildRepairPlan();
+		$result = [
+			'schema'    => $plan['schema'],
+			'mode'      => $mode,
+			'planned'   => $plan['planned'],
+			'preserved' => $plan['preserved'],
+			'applied'   => [
+				'deleted_connections' => 0,
+				'deleted_chats'       => 0,
+			],
+		];
+
+		if ( self::REPAIR_MODE_APPLY === $mode ) {
+			$result['applied']['deleted_connections'] = self::deleteConnectionsByIDs( $plan['planned']['delete_connection_ids'] );
+		}
+
+		return $result;
+	}
+
+	public static function cascadeDeletedPost( int $postID, ?WP_Post $post = null ): void {
+		if ( ! $post instanceof WP_Post ) {
+			$post = get_post( $postID );
+		}
+
+		if ( ! $post instanceof WP_Post || ! in_array( (string) $post->post_type, self::getOwnedPostTypes(), true ) ) {
+			return;
+		}
+
+		self::deleteConnectionsByObjectIDs( [ $postID ] );
+	}
+
+	private static function getBrokenConnectionIDs( ?array $connections = null ): array {
+		if ( null === $connections ) {
+			$connections = self::getPluginConnections();
+		}
 
 		if ( empty( $connections ) ) {
-			return 0;
+			return [];
 		}
 
 		$definitions = self::getRelationDefinitions();
@@ -184,56 +233,47 @@ class Maintenance {
 			}
 		}
 
-		return self::deleteConnectionsByIDs( $connectionIDs );
+		return self::normalizeIDs( $connectionIDs );
 	}
 
-	private static function deleteOrphanChats(): int {
-		if ( ! self::tableExists( self::getConnectionsTableName() ) ) {
-			return 0;
-		}
-
+	private static function getAmbiguousOrphanChatIDs( ?array $connections = null ): array {
 		$chatIDs = self::getPostIDs( Client::CPT_CHAT );
 
 		if ( empty( $chatIDs ) ) {
-			return 0;
-		}
-
-		$connectedChatIDs = self::getConnectedChatIDs();
-		$orphanChatIDs = array_values( array_diff( $chatIDs, $connectedChatIDs ) );
-
-		if ( empty( $orphanChatIDs ) ) {
-			return 0;
-		}
-
-		self::deleteConnectionsByObjectIDs( $orphanChatIDs );
-
-		$deleted = 0;
-
-		foreach ( $orphanChatIDs as $chatID ) {
-			if ( wp_delete_post( $chatID, true ) ) {
-				$deleted++;
-			}
-		}
-
-		return $deleted;
-	}
-
-	private static function getConnectedChatIDs(): array {
-		$table = self::getConnectionsTableName();
-
-		if ( ! self::tableExists( $table ) ) {
 			return [];
 		}
 
-		$chatIDs = self::runPreparedGetCol(
-			'SELECT DISTINCT `to` FROM %i WHERE relation = %s',
-			[
-				$table,
-				Client::BOT2CHAT,
-			]
-		);
+		$connectedChatIDs = self::getValidConnectedChatIDs( $connections );
 
-		return array_map( 'intval', $chatIDs );
+		return self::normalizeIDs( array_diff( $chatIDs, $connectedChatIDs ) );
+	}
+
+	private static function getValidConnectedChatIDs( ?array $connections = null ): array {
+		if ( null === $connections ) {
+			$connections = self::getPluginConnections();
+		}
+
+		if ( empty( $connections ) ) {
+			return [];
+		}
+
+		$postTypeCache = [];
+		$chatIDs = [];
+
+		foreach ( $connections as $connection ) {
+			if ( Client::BOT2CHAT !== ( $connection->relation ?? '' ) ) {
+				continue;
+			}
+
+			if (
+				Client::CPT_BOT === self::getPostType( (int) $connection->from, $postTypeCache ) &&
+				Client::CPT_CHAT === self::getPostType( (int) $connection->to, $postTypeCache )
+			) {
+				$chatIDs[] = (int) $connection->to;
+			}
+		}
+
+		return self::normalizeIDs( $chatIDs );
 	}
 
 	private static function getPluginConnections(): array {
@@ -244,11 +284,12 @@ class Maintenance {
 		}
 
 		$relations = array_values( array_keys( self::getRelationDefinitions() ) );
-		$sql = 'SELECT ID, relation, `from`, `to` FROM %i WHERE relation IN (' . self::placeholderList( count( $relations ), '%s' ) . ')';
+		$sql = 'SELECT ID, relation, `from`, `to` FROM ' . self::sqlIdentifier( $table );
+		$sql .= ' WHERE relation IN (' . self::placeholderList( count( $relations ), '%s' ) . ')';
 
 		return self::runPreparedGetResults(
 			$sql,
-			array_merge( [ $table ], $relations )
+			$relations
 		);
 	}
 
@@ -266,13 +307,14 @@ class Maintenance {
 		}
 
 		$relations = array_values( array_keys( self::getRelationDefinitions() ) );
-		$sql = 'SELECT ID FROM %i WHERE relation IN (' . self::placeholderList( count( $relations ), '%s' ) . ')';
+		$sql = 'SELECT ID FROM ' . self::sqlIdentifier( $table );
+		$sql .= ' WHERE relation IN (' . self::placeholderList( count( $relations ), '%s' ) . ')';
 		$sql .= ' AND (`from` IN (' . self::placeholderList( count( $objectIDs ), '%d' ) . ')';
 		$sql .= ' OR `to` IN (' . self::placeholderList( count( $objectIDs ), '%d' ) . '))';
 
 		$connectionIDs = self::runPreparedGetCol(
 			$sql,
-			array_merge( [ $table ], $relations, $objectIDs, $objectIDs )
+			array_merge( $relations, $objectIDs, $objectIDs )
 		);
 
 		return self::deleteConnectionsByIDs( array_map( 'intval', $connectionIDs ) );
@@ -296,14 +338,14 @@ class Maintenance {
 
 		if ( self::tableExists( $metaTable ) ) {
 			self::runPreparedQuery(
-				'DELETE FROM %i WHERE connection_id IN (' . $deletePlaceholders . ')',
-				array_merge( [ $metaTable ], $connectionIDs )
+				'DELETE FROM ' . self::sqlIdentifier( $metaTable ) . ' WHERE connection_id IN (' . $deletePlaceholders . ')',
+				$connectionIDs
 			);
 		}
 
 		return self::runPreparedQuery(
-			'DELETE FROM %i WHERE ID IN (' . $deletePlaceholders . ')',
-			array_merge( [ $table ], $connectionIDs )
+			'DELETE FROM ' . self::sqlIdentifier( $table ) . ' WHERE ID IN (' . $deletePlaceholders . ')',
+			$connectionIDs
 		);
 	}
 
@@ -334,8 +376,8 @@ class Maintenance {
 
 		$relations = array_values( array_keys( self::getRelationDefinitions() ) );
 		$connectionIDs = self::runPreparedGetCol(
-			'SELECT ID FROM %i WHERE relation IN (' . self::placeholderList( count( $relations ), '%s' ) . ')',
-			array_merge( [ $table ], $relations )
+			'SELECT ID FROM ' . self::sqlIdentifier( $table ) . ' WHERE relation IN (' . self::placeholderList( count( $relations ), '%s' ) . ')',
+			$relations
 		);
 
 		self::deleteConnectionsByIDs( array_map( 'intval', $connectionIDs ) );
@@ -399,7 +441,7 @@ class Maintenance {
 
 		$post = get_post( $postID );
 
-		if ( ! $post instanceof WP_Post || 'trash' === $post->post_status ) {
+		if ( ! $post instanceof WP_Post ) {
 			$cache[ $postID ] = '';
 			return $cache[ $postID ];
 		}
@@ -438,6 +480,14 @@ class Maintenance {
 				'from' => Client::CPT_BOT,
 				'to'   => Client::CPT_CHAT,
 			],
+		];
+	}
+
+	private static function getOwnedPostTypes(): array {
+		return [
+			Client::CPT_BOT,
+			Client::CPT_CHAT,
+			Client::CPT_CHANNEL,
 		];
 	}
 
@@ -651,13 +701,60 @@ class Maintenance {
 		return array_map(
 			'strval',
 			self::runPreparedGetCol(
-				'SELECT option_name FROM %i WHERE option_name LIKE %s',
+				'SELECT option_name FROM ' . self::sqlIdentifier( $wpdb->options ) . ' WHERE option_name LIKE %s',
 				[
-					$wpdb->options,
 					$wpdb->esc_like( $prefix ) . '%',
 				]
 			)
 		);
+	}
+
+	private static function normalizeIDs( array $ids ): array {
+		$ids = array_values( array_unique( array_map( 'intval', array_filter( $ids ) ) ) );
+		sort( $ids, SORT_NUMERIC );
+
+		return $ids;
+	}
+
+	private static function normalizeRepairMode( string $mode ): string {
+		if ( in_array( $mode, [ self::REPAIR_MODE_DRY_RUN, self::REPAIR_MODE_APPLY ], true ) ) {
+			return $mode;
+		}
+
+		throw new \InvalidArgumentException( sprintf( 'Unsupported repair mode: %s', $mode ) );
+	}
+
+	private static function hasReportableRepairResult( array $result ): bool {
+		return (bool) (
+			( $result['planned']['delete_connections'] ?? 0 ) ||
+			( $result['planned']['delete_chats'] ?? 0 ) ||
+			( $result['preserved']['ambiguous_orphan_chats'] ?? 0 )
+		);
+	}
+
+	private static function summarizeRepairResult( array $result ): array {
+		return [
+			'mode'      => $result['mode'] ?? self::REPAIR_MODE_DRY_RUN,
+			'planned'   => [
+				'delete_connections' => (int) ( $result['planned']['delete_connections'] ?? 0 ),
+				'delete_chats'       => (int) ( $result['planned']['delete_chats'] ?? 0 ),
+			],
+			'applied'   => [
+				'deleted_connections' => (int) ( $result['applied']['deleted_connections'] ?? 0 ),
+				'deleted_chats'       => (int) ( $result['applied']['deleted_chats'] ?? 0 ),
+			],
+			'preserved' => [
+				'ambiguous_orphan_chats' => (int) ( $result['preserved']['ambiguous_orphan_chats'] ?? 0 ),
+			],
+		];
+	}
+
+	private static function writeLog( $data, string $title = '', int $level = Logger::LEVEL_INFO ): void {
+		try {
+			( new Logger() )->write( $data, $title, $level );
+		} catch ( \Throwable $e ) {
+			// Cleanup and deletion hooks must not fail only because logging is unavailable.
+		}
 	}
 
 	private static function placeholderList( int $count, string $placeholder ): string {
@@ -722,10 +819,14 @@ class Maintenance {
 	}
 
 	private static function dropTable( string $tableName ): void {
-		self::runPreparedQuery( 'DROP TABLE IF EXISTS %i', [ $tableName ] );
+		self::runPreparedQuery( 'DROP TABLE IF EXISTS ' . self::sqlIdentifier( $tableName ) );
 	}
 
 	private static function tableExists( string $tableName ): bool {
 		return (bool) self::runPreparedGetVar( 'SHOW TABLES LIKE %s', [ $tableName ] );
+	}
+
+	private static function sqlIdentifier( string $identifier ): string {
+		return '`' . str_replace( '`', '``', $identifier ) . '`';
 	}
 }

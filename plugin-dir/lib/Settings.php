@@ -23,13 +23,20 @@ class Settings {
 		return CPT::get_instance()->cf7_orig_capabilities['edit_posts'];
 	}
 
-        public static function plugin_menu_cbf(){
+	public static function plugin_menu_cbf(){
                 $migration_notice = '';
+                $migration = Migration::getAdminRecoveryState();
 
-                if ( wp_next_scheduled( Migration::MIGRATION_HOOK ) ) {
+                if ( $migration['is_scheduled'] || $migration['is_running'] ) {
                         $migration_notice = sprintf(
                                 '<div class="notice cf7t-notice notice-info"><p>%s</p></div>',
                                 esc_html__( 'Data migration to the new plugin version is in progress. Please reload the page after a few seconds.', 'cf7-telegram' ),
+                        );
+                } elseif ( $migration['is_failed'] ) {
+                        $message = $migration['last_error']['message'] ?? '';
+                        $migration_notice = sprintf(
+                                '<div class="notice cf7t-notice notice-error"><p>%s</p></div>',
+                                esc_html( trim( __( 'Data migration failed. You can retry it below.', 'cf7-telegram' ) . ' ' . $message ) ),
                         );
                 }
 
@@ -82,8 +89,9 @@ class Settings {
 
 			'migration' => [
 				'show_action_button' => self::shouldShowMigrationActionButton(),
-				'action_url' => admin_url( 'admin-post.php' ),
-				'nonce' => wp_create_nonce( 'cf7tg_migration_action' ),
+				'action_url'         => admin_url( 'admin-post.php' ),
+				'nonce'              => wp_create_nonce( 'cf7tg_migration_action' ),
+				'status'             => self::getMigrationUiData(),
 			],
 
 			'intervals' => [
@@ -102,15 +110,23 @@ class Settings {
 	}
 
 	static function shouldShowMigrationActionButton(): bool {
-		if ( ( ! defined( 'WPFC7TG_BOT_TOKEN' ) ) && empty( get_option( 'wpcf7_telegram_tkn' ) ) ) {
-			return false;
-		}
+		return Migration::getAdminRecoveryState()['show_action_button'];
+	}
 
-		if ( ! empty( get_option( Migration::FIX_1_0_FLAG, false ) ) ) {
-			return false;
-		}
+	public static function getMigrationUiData(): array {
+		$state = Migration::getAdminRecoveryState();
 
-		return true;
+		return [
+			'status'       => $state['status'],
+			'can_retry'    => $state['can_retry'],
+			'is_scheduled' => $state['is_scheduled'],
+			'is_running'   => $state['is_running'],
+			'is_failed'    => $state['is_failed'],
+			'is_completed' => $state['is_completed'],
+			'attempts'     => $state['attempts'],
+			'current_step' => $state['current_step'],
+			'last_error'   => $state['last_error'],
+		];
 	}
 
 	public static function handle_migration_action(): void {
@@ -122,27 +138,14 @@ class Settings {
 
 		$redirect = wp_get_referer() ?: admin_url( 'admin.php?page=wpcf7_tg' );
 
-		// Exit if a migration was already performed.
-		if ( ! empty( get_option( Migration::FIX_1_0_FLAG, false ) ) ) {
-			wp_safe_redirect( $redirect );
-			exit;
-		}
-
-		// Set 'fix_1.0_migration' flag to true to indicate migration is needed.
-		update_option( Migration::FIX_1_0_FLAG, true, false );
-
-		// Schedule the migration manually.
-		wp_schedule_single_event(
-			time(),
-			Migration::MIGRATION_HOOK,
-			[
-				[],
-				'0.9',
-			]
-		);
+		self::requestMigrationRetry();
 
 		wp_safe_redirect( $redirect );
 		exit;
+	}
+
+	public static function requestMigrationRetry(): bool {
+		return Migration::getInstance()->scheduleAdminRetry();
 	}
 
 	private static function get_settings_content() : string {

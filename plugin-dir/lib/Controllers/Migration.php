@@ -20,10 +20,10 @@ class Migration {
 	public const LOCK_TTL = 300;
 
 	private const LEGACY_REPAIR_VERSION = '0.0';
-	private const STATUS_SCHEDULED = 'scheduled';
-	private const STATUS_RUNNING = 'running';
-	private const STATUS_FAILED = 'failed';
-	private const STATUS_COMPLETED = 'completed';
+	public const STATUS_SCHEDULED = 'scheduled';
+	public const STATUS_RUNNING = 'running';
+	public const STATUS_FAILED = 'failed';
+	public const STATUS_COMPLETED = 'completed';
 
 	private static Migration $instance;
 	private ?string $lockToken = null;
@@ -163,6 +163,55 @@ class Migration {
 		}
 
 		return is_array( $state ) ? self::normalizeMigrationState( $state ) : [];
+	}
+
+	public static function getAdminRecoveryState(): array {
+		$state = self::getMigrationState();
+		$status = $state['status'] ?? '';
+		$scheduled = self::hasScheduledMigrationEvent();
+		$running = self::STATUS_RUNNING === $status || self::hasActiveMigrationLock();
+		$completed = self::isCompletedState( $state );
+		$repairable = ! $completed && self::needsMigrationRepair( $state );
+		$canRetry = $repairable && ! $scheduled && ! $running;
+
+		return [
+			'show_action_button' => $repairable,
+			'can_retry'          => $canRetry,
+			'is_scheduled'       => $scheduled,
+			'is_running'         => $running,
+			'is_failed'          => self::STATUS_FAILED === $status,
+			'is_completed'       => $completed,
+			'status'             => $status ?: ( $repairable ? self::STATUS_SCHEDULED : '' ),
+			'attempts'           => (int) ( $state['attempts'] ?? 0 ),
+			'current_step'       => (string) ( $state['current_step'] ?? '' ),
+			'last_error'         => self::lastMigrationError( $state ),
+			'state'              => $state,
+		];
+	}
+
+	public function scheduleAdminRetry(): bool {
+		$state = self::getMigrationState();
+
+		if ( self::isCompletedState( $state ) || ! self::needsMigrationRepair( $state ) ) {
+			return false;
+		}
+
+		if (
+			self::STATUS_RUNNING === ( $state['status'] ?? '' ) ||
+			self::hasActiveMigrationLock() ||
+			self::hasScheduledMigrationEvent()
+		) {
+			return false;
+		}
+
+		self::clearStaleMigrationLock();
+
+		return $this->scheduleMigration(
+			'admin_retry',
+			self::normalizeVersionValue( $state['source_version'] ?? self::resolveSourceVersion() ),
+			self::normalizeVersionValue( $state['target_version'] ?? WPCF7TG_VERSION, WPCF7TG_VERSION ),
+			0
+		);
 	}
 
 	public static function registerMigration( $migration_version, callable $migration_function ): void {
@@ -393,6 +442,22 @@ class Migration {
 		$state['updated_at'] = (int) ( $state['updated_at'] ?? time() );
 
 		return $state;
+	}
+
+	private static function lastMigrationError( array $state ): array {
+		$errors = isset( $state['errors'] ) && is_array( $state['errors'] ) ? $state['errors'] : [];
+		$error = end( $errors );
+
+		if ( ! is_array( $error ) ) {
+			return [];
+		}
+
+		return [
+			'step'    => (string) ( $error['step'] ?? '' ),
+			'message' => (string) ( $error['message'] ?? '' ),
+			'code'    => (string) ( $error['code'] ?? '' ),
+			'time'    => (int) ( $error['time'] ?? 0 ),
+		];
 	}
 
 	private static function saveMigrationState( array $state ): void {
