@@ -64,6 +64,17 @@ jobs:
         working-directory: ./plugin-dir/react
         run: CI=true npm test -- --watchAll=false
 
+      - name: Run release dependency audit gates
+        run: scripts/run-release-audits.sh
+
+      - name: Upload release audit reports
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: cf7-telegram-release-audit-reports
+          path: dist/audit-reports
+          if-no-files-found: warn
+
       - name: Prepare release version gate
         id: release_version
         shell: bash

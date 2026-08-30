@@ -54,7 +54,7 @@ for entry in "${ZIP_ENTRIES[@]}"; do
 
 	name="${entry##*/}"
 	lower_entry="${entry,,}"
-	if [[ "$name" == .* ]]; then
+	if [[ "$name" == .* ]] || [[ "$entry" == */.* ]] || [[ "$entry" == */.*/* ]]; then
 		fail "hidden file or directory is present: $entry"
 	fi
 
@@ -62,7 +62,7 @@ for entry in "${ZIP_ENTRIES[@]}"; do
 		*/node_modules/*|*/.git/*|*/.github/*|*/.env|*/.env.*|*/.gitignore)
 			fail "development or hidden artifact is present: $entry"
 			;;
-		*/local-dev/*)
+		*/local-dev/*|*/benchmark/*|*/benchmarks/*|*/coverage/*)
 			fail "local development artifact is present: $entry"
 			;;
 		"${PLUGIN_SLUG}/react/src/"*|"${PLUGIN_SLUG}/react/public/"*|"${PLUGIN_SLUG}/react/scripts/"*)
@@ -82,26 +82,73 @@ for entry in "${ZIP_ENTRIES[@]}"; do
 		"${PLUGIN_SLUG}/react/jest-unit.config.js")
 			fail "React development file is present: $entry"
 			;;
+		"${PLUGIN_SLUG}/composer.json"|\
+		"${PLUGIN_SLUG}/composer.lock"|\
+		"${PLUGIN_SLUG}/package.json"|\
+		"${PLUGIN_SLUG}/package-lock.json"|\
+		"${PLUGIN_SLUG}/npm-shrinkwrap.json"|\
+		"${PLUGIN_SLUG}/yarn.lock"|\
+		"${PLUGIN_SLUG}/pnpm-lock.yaml"|\
+		"${PLUGIN_SLUG}/pnpm-workspace.yaml"|\
+		"${PLUGIN_SLUG}/vendor/"*"composer.json"|\
+		"${PLUGIN_SLUG}/vendor/"*"composer.lock")
+			fail "package manifest is present: $entry"
+			;;
+		"${PLUGIN_SLUG}/webpack.config."*|\
+		"${PLUGIN_SLUG}/jest.config."*|\
+		"${PLUGIN_SLUG}/jest-unit.config."*|\
+		"${PLUGIN_SLUG}/babel.config."*|\
+		"${PLUGIN_SLUG}/postcss.config."*|\
+		"${PLUGIN_SLUG}/tsconfig."*|\
+		"${PLUGIN_SLUG}/vendor/"*"makefile"|\
+		"${PLUGIN_SLUG}/vendor/"*"Makefile"|\
+		"${PLUGIN_SLUG}/vendor/"*"php-wp-unit.xml"|\
+		"${PLUGIN_SLUG}/vendor/"*"postman.json"|\
+		"${PLUGIN_SLUG}/vendor/"*"captainhook.json"|\
+		"${PLUGIN_SLUG}/vendor/"*"codecov.yml"|\
+		"${PLUGIN_SLUG}/vendor/"*"conventional-commits.json")
+			fail "build or tooling artifact is present: $entry"
+			;;
 		"${PLUGIN_SLUG}/tests"|\
 		"${PLUGIN_SLUG}/tests/"*|\
 		"${PLUGIN_SLUG}/phpunit.xml.dist")
 			fail "plugin test harness is present: $entry"
 			;;
-		*.sql|*.zip|*.tgz|*.tar|*.tar.gz|*.pem|*.key)
-			fail "archive, database dump, or key file is present: $entry"
+		*.sql|*.sqlite|*.sqlite3|*.db|*.bak|*.log|*.zip|*.tgz|*.tar|*.tar.gz|*.pem|*.key|*.crt|*.p12|*.pfx|*.map)
+			fail "archive, database dump, log, source map, or key file is present: $entry"
 			;;
-		*private_key*|*secret*|*token*)
+		*id_rsa*|*private_key*|*secret*|*token*)
 			fail "possible secret file is present: $entry"
 			;;
 	esac
 
 	case "$lower_entry" in
+		"${PLUGIN_SLUG,,}/composer.json"|\
+		"${PLUGIN_SLUG,,}/composer.lock"|\
+		"${PLUGIN_SLUG,,}/package.json"|\
+		"${PLUGIN_SLUG,,}/package-lock.json"|\
+		"${PLUGIN_SLUG,,}/npm-shrinkwrap.json"|\
+		"${PLUGIN_SLUG,,}/yarn.lock"|\
+		"${PLUGIN_SLUG,,}/pnpm-lock.yaml"|\
+		"${PLUGIN_SLUG,,}/pnpm-workspace.yaml"|\
+		"${PLUGIN_SLUG,,}/vendor/"*/composer.json|\
+		"${PLUGIN_SLUG,,}/vendor/"*/composer.lock)
+			fail "package manifest is present: $entry"
+			;;
 		"${PLUGIN_SLUG,,}/vendor/"*/test/*|\
 		"${PLUGIN_SLUG,,}/vendor/"*/tests/*|\
+		"${PLUGIN_SLUG,,}/vendor/"*/build/*|\
+		"${PLUGIN_SLUG,,}/vendor/"*/builds/*|\
+		"${PLUGIN_SLUG,,}/vendor/"*/benchmark/*|\
+		"${PLUGIN_SLUG,,}/vendor/"*/benchmarks/*|\
+		"${PLUGIN_SLUG,,}/vendor/"*/coverage/*|\
 		"${PLUGIN_SLUG,,}/vendor/"*/doc/*|\
 		"${PLUGIN_SLUG,,}/vendor/"*/docs/*|\
 		"${PLUGIN_SLUG,,}/vendor/"*/example/*|\
 		"${PLUGIN_SLUG,,}/vendor/"*/examples/*|\
+		"${PLUGIN_SLUG,,}/vendor/"*/.github/*|\
+		"${PLUGIN_SLUG,,}/vendor/"*/.circleci/*|\
+		"${PLUGIN_SLUG,,}/vendor/"*/.gitlab/*|\
 		"${PLUGIN_SLUG,,}/vendor/"*/vendor-bin/*|\
 		"${PLUGIN_SLUG,,}/vendor/"*/phpstan/*|\
 		"${PLUGIN_SLUG,,}/vendor/"*/psalm/*|\
@@ -112,6 +159,12 @@ for entry in "${ZIP_ENTRIES[@]}"; do
 		"${PLUGIN_SLUG,,}/vendor/"*/phpstan*|\
 		"${PLUGIN_SLUG,,}/vendor/"*/psalm*|\
 		"${PLUGIN_SLUG,,}/vendor/"*/phpcs*|\
+		"${PLUGIN_SLUG,,}/vendor/"*/php-wp-unit.xml|\
+		"${PLUGIN_SLUG,,}/vendor/"*/makefile|\
+		"${PLUGIN_SLUG,,}/vendor/"*/postman.json|\
+		"${PLUGIN_SLUG,,}/vendor/"*/captainhook.json|\
+		"${PLUGIN_SLUG,,}/vendor/"*/codecov.yml|\
+		"${PLUGIN_SLUG,,}/vendor/"*/conventional-commits.json|\
 		"${PLUGIN_SLUG,,}/vendor/"*/.php_cs*|\
 		"${PLUGIN_SLUG,,}/vendor/"*/dockerfile*)
 			fail "vendor development file is present: $entry"
