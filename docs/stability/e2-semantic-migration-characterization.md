@@ -118,11 +118,11 @@ The E2.6 semantic gate is green.
 
 E2.7 verified the combined implementation and production artifact on 2026-08-30:
 
-- PHP suite: `50/50`;
+- PHP suite: `51/51`, including constant-only legacy source scheduling and secret non-persistence;
 - React suite: `3/3` suites and `7/7` tests;
 - production build and `scripts/validate-release-zip.sh`: pass for version `1.0.10`;
-- artifact SHA-256: `d5254f0966db5e4614e0676f424c4c988e23ddfd2c8a2de5c06ad951ce52047c`;
-- artifact matrix run id `20260830T185233Z-38408`: `360/360`, no failed or expected-failed steps;
+- artifact SHA-256: `6befb14de2bf1ebd2afb373ab8e589a841311edfffcd39df509274e2d2152f1c`;
+- post-fix artifact matrix run id `20260830T190418Z-58607`: `360/360`, no failed or expected-failed steps;
 - tracked worktree after build and matrix: clean.
 
 Epic closure still requires independent Epic 2 QA. Publishing, tagging, and a `1.0.11` version bump remain outside Epic 2.
