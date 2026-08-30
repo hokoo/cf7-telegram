@@ -5,7 +5,7 @@ Tags: contact form telegram,contact form 7,telegram
 Requires at least: 5.6
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.0.11
+Stable tag: 1.0.12
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -43,6 +43,13 @@ Runs after all configured recipients have been attempted.
 This plugin uses [API Telegram](https://core.telegram.org/api "Telegram docs") and sends remote HTTP requests to Telegram servers to deliver notifications.
 
 == Changelog ==
+
+= 1.0.12 =
+- Replace the Telegram SDK with a smaller WordPress HTTP integration and safer error handling.
+- Validate bot tokens before saving them and preserve existing chat connections when the bot identity is unchanged.
+- Make update polling webhook-aware and prevent failed updates from being skipped.
+- Load every page of Telegram chats in the administration interface.
+- Improve Unicode message chunking, plaintext fallback, multi-recipient delivery, and legacy hook compatibility.
 
 = 1.0.11 =
 - Make legacy migrations self-healing, retryable, and safe to run repeatedly.
