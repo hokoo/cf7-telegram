@@ -19,11 +19,19 @@ class RestApi {
 		register_rest_field( Client::CPT_BOT, 'token', array(
 			'get_callback' => function( $object ) {
 				$bot = new Bot( $object['id'] );
-				return $bot->isTokenEmpty() ? Bot::getEmptyToken() : mb_substr( $bot->getToken(), -4 );
+				return $bot->isTokenEmpty() ? Bot::getEmptyToken() : substr( (string) $bot->getToken(), -4 );
 			},
 			'update_callback' => function( $updatedValue, $wp_post, $field, $request, $cpt ) {
-				$chat = new Bot( $wp_post->ID );
-				$chat->setToken( $updatedValue );
+				$bot = new Bot( $wp_post->ID );
+				try {
+					$bot->replaceTokenIfValid( (string) $updatedValue );
+				} catch ( \iTRON\cf7Telegram\Exceptions\Telegram $exception ) {
+					return new \WP_Error(
+						'rest_bot_token_invalid',
+						$exception->getMessage(),
+						[ 'status' => 400 ]
+					);
+				}
 				return true;
 			},
 			'schema' => array(

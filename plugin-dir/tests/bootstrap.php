@@ -260,7 +260,7 @@ class Cf7tg_Test_Wpdb extends wpdb {
 	public function query( string $query ): int {
 		$this->rows_affected = 0;
 
-		if ( preg_match( '/DELETE FROM `?([^`\s]+)`? WHERE connection_id = (\d+)/i', $query, $matches ) && $this->isConnectionsMetaTable( $matches[1] ) ) {
+		if ( preg_match( '/DELETE FROM `?([^`\s]+)`? WHERE `?connection_id`? = (\d+)/i', $query, $matches ) && $this->isConnectionsMetaTable( $matches[1] ) ) {
 			$connection_id = (int) $matches[2];
 			$before = count( $GLOBALS['wp_connection_meta_rows'] );
 			$GLOBALS['wp_connection_meta_rows'] = array_values(
@@ -273,7 +273,7 @@ class Cf7tg_Test_Wpdb extends wpdb {
 			return $this->rows_affected;
 		}
 
-		if ( preg_match( '/DELETE FROM `?([^`\s]+)`? WHERE connection_id IN \(([^)]*)\)/i', $query, $matches ) && $this->isConnectionsMetaTable( $matches[1] ) ) {
+		if ( preg_match( '/DELETE FROM `?([^`\s]+)`? WHERE `?connection_id`? IN \(([^)]*)\)/i', $query, $matches ) && $this->isConnectionsMetaTable( $matches[1] ) ) {
 			$ids = $this->parseIntegerList( $matches[2] );
 			$before = count( $GLOBALS['wp_connection_meta_rows'] );
 			$GLOBALS['wp_connection_meta_rows'] = array_values(
@@ -286,7 +286,7 @@ class Cf7tg_Test_Wpdb extends wpdb {
 			return $this->rows_affected;
 		}
 
-		if ( preg_match( '/DELETE FROM `?([^`\s]+)`? WHERE ID IN \(([^)]*)\)/i', $query, $matches ) && $this->isConnectionsTable( $matches[1] ) ) {
+		if ( preg_match( '/DELETE FROM `?([^`\s]+)`? WHERE `?ID`? IN \(([^)]*)\)/i', $query, $matches ) && $this->isConnectionsTable( $matches[1] ) ) {
 			$ids = $this->parseIntegerList( $matches[2] );
 			$before = count( $GLOBALS['wp_connection_rows'] );
 			$GLOBALS['wp_connection_rows'] = array_values(
@@ -526,6 +526,12 @@ if ( ! function_exists( 'do_action' ) ) {
 if ( ! function_exists( '__' ) ) {
 	function __( string $text, string $domain = 'default' ): string {
 		return $text;
+	}
+}
+
+if ( ! function_exists( 'sanitize_text_field' ) ) {
+	function sanitize_text_field( string $text ): string {
+		return trim( strip_tags( $text ) );
 	}
 }
 

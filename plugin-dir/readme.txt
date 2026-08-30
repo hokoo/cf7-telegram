@@ -31,6 +31,15 @@ Use it to skip sending a Telegram message.
 Filter <code>wpcf7tg_markdown</code>
 Use it to customize the allowed Markdown tags.
 
+Filter <code>wpcf7tg_sendMessage( $args, $chat_id, $mode )</code>
+Use it to customize Telegram <code>sendMessage</code> arguments for each recipient and message chunk.
+
+Action <code>wpcf7tg_message_sent( $args, $submission )</code>
+Runs after each Telegram delivery attempt. A Telegram failure does not abort the Contact Form 7 submission.
+
+Action <code>wpcf7tg_messages_sent( $list, $output, $mode, $submission )</code>
+Runs after all configured recipients have been attempted.
+
 This plugin uses [API Telegram](https://core.telegram.org/api "Telegram docs") and sends remote HTTP requests to Telegram servers to deliver notifications.
 
 == Changelog ==
