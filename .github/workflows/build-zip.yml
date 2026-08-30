@@ -121,7 +121,7 @@ jobs:
           if-no-files-found: error
 
   publish:
-    name: Publish verified release
+    name: Publish verified GitHub release artifact
     runs-on: ubuntu-latest
     needs: verify
     if: ${{ github.event_name == 'release' }}
@@ -154,17 +154,14 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
 
-      - name: Set target branch
-        id: branch
-        run: echo "branch_name=$([ '${{ github.event.release.prerelease }}' = 'true' ] && echo 'plugin-dist' || echo 'stable')" >> "$GITHUB_OUTPUT"
-
-      - name: Push to release branch
+      - name: Push prerelease canary to plugin-dist
+        if: ${{ github.event.release.prerelease == true }}
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git fetch origin "${{ steps.branch.outputs.branch_name }}"
-          git worktree add --force dist-worktree "origin/${{ steps.branch.outputs.branch_name }}"
+          git fetch origin plugin-dist
+          git worktree add --force dist-worktree origin/plugin-dist
 
           find dist-worktree -mindepth 1 -maxdepth 1 -not -name '.git' -exec rm -rf {} +
           rsync -a --delete --exclude '.git' release-work/cf7-telegram/ dist-worktree/
@@ -177,17 +174,7 @@ jobs:
             echo "No changes to commit"
           else
             git commit -m "Update plugin build from release ${{ github.event.release.tag_name }}"
-            git push origin HEAD:${{ steps.branch.outputs.branch_name }}
+            git push origin HEAD:plugin-dist
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Deploy to WordPress.org (production only)
-        if: ${{ github.event.release.prerelease == false }}
-        uses: 10up/action-wordpress-plugin-deploy@stable
-        env:
-          SVN_USERNAME: ${{ secrets.WPORG_USERNAME }}
-          SVN_PASSWORD: ${{ secrets.WPORG_PASSWORD }}
-          BUILD_DIR: ./release-work/cf7-telegram
-          SLUG: cf7-telegram
-          VERSION: ${{ needs.verify.outputs.release_version }}
