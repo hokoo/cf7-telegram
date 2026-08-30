@@ -120,9 +120,9 @@ E2.7 verified the combined implementation and production artifact on 2026-08-30:
 
 - PHP suite: `51/51`, including constant-only legacy source scheduling and secret non-persistence;
 - React suite: `3/3` suites and `7/7` tests;
-- production build and `scripts/validate-release-zip.sh`: pass for version `1.0.10`;
-- artifact SHA-256: `52ad8772e5fe77d92feb07cebe21b6162ffdf7c92b2ae581ec831167ee939eb3`;
-- final artifact matrix run id `20260830T191946Z-83427`: `360/360`, no failed or expected-failed steps;
+- production build and `scripts/validate-release-zip.sh`: pass for version `1.0.11`;
+- artifact SHA-256: `4c5c0f5336a25f1f8cc1d73f859559549aa1e0def401ec87e7bb5019f7fdd2ab`;
+- final `1.0.11` artifact matrix run id `20260830T195004Z-2367`: `360/360`, no failed or expected-failed steps;
 - tracked worktree after build and matrix: clean.
 
 Independent Epic 2 QA passed on `93b969a`:
