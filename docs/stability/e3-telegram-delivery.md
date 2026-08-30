@@ -36,8 +36,8 @@ Verified on 2026-08-31:
 - `composer audit`: no known security advisories;
 - `composer check-platform-reqs --no-dev`: pass;
 - PHP lint for changed PHP files and `git diff --check`: pass;
-- `scripts/build-release-zip.sh`: pass twice with byte-identical output; its default epoch follows release inputs, so documentation-only commits do not change ZIP bytes;
-- candidate ZIP SHA-256: `7ce3e30956c2295f0c2766e52ec6acdd111cb975a392f935886ce97ae0b9da81`;
+- `scripts/build-release-zip.sh`: pass with byte-identical output across `Asia/Tbilisi` and `America/Los_Angeles`; its default epoch follows release inputs and ZIP timestamps are normalized to UTC;
+- candidate ZIP SHA-256: `b82c4b9aac9b339bb96270c4372ada27e95d746e4d013d137f36e26a18495d29`;
 - candidate ZIP size: `272759` bytes;
 - candidate ZIP contains no Telegram SDK, Guzzle, Illuminate, or Carbon paths;
 - Composer production graph contains only `hokoo/wpconnections`, `hokoo/wppostable`, `psr/log`, `ramsey/collection`, and `symfony/polyfill-php81`.
@@ -51,7 +51,7 @@ tests/stability/e1-smoke-matrix.sh
 
 Result:
 
-- run id: `20260830T213803Z-74045`;
+- run id: `20260830T214947Z-85952`;
 - WordPress `7.0.4`, Contact Form 7 `6.0.6`, PHP `8.2`;
 - `total_steps=164`, `passed_steps=164`;
 - `failed_steps=0`, `expected_failed_steps=0`;
