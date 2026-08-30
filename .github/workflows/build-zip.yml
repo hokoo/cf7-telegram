@@ -90,6 +90,12 @@ jobs:
             exit 1
           fi
 
+      - name: Run Plugin Check release gate
+        env:
+          CF7TG_CANDIDATE_ZIP: ${{ github.workspace }}/${{ env.ZIP_PATH }}
+          CF7TG_EXPECTED_CANDIDATE_VERSION: ${{ steps.release_version.outputs.value }}
+        run: tests/stability/e5-plugin-check-gate.sh
+
       - name: Run isolated stability matrix
         env:
           CF7TG_CANDIDATE_ZIP: ${{ github.workspace }}/${{ env.ZIP_PATH }}
