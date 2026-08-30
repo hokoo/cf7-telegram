@@ -21,6 +21,7 @@ WP_VERSION="${CF7TG_E1_WP_VERSION:-$(jq -r '.wordpress.default_core_version' "${
 WP_CLI_IMAGE="${CF7TG_E1_WP_CLI_IMAGE:-$(jq -r '.wordpress.default_cli_image' "${SOURCE_MANIFEST}")}"
 CF7_VERSION="${CF7TG_E1_CF7_VERSION:-$(jq -r '.dependencies.contact_form_7.default_version' "${SOURCE_MANIFEST}")}"
 FIXTURE="${CF7TG_E1_FIXTURE:-legacy-heavy}"
+E2_CHARACTERIZATION="${CF7TG_E2_CHARACTERIZATION:-0}"
 KEEP_WORKDIR=0
 ARTIFACT_ONLY=0
 FAILURES=0
@@ -50,6 +51,7 @@ Environment:
   CF7TG_E1_CF7_VERSION                Contact Form 7 version, default 6.0.6.
   CF7TG_E1_FIXTURE                    legacy-heavy, legacy-basic, damaged-legacy,
                                       partial-modern, or none. Default legacy-heavy.
+  CF7TG_E2_CHARACTERIZATION           When set to 1, emit E2 semantic migration evidence.
   CF7TG_E1_CACHE_DIR                  Cache for downloaded source zips.
   CF7TG_E1_RESULTS_DIR                Evidence output directory.
 USAGE
@@ -286,6 +288,29 @@ verify_zip_version() {
 	emit "${case_id}" "${step}" "pass" "Zip integrity and expected plugin version verified." "$(jq -nc --arg file "${zip_file}" --arg version "${actual}" --arg sha256 "$(sha256sum "${zip_file}" | awk '{print $1}')" --argjson bytes "$(wc -c < "${zip_file}")" '{file:$file,version:$version,sha256:$sha256,bytes:$bytes}')"
 }
 
+prepare_candidate_from_local_plugin_dir() {
+	local candidate_zip="$1"
+	local stage_dir="${CANDIDATE_STAGE}/cf7-telegram"
+
+	if [ ! -f "${REPO_ROOT}/plugin-dir/vendor/autoload.php" ] || [ ! -d "${REPO_ROOT}/plugin-dir/react/build" ]; then
+		fail_step "candidate" "source" "Local plugin-dir is incomplete." "$(jq -nc --arg required_zip "${REPO_ROOT}/dist/cf7-telegram-wp-plugin.zip" '{required_zip:$required_zip,required_env:"CF7TG_CANDIDATE_ZIP",reason:"Local characterization requires plugin-dir/vendor/autoload.php and plugin-dir/react/build. Build the release zip in another task or pass CF7TG_CANDIDATE_ZIP."}')"
+		exit 2
+	fi
+
+	mkdir -p "${stage_dir}"
+	rsync -a \
+		--exclude '.git' \
+		--exclude 'react/node_modules' \
+		--exclude 'react/.cache' \
+		--exclude 'react/coverage' \
+		"${REPO_ROOT}/plugin-dir/" "${stage_dir}/"
+
+	(
+		cd "${CANDIDATE_STAGE}"
+		zip -qr "${candidate_zip}" "cf7-telegram" -x '*/node_modules/*' '*/.cache/*' '*/coverage/*'
+	)
+}
+
 prepare_candidate() {
 	local candidate_zip="${ARTIFACT_DIR}/cf7-telegram-candidate.zip"
 	local expected="${CF7TG_EXPECTED_CANDIDATE_VERSION:-}"
@@ -298,28 +323,14 @@ prepare_candidate() {
 		fi
 		cp "${CF7TG_CANDIDATE_ZIP}" "${candidate_zip}"
 		emit "candidate" "source" "pass" "Using candidate zip from CF7TG_CANDIDATE_ZIP." "$(jq -nc --arg file "${CF7TG_CANDIDATE_ZIP}" '{file:$file}')"
+	elif [ "${E2_CHARACTERIZATION}" = "1" ]; then
+		prepare_candidate_from_local_plugin_dir "${candidate_zip}"
+		emit "candidate" "source" "pass" "Using current local plugin-dir candidate for E2 characterization." "$(jq -nc --arg file "${candidate_zip}" '{file:$file,reason:"CF7TG_E2_CHARACTERIZATION avoids silently preferring stale dist artifacts."}')"
 	elif [ -f "${dist_zip}" ]; then
 		cp "${dist_zip}" "${candidate_zip}"
 		emit "candidate" "source" "pass" "Using candidate zip from dist/cf7-telegram-wp-plugin.zip." "$(jq -nc --arg file "${dist_zip}" '{file:$file}')"
 	else
-		if [ ! -f "${REPO_ROOT}/plugin-dir/vendor/autoload.php" ] || [ ! -d "${REPO_ROOT}/plugin-dir/react/build" ]; then
-			fail_step "candidate" "source" "No production candidate zip is available and local plugin-dir is incomplete." "$(jq -nc --arg required_zip "${dist_zip}" '{required_zip:$required_zip,required_env:"CF7TG_CANDIDATE_ZIP",reason:"Clean checkouts do not include ignored vendor/react build artifacts. Build the release zip in another task or pass CF7TG_CANDIDATE_ZIP."}')"
-			exit 2
-		fi
-
-		local stage_dir="${CANDIDATE_STAGE}/cf7-telegram"
-		mkdir -p "${stage_dir}"
-		rsync -a \
-			--exclude '.git' \
-			--exclude 'react/node_modules' \
-			--exclude 'react/.cache' \
-			--exclude 'react/coverage' \
-			"${REPO_ROOT}/plugin-dir/" "${stage_dir}/"
-
-		(
-			cd "${CANDIDATE_STAGE}"
-			zip -qr "${candidate_zip}" "cf7-telegram" -x '*/node_modules/*' '*/.cache/*' '*/coverage/*'
-		)
+		prepare_candidate_from_local_plugin_dir "${candidate_zip}"
 		emit "candidate" "source" "pass" "Built candidate zip from local plugin-dir." "$(jq -nc --arg file "${candidate_zip}" '{file:$file}')"
 	fi
 
@@ -485,7 +496,52 @@ assert_migration_scheduled() {
 		return 0
 	fi
 
+	if [ "${E2_CHARACTERIZATION}" = "1" ]; then
+		emit "${case_id}" "assert-${label}-migration" "expected_fail" "Migration cron is missing after the WordPress single-plugin update path; this is an E2 blocker." "$(jq -nc --arg state_file "${state_file}" '{state_file:$state_file,downstream_epic:"E2",dependency:"E2.2 durable self-healing migration scheduler"}')"
+		return 1
+	fi
+
 	fail_step "${case_id}" "assert-${label}-migration" "Migration cron is missing after the WordPress single-plugin update path; this is an E2 blocker." "$(jq -nc --arg state_file "${state_file}" '{state_file:$state_file,downstream_epic:"E2"}')"
+	return 1
+}
+
+emit_e2_checks() {
+	local case_id="$1"
+	local file="$2"
+	local count index check_id status message extra
+
+	count="$(jq '.checks | length' "${file}")"
+	if [ "${count}" -eq 0 ]; then
+		return 0
+	fi
+
+	for index in $(seq 0 $((count - 1))); do
+		check_id="$(jq -r ".checks[${index}].id" "${file}")"
+		status="$(jq -r ".checks[${index}].status" "${file}")"
+		message="$(jq -r ".checks[${index}].message" "${file}")"
+		extra="$(jq -c --arg file "${file}" ".checks[${index}] + {e2_file: \$file}" "${file}")"
+		emit "${case_id}" "e2-${check_id}" "${status}" "${message}" "${extra}"
+	done
+}
+
+write_e2_characterization() {
+	local case_id="$1"
+	local stage="$2"
+	local e2_dir="${RESULTS_DIR}/e2"
+	local e2_file="${e2_dir}/${case_id}-${stage}.json"
+	local log_file="${LOG_DIR}/${case_id}-e2-${stage}.log"
+
+	[ "${E2_CHARACTERIZATION}" = "1" ] || return 0
+
+	mkdir -p "${e2_dir}"
+
+	if wp_run eval-file /e1-tests/wp-e2-migration-characterization.php "${stage}" >"${e2_file}" 2>"${log_file}"; then
+		emit "${case_id}" "e2-${stage}" "pass" "Captured E2 migration characterization evidence." "$(jq -nc --arg file "${e2_file}" '{e2_file:$file}')"
+		emit_e2_checks "${case_id}" "${e2_file}"
+		return 0
+	fi
+
+	fail_step "${case_id}" "e2-${stage}" "Could not capture E2 migration characterization evidence." "$(jq -nc --arg log "${log_file}" '{log:$log}')"
 	return 1
 }
 
@@ -572,6 +628,7 @@ run_upgrade_case() {
 	if [ "${rc}" -eq 0 ]; then
 		run_logged "${case_id}" "candidate_upgrade" wp_run eval-file /e1-tests/wp-upgrade-candidate.php /artifacts/cf7-telegram-candidate.zip || rc=1
 		write_state "${case_id}" "after-upgrade" || rc=1
+		write_e2_characterization "${case_id}" "after-upgrade" || rc=1
 		assert_active_version "${case_id}" "after-upgrade" "${candidate_version}" || true
 		assert_cleanup_scheduled "${case_id}" "after-upgrade" || true
 	fi
@@ -583,6 +640,12 @@ run_upgrade_case() {
 			emit "${case_id}" "migration_event_run" "skipped" "Migration cron execution was skipped because no event was scheduled." "$(jq -nc '{downstream_epic:"E2"}')"
 		fi
 		write_state "${case_id}" "after-migration-run" || rc=1
+		write_e2_characterization "${case_id}" "after-migration-run" || rc=1
+		if [ "${E2_CHARACTERIZATION}" = "1" ]; then
+			write_e2_characterization "${case_id}" "rerun" || rc=1
+			write_state "${case_id}" "after-second-migration-run" || rc=1
+			write_e2_characterization "${case_id}" "after-second-migration-run" || rc=1
+		fi
 		assert_active_version "${case_id}" "after-migration-run" "${candidate_version}" || true
 	fi
 
@@ -637,12 +700,15 @@ write_summary() {
 				wp_cli_image: $wp_cli_image,
 				contact_form_7_version: $cf7_version,
 				fixture: $fixture,
+				e2_characterization: env.CF7TG_E2_CHARACTERIZATION,
 				uses_repo_docker_compose: false,
 				dev_database_guard: "Harness creates a temporary Compose file and project; it does not use docker-compose.yml or its persistent MySQL volume."
 			},
 			total_steps: length,
 			passed_steps: ([.[] | select(.status == "pass")] | length),
+			expected_failed_steps: ([.[] | select(.status == "expected_fail")] | length),
 			failed_steps: ([.[] | select(.status == "fail")] | length),
+			expected_failures: [.[] | select(.status == "expected_fail")],
 			failures: [.[] | select(.status == "fail")],
 			evidence: .
 		}' "${EVIDENCE_JSONL}" > "${SUMMARY_JSON}"

@@ -32,6 +32,10 @@ $result = [
 	'options' => [],
 ];
 
+$e2_expectations = [
+	'fixture' => $fixture,
+];
+
 if ( in_array( $fixture, [ 'legacy-basic', 'legacy-heavy', 'damaged-legacy' ], true ) ) {
 	update_option( 'wpcf7_telegram_tkn', '123456789:REDACTED_E1_FIXTURE_TOKEN', false );
 	update_option( 'wpcf7_telegram_last_update_id', 987654321, false );
@@ -77,6 +81,34 @@ if ( in_array( $fixture, [ 'legacy-basic', 'legacy-heavy', 'damaged-legacy' ], t
 	update_option( 'wpcf7_telegram_chats', $chats, false );
 	$result['options'][] = 'wpcf7_telegram_chats';
 
+	$valid_chats = array_filter(
+		$chats,
+		static function ( array $chat ): bool {
+			return isset( $chat['id'] ) && '' !== trim( (string) $chat['id'] );
+		}
+	);
+
+	$e2_expectations['legacy'] = [
+		'has_legacy_state'     => true,
+		'total_chat_rows'      => count( $chats ),
+		'valid_chat_rows'      => count( $valid_chats ),
+		'malformed_chat_rows'  => count( $chats ) - count( $valid_chats ),
+		'pending_chat_rows'    => count(
+			array_filter(
+				$valid_chats,
+				static fn( array $chat ): bool => 'pending' === ( $chat['status'] ?? '' )
+			)
+		),
+		'active_chat_rows'     => count(
+			array_filter(
+				$valid_chats,
+				static fn( array $chat ): bool => 'pending' !== ( $chat['status'] ?? '' )
+			)
+		),
+		'expected_bot_count'   => 1,
+		'expected_channel_count' => 1,
+	];
+
 	$form_definitions = [
 		[
 			'title' => 'E1 Fixture Form 1',
@@ -112,6 +144,13 @@ if ( in_array( $fixture, [ 'legacy-basic', 'legacy-heavy', 'damaged-legacy' ], t
 			'id'    => (int) $post_id,
 			'title' => $definition['title'],
 		];
+		$e2_expectations['forms'][] = [
+			'id'                    => (int) $post_id,
+			'title'                 => $definition['title'],
+			'post_content_sha256'   => hash( 'sha256', $definition['body'] ),
+			'_form_sha256'          => hash( 'sha256', $definition['body'] ),
+			'contains_telegram_tag' => str_contains( $definition['body'], '[telegram]' ),
+		];
 	}
 }
 
@@ -133,6 +172,18 @@ if ( 'partial-modern' === $fixture ) {
 
 	update_option( 'cf7tg_version', '1.0.0', false );
 	$result['options'][] = 'cf7tg_version';
+	$e2_expectations['legacy'] = [
+		'has_legacy_state'      => false,
+		'valid_chat_rows'       => 0,
+		'malformed_chat_rows'   => 0,
+		'expected_bot_count'    => 1,
+		'expected_channel_count' => 1,
+	];
+}
+
+if ( ! empty( $e2_expectations['legacy'] ) || ! empty( $e2_expectations['forms'] ) ) {
+	update_option( 'cf7tg_e2_fixture_expectations', $e2_expectations, false );
+	$result['options'][] = 'cf7tg_e2_fixture_expectations';
 }
 
 echo wp_json_encode( $result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES );
