@@ -344,8 +344,10 @@ class LegacyImporter {
 	}
 
 	private function findChannelForBot( Bot $bot ): ?Channel {
-		$connections = $this->getRelation( Client::BOT2CHANNEL )
-			->findConnections( new Query\Connection( $bot->getPost()->ID ) );
+		$relation = $this->getRelation( Client::BOT2CHANNEL );
+		$connections = $this->withRelationStorageBootstrap(
+			static fn() => $relation->findConnections( new Query\Connection( $bot->getPost()->ID ) )
+		);
 
 		foreach ( $connections->getIterator() as $connection ) {
 			$post = get_post( (int) $connection->to );
@@ -426,7 +428,9 @@ class LegacyImporter {
 	private function ensureConnection( string $relationName, int $from, int $to, array &$report ): Connection {
 		$relation = $this->getRelation( $relationName );
 		$query = new Query\Connection( $from, $to );
-		$connections = $relation->findConnections( $query );
+		$connections = $this->withRelationStorageBootstrap(
+			static fn() => $relation->findConnections( $query )
+		);
 
 		if ( ! $connections->isEmpty() ) {
 			$report['relations']['reused']++;
@@ -434,11 +438,15 @@ class LegacyImporter {
 		}
 
 		try {
-			$connection = $relation->createConnection( $query );
+			$connection = $this->withRelationStorageBootstrap(
+				static fn() => $relation->createConnection( $query )
+			);
 			$report['relations']['created']++;
 			return $connection;
 		} catch ( ConnectionWrongData $e ) {
-			$connections = $relation->findConnections( $query );
+			$connections = $this->withRelationStorageBootstrap(
+				static fn() => $relation->findConnections( $query )
+			);
 			if ( ! $connections->isEmpty() ) {
 				$report['relations']['reused']++;
 				return $connections->first();
@@ -473,6 +481,41 @@ class LegacyImporter {
 
 	private function getRelation( string $relationName ): \iTRON\wpConnections\Relation {
 		return $this->client->getConnectionsClient()->getRelation( $relationName );
+	}
+
+	private function withRelationStorageBootstrap( callable $operation ) {
+		global $wpdb;
+
+		if ( ! $this->relationStorageTablesMissing() || ! method_exists( $wpdb, 'suppress_errors' ) ) {
+			return $operation();
+		}
+
+		$previous = $wpdb->suppress_errors( true );
+
+		try {
+			return $operation();
+		} finally {
+			$wpdb->suppress_errors( $previous );
+		}
+	}
+
+	private function relationStorageTablesMissing(): bool {
+		global $wpdb;
+
+		$storage = $this->client->getConnectionsClient()->getStorage();
+		foreach ( [ 'get_connections_table', 'get_meta_table' ] as $method ) {
+			if ( ! method_exists( $storage, $method ) ) {
+				return false;
+			}
+
+			$table = $wpdb->prefix . $storage->$method();
+			$like = method_exists( $wpdb, 'esc_like' ) ? $wpdb->esc_like( $table ) : $table;
+			if ( $table !== $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $like ) ) ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	private function ensureRelationsRegistered(): void {
