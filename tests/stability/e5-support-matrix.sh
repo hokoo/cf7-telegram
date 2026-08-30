@@ -16,6 +16,7 @@ EVIDENCE_JSONL="${RESULTS_DIR}/evidence.jsonl"
 SUMMARY_JSON="${RESULTS_DIR}/summary.json"
 CANDIDATE_ZIP="${CF7TG_CANDIDATE_ZIP:-${REPO_ROOT}/dist/${PLUGIN_SLUG}-wp-plugin.zip}"
 EXPECTED_CANDIDATE_VERSION="${CF7TG_EXPECTED_CANDIDATE_VERSION:-$(jq -r '.candidate.expected_version // .support_contract.candidate_expected_version // empty' "${SOURCE_MANIFEST}")}"
+PROMOTION_ROLLBACK_VERSION="${CF7TG_E5_PROMOTION_ROLLBACK_VERSION:-$(jq -r '.release_assumptions.wordpress_org_production_baseline // empty' "${SOURCE_MANIFEST}")}"
 IMAGE_PROBE_TIMEOUT="${CF7TG_E5_SUPPORT_MATRIX_IMAGE_PROBE_TIMEOUT:-90s}"
 KEEP_WORKDIR=0
 FAILURES=0
@@ -139,6 +140,7 @@ fail_step() {
 
 write_summary() {
 	local row_summaries='[]'
+	local promotion_rollback='null'
 	local summary_files=()
 
 	while IFS= read -r -d '' summary_file; do
@@ -147,6 +149,14 @@ write_summary() {
 
 	if [ "${#summary_files[@]}" -gt 0 ]; then
 		row_summaries="$(jq -s '.' "${summary_files[@]}")"
+	fi
+
+	if [ -s "${RESULTS_DIR}/rollback.sql" ]; then
+		promotion_rollback="$(jq -nc \
+			--arg version "${PROMOTION_ROLLBACK_VERSION}" \
+			--arg file "${RESULTS_DIR}/rollback.sql" \
+			--arg sha256 "$(sha256sum "${RESULTS_DIR}/rollback.sql" | awk '{print $1}')" \
+			'{version:$version,file:$file,sha256:$sha256}')"
 	fi
 
 	jq -s \
@@ -158,6 +168,7 @@ write_summary() {
 		--arg candidate_sha256 "$(sha256sum "${CANDIDATE_ZIP}" 2>/dev/null | awk '{print $1}')" \
 		--arg expected_candidate_version "${EXPECTED_CANDIDATE_VERSION}" \
 		--arg image_probe_timeout "${IMAGE_PROBE_TIMEOUT}" \
+		--argjson promotion_rollback "${promotion_rollback}" \
 		--argjson support_contract "$(jq -c '.support_contract // {}' "${SOURCE_MANIFEST}")" \
 		--argjson support_matrix "$(jq -c '.support_matrix // []' "${SOURCE_MANIFEST}")" \
 		--argjson row_summaries "${row_summaries}" \
@@ -172,6 +183,7 @@ write_summary() {
 				expected_version: $expected_candidate_version
 			},
 			image_probe_timeout: $image_probe_timeout,
+			promotion_rollback: $promotion_rollback,
 			support_contract: $support_contract,
 			support_matrix: $support_matrix,
 			row_summaries: $row_summaries,
@@ -184,6 +196,24 @@ write_summary() {
 			evidence: .
 		}' "${EVIDENCE_JSONL}" > "${SUMMARY_JSON}"
 	SUMMARY_WRITTEN=1
+}
+
+stage_promotion_rollback() {
+	local current_row_id source_snapshot
+
+	[ -n "${PROMOTION_ROLLBACK_VERSION}" ] || return 0
+	current_row_id="$(jq -r '[.support_matrix[] | select(.label == "current")][0].matrix_id // empty' "${SOURCE_MANIFEST}")"
+	[ -n "${current_row_id}" ] || return 0
+	source_snapshot="${ROW_RESULTS_DIR}/${current_row_id}/rollback/upgrade-${PROMOTION_ROLLBACK_VERSION}-rollback.sql"
+	[ -s "${source_snapshot}" ] || return 0
+
+	cp "${source_snapshot}" "${RESULTS_DIR}/rollback.sql"
+	emit "promotion" "rollback_snapshot" "pass" "Staged the current support-row pre-upgrade database snapshot for manual promotion." "$(jq -nc \
+		--arg source "${source_snapshot}" \
+		--arg file "${RESULTS_DIR}/rollback.sql" \
+		--arg version "${PROMOTION_ROLLBACK_VERSION}" \
+		--arg sha256 "$(sha256sum "${RESULTS_DIR}/rollback.sql" | awk '{print $1}')" \
+		'{source:$source,file:$file,version:$version,sha256:$sha256}')"
 }
 
 on_exit() {
@@ -345,6 +375,7 @@ for row_id in "${ROWS[@]}"; do
 	run_row "${row_id}" || true
 done
 
+stage_promotion_rollback
 write_summary
 
 echo "E5 support matrix evidence: ${SUMMARY_JSON}"
