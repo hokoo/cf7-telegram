@@ -295,6 +295,12 @@ class Cf7tg_Test_Wpdb extends wpdb {
 		$this->last_error = '';
 		$this->rows_affected = 1;
 
+		$GLOBALS['wpdb_inserts'][] = [
+			'table'  => $table,
+			'data'   => $data,
+			'format' => $format,
+		];
+
 		if ( str_contains( $table, 'post_connections_meta_cf7_telegram' ) ) {
 			$id = $GLOBALS['wp_next_connection_meta_id']++;
 			$GLOBALS['wp_connection_meta_rows'][] = (object) [
@@ -321,11 +327,19 @@ class Cf7tg_Test_Wpdb extends wpdb {
 			return true;
 		}
 
-		$GLOBALS['wpdb_inserts'][] = [
-			'table'  => $table,
-			'data'   => $data,
-			'format' => $format,
-		];
+		if ( $this->isLogTable( $table ) ) {
+			$id = $GLOBALS['wp_next_log_id']++;
+			$GLOBALS['wp_log_rows'][] = (object) [
+				'ID'     => $id,
+				'source' => (string) ( $data['source'] ?? '' ),
+				'date'   => (int) ( $data['date'] ?? 0 ),
+				'level'  => (int) ( $data['level'] ?? 0 ),
+				'msg'    => (string) ( $data['msg'] ?? '' ),
+				'data'   => (string) ( $data['data'] ?? '' ),
+			];
+			$this->insert_id = $id;
+			return true;
+		}
 
 		return true;
 	}
@@ -420,14 +434,53 @@ class Cf7tg_Test_Wpdb extends wpdb {
 	public function get_var( string $query ) {
 		if ( preg_match( "/SHOW TABLES LIKE '([^']+)'/", $query, $matches ) ) {
 			$table = stripslashes( $matches[1] );
-			return in_array( $table, $this->tables, true ) ? $table : null;
+			return $this->tableExistsInMock( $table ) ? $table : null;
 		}
 
 		return null;
 	}
 
 	public function query( string $query ): int {
+		$GLOBALS['wpdb_queries'][] = $query;
 		$this->rows_affected = 0;
+
+		if ( preg_match( '/DELETE FROM `?([^`\s]+)`? WHERE `?date`? < (\d+)/i', $query, $matches ) && $this->isLogTable( $matches[1] ) ) {
+			$cutoff = (int) $matches[2];
+			$before = count( $GLOBALS['wp_log_rows'] );
+			$GLOBALS['wp_log_rows'] = array_values(
+				array_filter(
+					$GLOBALS['wp_log_rows'],
+					static fn( object $row ): bool => (int) $row->date >= $cutoff
+				)
+			);
+			$this->rows_affected = $before - count( $GLOBALS['wp_log_rows'] );
+			return $this->rows_affected;
+		}
+
+		if ( preg_match( '/DELETE FROM `?([^`\s]+)`? WHERE `?ID`? NOT IN .*LIMIT (\d+)/is', $query, $matches ) && $this->isLogTable( $matches[1] ) ) {
+			$limit = max( 1, (int) $matches[2] );
+			$rows = $GLOBALS['wp_log_rows'];
+			usort(
+				$rows,
+				static function ( object $left, object $right ): int {
+					$dateComparison = (int) $right->date <=> (int) $left->date;
+					return 0 !== $dateComparison ? $dateComparison : (int) $right->ID <=> (int) $left->ID;
+				}
+			);
+			$keepIDs = array_map(
+				static fn( object $row ): int => (int) $row->ID,
+				array_slice( $rows, 0, $limit )
+			);
+			$before = count( $GLOBALS['wp_log_rows'] );
+			$GLOBALS['wp_log_rows'] = array_values(
+				array_filter(
+					$GLOBALS['wp_log_rows'],
+					static fn( object $row ): bool => in_array( (int) $row->ID, $keepIDs, true )
+				)
+			);
+			$this->rows_affected = $before - count( $GLOBALS['wp_log_rows'] );
+			return $this->rows_affected;
+		}
 
 		if ( preg_match( '/DELETE FROM `?([^`\s]+)`? WHERE `?connection_id`? = (\d+)/i', $query, $matches ) && $this->isConnectionsMetaTable( $matches[1] ) ) {
 			$connection_id = (int) $matches[2];
@@ -469,7 +522,12 @@ class Cf7tg_Test_Wpdb extends wpdb {
 		}
 
 		if ( preg_match( '/DROP TABLE IF EXISTS `?([^`\s;]+)`?/', $query, $matches ) ) {
-			$this->tables = array_values( array_diff( $this->tables, [ $matches[1] ] ) );
+			$table = $matches[1];
+			$bareTable = $this->stripPrefix( $table );
+			$this->tables = array_values( array_filter(
+				$this->tables,
+				static fn( string $existing ): bool => $existing !== $table && $existing !== $bareTable
+			) );
 		}
 
 		if ( preg_match( '/CREATE TABLE IF NOT EXISTS ([^\s(]+)/', $query, $matches ) ) {
@@ -616,6 +674,20 @@ class Cf7tg_Test_Wpdb extends wpdb {
 
 	private function isConnectionsMetaTable( string $table ): bool {
 		return $table === $this->prefix . 'post_connections_meta_cf7_telegram';
+	}
+
+	private function isLogTable( string $table ): bool {
+		return $table === $this->prefix . 'cf7tg_log' || $table === 'cf7tg_log';
+	}
+
+	private function tableExistsInMock( string $table ): bool {
+		$bareTable = $this->stripPrefix( $table );
+
+		return in_array( $table, $this->tables, true ) || in_array( $bareTable, $this->tables, true );
+	}
+
+	private function stripPrefix( string $table ): string {
+		return str_starts_with( $table, $this->prefix ) ? substr( $table, strlen( $this->prefix ) ) : $table;
 	}
 }
 
@@ -1369,13 +1441,16 @@ function cf7tg_test_reset_environment(): void {
 	$GLOBALS['wp_rest_fields'] = [];
 	$GLOBALS['wp_connection_rows'] = [];
 	$GLOBALS['wp_connection_meta_rows'] = [];
+	$GLOBALS['wp_log_rows'] = [];
 	$GLOBALS['wpdb_inserts'] = [];
+	$GLOBALS['wpdb_queries'] = [];
 	$GLOBALS['wp_remote_post_requests'] = [];
 	$GLOBALS['wp_remote_post_handler'] = null;
 	$GLOBALS['wp_schedule_errors'] = [];
 	$GLOBALS['wp_next_post_id'] = 1;
 	$GLOBALS['wp_next_connection_id'] = 1;
 	$GLOBALS['wp_next_connection_meta_id'] = 1;
+	$GLOBALS['wp_next_log_id'] = 1;
 	$GLOBALS['wpcf7_form_tags'] = [];
 	$GLOBALS['current_user_can'] = true;
 	$GLOBALS['checked_admin_referer'] = null;

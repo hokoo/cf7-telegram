@@ -5,6 +5,7 @@ declare( strict_types=1 );
 use iTRON\cf7Telegram\Bot;
 use iTRON\cf7Telegram\Client;
 use iTRON\cf7Telegram\Controllers\Migration;
+use iTRON\cf7Telegram\Logger;
 use iTRON\cf7Telegram\Maintenance;
 
 final class MaintenanceTest extends Cf7tg_TestCase {
@@ -234,6 +235,109 @@ final class MaintenanceTest extends Cf7tg_TestCase {
 		$this->assertArrayNotHasKey( Maintenance::CLEANUP_LOCK_OPTION, $GLOBALS['wp_options'] );
 	}
 
+	public function testCleanupLogsDeletesAgeExpiredRowsAndTouchesOnlyLogTable(): void {
+		$now = time();
+		$this->seedConnectionTables();
+		$this->seedConnection( 1, Client::BOT2CHAT, 10, 20 );
+		$this->seedLogTable();
+		$this->seedLogRow( 1, $now - ( 31 * 24 * HOUR_IN_SECONDS ) );
+		$this->seedLogRow( 2, $now - HOUR_IN_SECONDS );
+		add_filter(
+			'cf7tg/logMaxRows',
+			static fn(): int => 100
+		);
+
+		$result = Maintenance::cleanupLogs();
+
+		$this->assertSame( 1, $result['deleted_expired'] );
+		$this->assertSame( 0, $result['deleted_excess'] );
+		$this->assertSame( [ 2 ], $this->logIDs() );
+		$this->assertSame( [ 1 ], $this->connectionIDs() );
+
+		foreach ( $GLOBALS['wpdb_queries'] as $query ) {
+			if ( ! str_starts_with( $query, 'DELETE FROM' ) ) {
+				continue;
+			}
+
+			$this->assertTrue( str_contains( $query, 'cf7tg_log' ), 'Log cleanup query must target cf7tg_log only.' );
+			$this->assertFalse( str_contains( $query, 'post_connections' ), 'Log cleanup query must not target connection tables.' );
+		}
+	}
+
+	public function testCleanupLogsKeepsNewestRowsByCapAndIsIdempotent(): void {
+		$this->seedLogTable();
+		$this->seedLogRow( 1, 1000 );
+		$this->seedLogRow( 2, 1000 );
+		$this->seedLogRow( 3, 2000 );
+		$this->seedLogRow( 4, 3000 );
+		$this->seedLogRow( 5, 3000 );
+		add_filter(
+			'cf7tg/logRetentionDays',
+			static fn(): int => 0
+		);
+		add_filter(
+			'cf7tg/logMaxRows',
+			static fn(): int => 3
+		);
+
+		$first = Maintenance::cleanupLogs();
+		$second = Maintenance::cleanupLogs();
+
+		$this->assertSame( 0, $first['deleted_expired'] );
+		$this->assertSame( 2, $first['deleted_excess'] );
+		$this->assertSame( 0, $second['deleted_expired'] );
+		$this->assertSame( 0, $second['deleted_excess'] );
+		$this->assertSame( [ 3, 4, 5 ], $this->logIDs() );
+	}
+
+	public function testCleanupLogsRetentionAndCapFiltersOverrideIndependently(): void {
+		$maxRows = 2;
+		$retentionDays = 0;
+		add_filter(
+			'cf7tg/logMaxRows',
+			static function () use ( &$maxRows ): int {
+				return $maxRows;
+			}
+		);
+		add_filter(
+			'cf7tg/logRetentionDays',
+			static function () use ( &$retentionDays ): int {
+				return $retentionDays;
+			}
+		);
+
+		$this->seedLogTable();
+		$this->seedLogRow( 1, time() - ( 60 * 24 * HOUR_IN_SECONDS ) );
+		$this->seedLogRow( 2, time() - HOUR_IN_SECONDS );
+		$this->seedLogRow( 3, time() );
+
+		$capOnly = Maintenance::cleanupLogs();
+
+		$this->assertSame( 0, $capOnly['retention_days'] );
+		$this->assertSame( 2, $capOnly['max_rows'] );
+		$this->assertSame( 0, $capOnly['deleted_expired'] );
+		$this->assertSame( 1, $capOnly['deleted_excess'] );
+		$this->assertSame( [ 2, 3 ], $this->logIDs() );
+
+		$retentionDays = 30;
+		$maxRows = 10;
+		$GLOBALS['wp_log_rows'] = [];
+		$GLOBALS['wpdb_queries'] = [];
+		$GLOBALS['wpdb']->tables = [];
+		$this->seedLogTable();
+		$this->seedLogRow( 1, time() - ( 60 * 24 * HOUR_IN_SECONDS ) );
+		$this->seedLogRow( 2, time() - HOUR_IN_SECONDS );
+		$this->seedLogRow( 3, time() );
+
+		$retentionOnly = Maintenance::cleanupLogs();
+
+		$this->assertSame( 30, $retentionOnly['retention_days'] );
+		$this->assertSame( 10, $retentionOnly['max_rows'] );
+		$this->assertSame( 1, $retentionOnly['deleted_expired'] );
+		$this->assertSame( 0, $retentionOnly['deleted_excess'] );
+		$this->assertSame( [ 2, 3 ], $this->logIDs() );
+	}
+
 	public function testExplicitPluginPostDeletionCascadesOnlyOwnedRelationsAndMeta(): void {
 		$this->seedConnectionTables();
 		$this->seedPost( 10, Client::CPT_BOT );
@@ -286,6 +390,24 @@ final class MaintenanceTest extends Cf7tg_TestCase {
 		];
 	}
 
+	private function seedLogTable(): void {
+		$GLOBALS['wpdb']->tables[] = 'cf7tg_log';
+		$GLOBALS['wpdb']->tables[] = 'wp_cf7tg_log';
+		$GLOBALS['wpdb']->cf7tg_log = 'wp_cf7tg_log';
+	}
+
+	private function seedLogRow( int $logID, int $date ): void {
+		$GLOBALS['wp_log_rows'][] = (object) [
+			'ID'     => $logID,
+			'source' => 'test',
+			'date'   => $date,
+			'level'  => Logger::LEVEL_INFO,
+			'msg'    => 'row ' . $logID,
+			'data'   => 'diagnostic',
+		];
+		$GLOBALS['wp_next_log_id'] = max( $GLOBALS['wp_next_log_id'], $logID + 1 );
+	}
+
 	private function seedPost( int $postID, string $postType, string $postStatus = 'publish' ): void {
 		$post = new WP_Post();
 		$post->ID = $postID;
@@ -326,6 +448,16 @@ final class MaintenanceTest extends Cf7tg_TestCase {
 		$ids = array_map(
 			static fn( object $row ): int => (int) $row->connection_id,
 			$GLOBALS['wp_connection_meta_rows']
+		);
+		sort( $ids, SORT_NUMERIC );
+
+		return $ids;
+	}
+
+	private function logIDs(): array {
+		$ids = array_map(
+			static fn( object $row ): int => (int) $row->ID,
+			$GLOBALS['wp_log_rows']
 		);
 		sort( $ids, SORT_NUMERIC );
 

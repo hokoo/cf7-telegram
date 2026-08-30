@@ -18,6 +18,8 @@ class Maintenance {
 	public const REPAIR_MODE_DRY_RUN = 'dry-run';
 	public const REPAIR_MODE_APPLY = 'apply';
 	public const REPAIR_PLAN_SCHEMA = 1;
+	public const DEFAULT_LOG_RETENTION_DAYS = 30;
+	public const DEFAULT_LOG_MAX_ROWS = 10000;
 
 	private const LEGACY_EARLY_ACCESS_OPTION = 'cf7t_early_access';
 
@@ -119,6 +121,8 @@ class Maintenance {
 			if ( self::hasReportableRepairResult( $result ) ) {
 				self::writeLog( self::summarizeRepairResult( $result ), 'Scheduled repair report' );
 			}
+
+			self::cleanupLogs();
 		} catch ( \Throwable $e ) {
 			self::writeLog(
 				[
@@ -202,6 +206,30 @@ class Maintenance {
 		}
 
 		self::deleteConnectionsByObjectIDs( [ $postID ] );
+	}
+
+	public static function cleanupLogs(): array {
+		$table = self::getLogTableName();
+		$retentionDays = self::getLogRetentionDays();
+		$maxRows = self::getLogMaxRows();
+		$result = [
+			'retention_days'  => $retentionDays,
+			'max_rows'        => $maxRows,
+			'deleted_expired' => 0,
+			'deleted_excess'  => 0,
+		];
+
+		if ( ! self::tableExists( $table ) ) {
+			return $result;
+		}
+
+		if ( $retentionDays > 0 ) {
+			$result['deleted_expired'] = self::deleteExpiredLogRows( $table, $retentionDays );
+		}
+
+		$result['deleted_excess'] = self::deleteExcessLogRows( $table, $maxRows );
+
+		return $result;
 	}
 
 	private static function getBrokenConnectionIDs( ?array $connections = null ): array {
@@ -496,6 +524,46 @@ class Maintenance {
 		$interval = (int) apply_filters( 'cf7tg/cleanupInterval', $interval );
 
 		return max( MINUTE_IN_SECONDS, $interval );
+	}
+
+	private static function getLogRetentionDays(): int {
+		$retentionDays = defined( 'WPCF7TG_LOG_RETENTION_DAYS' )
+			? (int) WPCF7TG_LOG_RETENTION_DAYS
+			: self::DEFAULT_LOG_RETENTION_DAYS;
+		$retentionDays = (int) apply_filters( 'cf7tg/logRetentionDays', $retentionDays );
+
+		return max( 0, $retentionDays );
+	}
+
+	private static function getLogMaxRows(): int {
+		$maxRows = defined( 'WPCF7TG_LOG_MAX_ROWS' )
+			? (int) WPCF7TG_LOG_MAX_ROWS
+			: self::DEFAULT_LOG_MAX_ROWS;
+		$maxRows = (int) apply_filters( 'cf7tg/logMaxRows', $maxRows );
+
+		return max( 1, $maxRows );
+	}
+
+	private static function deleteExpiredLogRows( string $table, int $retentionDays ): int {
+		$cutoff = time() - ( $retentionDays * 24 * HOUR_IN_SECONDS );
+
+		return self::runPreparedQuery(
+			'DELETE FROM ' . self::sqlIdentifier( $table ) . ' WHERE `date` < %d',
+			[ $cutoff ]
+		);
+	}
+
+	private static function deleteExcessLogRows( string $table, int $maxRows ): int {
+		return self::runPreparedQuery(
+			'DELETE FROM ' . self::sqlIdentifier( $table ) .
+			' WHERE `ID` NOT IN (' .
+			'SELECT `ID` FROM (' .
+			'SELECT `ID` FROM ' . self::sqlIdentifier( $table ) .
+			' ORDER BY `date` DESC, `ID` DESC LIMIT %d' .
+			') AS cf7tg_keep_log_rows' .
+			')',
+			[ $maxRows ]
+		);
 	}
 
 	private static function ensureScheduleRegistered(): void {
