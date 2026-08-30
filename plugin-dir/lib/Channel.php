@@ -202,16 +202,30 @@ class Channel extends Entity implements wpPostAble{
 	 * @throws RelationNotFound
 	 * not @throws Telegram exception due to throwOnError is set to false.
 	 */
-    public function doSendOut(string $message, string $mode ) {
+	public function doSendOut(string $message, string $mode ) {
 		$chats = $this->getChats();
 
 		if ( $chats->isEmpty() ) {
 			return;
 		}
 
+		$bot = $this->getBot();
+
+		if ( is_null( $bot ) ) {
+			$this->logger->write(
+				[
+					'channelTitle'  => $this->getTitle(),
+					'channelPostID' => $this->getPost()->ID,
+				],
+				'Channel has no bot connected. Telegram send skipped.',
+				Logger::LEVEL_WARNING
+			);
+			return;
+		}
+
 		foreach ( $chats as $chat ) {
 			/** @var Chat $chat */
-			$this->getBot()->sendMessage( $chat, $message, $mode, false, [ $this ] );
+			$bot->sendMessage( $chat, $message, $mode, false, [ $this ] );
 		}
 	}
 
