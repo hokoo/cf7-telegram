@@ -33,10 +33,9 @@ class Settings {
                                 esc_html__( 'Data migration to the new plugin version is in progress. Please reload the page after a few seconds.', 'cf7-telegram' ),
                         );
                 } elseif ( $migration['is_failed'] ) {
-                        $message = $migration['last_error']['message'] ?? '';
                         $migration_notice = sprintf(
                                 '<div class="notice cf7t-notice notice-error"><p>%s</p></div>',
-                                esc_html( trim( __( 'Data migration failed. You can retry it below.', 'cf7-telegram' ) . ' ' . $message ) ),
+                                esc_html__( 'Data migration failed. You can retry it below.', 'cf7-telegram' ),
                         );
                 }
 
@@ -117,6 +116,9 @@ class Settings {
 
 	public static function getMigrationUiData(): array {
 		$state = Migration::getAdminRecoveryState();
+		$last_error = isset( $state['last_error'] ) && is_array( $state['last_error'] )
+			? self::getSafeMigrationError( $state['last_error'] )
+			: [];
 
 		return [
 			'status'       => $state['status'],
@@ -126,9 +128,27 @@ class Settings {
 			'is_failed'    => $state['is_failed'],
 			'is_completed' => $state['is_completed'],
 			'attempts'     => $state['attempts'],
-			'current_step' => $state['current_step'],
-			'last_error'   => $state['last_error'],
+			'current_step' => self::sanitizeDiagnosticIdentifier( (string) $state['current_step'] ),
+			'last_error'   => $last_error,
 		];
+	}
+
+	private static function getSafeMigrationError( array $error ): array {
+		if ( empty( $error ) ) {
+			return [];
+		}
+
+		return [
+			'category' => 'migration_failed',
+			'step'     => self::sanitizeDiagnosticIdentifier( (string) ( $error['step'] ?? '' ) ),
+			'code'     => self::sanitizeDiagnosticIdentifier( (string) ( $error['code'] ?? '' ) ),
+			'message'  => __( 'A migration step could not be completed.', 'cf7-telegram' ),
+			'time'     => (int) ( $error['time'] ?? 0 ),
+		];
+	}
+
+	private static function sanitizeDiagnosticIdentifier( string $value ): string {
+		return preg_replace( '/[^a-zA-Z0-9._-]/', '', $value ) ?? '';
 	}
 
 	public static function handle_migration_action(): void {

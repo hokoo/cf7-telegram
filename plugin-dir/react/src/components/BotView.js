@@ -21,7 +21,8 @@ const BotView = ({
     setTokenValue,
     handleToggleChatStatus,
     handleDisconnectChat,
-    online
+    online,
+    chatDataStatus = 'ready'
 }) => {
 
     let status = online === true ? 'online' : online === false ? 'offline' : 'unknown';
@@ -96,7 +97,11 @@ const BotView = ({
                 {error && <p style={{color: 'red'}}>{error}</p>}
 
                 <div className="frame chats-for-bot">
-                    {chatsForBot.length > 0 ? (
+                    {'error' === chatDataStatus ? (
+                        <span className="offline-bot-sad-message">{ wp.i18n.__( 'Chat data is unavailable.', 'cf7-telegram' ) }</span>
+                    ) : 'ready' !== chatDataStatus ? (
+                        <span className="unknown-bot-status-message">{ wp.i18n.__( 'Loading chat data...', 'cf7-telegram' ) }</span>
+                    ) : chatsForBot.length > 0 ? (
                         <ul>
                             {chatsForBot.map(chat => {
                                 const status = getChatStatus(bot.id, chat.id, bot2ChatConnections);

@@ -27,7 +27,9 @@ const ChannelView = ({
     bot2ChatConnections = [],
     handleToggleChat,
     deleteChannel,
-    getToggleButtonLabel
+    getToggleButtonLabel,
+    dataAvailability = {forms: 'ready', bots: 'ready', chats: 'ready'},
+    mutatingRelations = false
 }) => {
     const renderedChats = (botForChannel?.chats || [])
         .map(chat => {
@@ -90,12 +92,17 @@ const ChannelView = ({
                         </div>
 
                         <div className="column bot-column">
-                            {botForChannel ? (
+                            {'error' === dataAvailability.bots ? (
+                                <span className="resource-error">{wp.i18n.__( 'Bots are unavailable.', 'cf7-telegram' )}</span>
+                            ) : 'ready' !== dataAvailability.bots ? (
+                                <span className="resource-loading">{wp.i18n.__( 'Loading bots...', 'cf7-telegram' )}</span>
+                            ) : botForChannel ? (
                                 <div data-Bot-Id={botForChannel.id} className={`bot-for-channel ` + (botForChannel?.online ? 'online' : 'offline')}>
                                     <span>{botForChannel.title.rendered}</span>
                                     <button
                                         className="detach-button detach-bot-button crux"
                                         onClick={handleRemoveBot}
+                                        disabled={mutatingRelations}
                                     ></button>
                                 </div>
                             ) : (
@@ -112,6 +119,7 @@ const ChannelView = ({
                                             placeholder={wp.i18n.__( 'Pick a bot', 'cf7-telegram' )}
                                             onChange={(selectedOption) => handleBotSelect({target: {value: selectedOption?.value}})}
                                             isClearable
+                                            isDisabled={mutatingRelations}
                                         />
                                     )}
                                 </>
@@ -121,13 +129,18 @@ const ChannelView = ({
                 </div>
 
                 <div className="frame chats">
-                    {renderedChats.length > 0 ? (
+                    {'error' === dataAvailability.chats ? (
+                        <span className="resource-error">{wp.i18n.__( 'Chat data is unavailable.', 'cf7-telegram' )}</span>
+                    ) : 'ready' !== dataAvailability.chats ? (
+                        <span className="resource-loading">{wp.i18n.__( 'Loading chat data...', 'cf7-telegram' )}</span>
+                    ) : renderedChats.length > 0 ? (
                         <>
                             {renderedChats.map(chat => (
                                 <div
                                     key={chat.id}
                                     className={`chat chat-${chat.id} ${chat.status.toLowerCase()}`}
-                                    onClick={() => handleToggleChat(chat.id, chat.status)}
+                                    onClick={() => !mutatingRelations && handleToggleChat(chat.id, chat.status)}
+                                    aria-disabled={mutatingRelations}
                                     title={getToggleButtonLabel(chat.status)}
                                 >
                                     <span className={`chat-username`}>{chat.title.rendered}</span>
@@ -143,12 +156,17 @@ const ChannelView = ({
                     <button
                         className="add-button add-form-button"
                         onClick={handleAddForm}
+                        disabled={'ready' !== dataAvailability.forms || mutatingRelations}
                     >
                         {!showFormSelector ?
                             (wp.i18n.__( 'Add Form', 'cf7-telegram' )) :
                             (wp.i18n.__( 'Cancel', 'cf7-telegram' ))}
                     </button>
-                    {showFormSelector && (
+                    {'error' === dataAvailability.forms ? (
+                        <span className="resource-error">{wp.i18n.__( 'Forms are unavailable.', 'cf7-telegram' )}</span>
+                    ) : 'ready' !== dataAvailability.forms ? (
+                        <span className="resource-loading">{wp.i18n.__( 'Loading forms...', 'cf7-telegram' )}</span>
+                    ) : showFormSelector && (
                         <Select
                             className="select-picker form-picker"
                             classNamePrefix="select-picker"
@@ -160,10 +178,11 @@ const ChannelView = ({
                             placeholder={wp.i18n.__( 'Pick a form', 'cf7-telegram' )}
                             onChange={(selectedOption) => handleFormSelect({target: {value: selectedOption?.value}})}
                             isClearable
+                            isDisabled={mutatingRelations}
                         />
                     )}
 
-                    {formsForChannel.length > 0 ? (
+                    {'ready' === dataAvailability.forms && (formsForChannel.length > 0 ? (
                         <ul className={`form-list ` + (showFormSelector ? 'show-selector' : '')}>
                             {formsForChannel.map(form => (
                                 <li key={form.id}>
@@ -171,13 +190,14 @@ const ChannelView = ({
                                     <button
                                         className="detach-button crux detach-form-button"
                                         onClick={() => handleRemoveForm(form.id)}
+                                        disabled={mutatingRelations}
                                     ></button>
                                 </li>
                             ))}
                         </ul>
                     ) : showFormSelector || (
                         <span className="no-forms-found">[{wp.i18n.__( 'No forms assigned to this channel', 'cf7-telegram' )}]</span>
-                    )}
+                    ))}
                 </div>
 
 
@@ -185,7 +205,7 @@ const ChannelView = ({
                     <button
                         className="remove-channel-button"
                         onClick={deleteChannel}
-                        disabled={saving}>
+                        disabled={saving || mutatingRelations}>
                         {wp.i18n.__( 'Remove channel', 'cf7-telegram' )}
                     </button>
                 </div>

@@ -133,6 +133,7 @@ describe('API collections', () => {
             name: 'ApiError',
             status: 403,
             code: 'rest_forbidden',
+            category: 'rest_permission',
             method: 'GET',
             data: {
                 status: 403,
@@ -141,6 +142,39 @@ describe('API collections', () => {
                     nonce: '[redacted]',
                 },
             },
+        });
+    });
+
+    it('distinguishes transport, HTTP, and invalid response failures safely', async () => {
+        global.fetch
+            .mockRejectedValueOnce(new Error('connect ECONNREFUSED ?token=123456789:SECRET_TOKEN'))
+            .mockResolvedValueOnce({
+                ok: false,
+                status: 502,
+                headers: {get: jest.fn(() => null)},
+                json: jest.fn().mockRejectedValue(new Error('invalid json')),
+            })
+            .mockResolvedValueOnce({
+                ok: true,
+                status: 200,
+                headers: {get: jest.fn(() => null)},
+                json: jest.fn().mockRejectedValue(new Error('invalid json')),
+            });
+
+        await expect(fetchBots()).rejects.toMatchObject({
+            category: 'rest_transport',
+            status: 0,
+            message: 'connect ECONNREFUSED ?token=[redacted]',
+        });
+        await expect(fetchBots()).rejects.toMatchObject({
+            category: 'rest_http',
+            status: 502,
+            message: 'The request could not be completed.',
+        });
+        await expect(fetchBots()).rejects.toMatchObject({
+            category: 'rest_parse',
+            status: 200,
+            message: 'The server returned an invalid response.',
         });
     });
 

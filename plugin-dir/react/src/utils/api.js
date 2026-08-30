@@ -6,11 +6,20 @@ export class ApiError extends Error {
         this.name = 'ApiError';
         this.status = details.status ?? 0;
         this.code = details.code ?? '';
+        this.category = details.category ?? 'rest_transport';
         this.method = details.method ?? 'GET';
         this.url = details.url ?? '';
         this.data = details.data ?? null;
     }
 }
+
+const getApiErrorCategory = (status, code = '') => {
+    if ([401, 403].includes(Number(status)) || /forbidden|unauthorized|cannot_/i.test(code)) {
+        return 'rest_permission';
+    }
+
+    return Number(status) >= 400 ? 'rest_http' : 'rest_transport';
+};
 
 const safeText = (text) => String(text)
     .replace(/bot\d{5,}(:|%(?:25)*3a)[A-Za-z0-9_-]{8,}/gi, 'bot[telegram-token]')
@@ -102,14 +111,29 @@ const apiRequest = async (url, method, body, options = {}) => {
 
     try {
         const response = await fetch(url, query);
-        const data = await response.json();
+        let data;
+
+        try {
+            data = await response.json();
+        } catch (error) {
+            throw new ApiError(
+                response.ok ? 'The server returned an invalid response.' : 'The request could not be completed.',
+                {
+                    status: response.status ?? 0,
+                    category: response.ok ? 'rest_parse' : getApiErrorCategory(response.status),
+                    method,
+                    url: safeUrl(url),
+                }
+            );
+        }
 
         if (!response.ok) {
             throw new ApiError(
-                safeText(data?.message || 'Network response was not ok'),
+                'The request could not be completed.',
                 {
                     status: response.status ?? data?.data?.status ?? 0,
                     code: data?.code ?? '',
+                    category: getApiErrorCategory(response.status ?? data?.data?.status, data?.code),
                     method,
                     url: safeUrl(url),
                     data: safeData(data?.data ?? null),
@@ -123,6 +147,7 @@ const apiRequest = async (url, method, body, options = {}) => {
             error = new ApiError(
                 safeText(error?.message || 'API request failed'),
                 {
+                    category: 'rest_transport',
                     method,
                     url: safeUrl(requestUrl),
                 }

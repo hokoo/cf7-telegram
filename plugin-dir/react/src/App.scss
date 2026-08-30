@@ -717,3 +717,21 @@
     opacity: 1;
   }
 }
+
+#cf7-telegram-container {
+  .cf7-tg-load-status {
+    padding-bottom: 10px;
+  }
+
+  .resource-error {
+    color: #b32d2e;
+  }
+
+  .resource-loading {
+    color: #656565;
+  }
+
+  .cf7-tg-error-boundary {
+    padding: 20px;
+  }
+}

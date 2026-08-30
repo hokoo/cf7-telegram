@@ -42,6 +42,28 @@ export const getUpdateDiagnostic = (updates) => {
     return null;
 };
 
+export const updateBotChatStatus = async ({
+    connectionId,
+    newStatus,
+    currentStatus,
+    chatId,
+    botId,
+    bot2ChannelConnections,
+    setBot2ChatConnections,
+    setChat2ChannelConnections,
+}) => {
+    await setBot2ChatConnectionStatus(connectionId, newStatus, setBot2ChatConnections);
+
+    if ('pending' !== currentStatus) {
+        return;
+    }
+
+    const channels = bot2ChannelConnections.filter(connection => connection.data.from === botId);
+    for (const channel of channels) {
+        await connectChat2Channel(chatId, channel.data.to, setChat2ChannelConnections);
+    }
+};
+
 const Bot = ({
     bot,
     chats,
@@ -51,7 +73,8 @@ const Bot = ({
     bot2ChannelConnections,
     setBot2ChannelConnections,
     setChat2ChannelConnections,
-    loadChatData
+    loadChatData,
+    chatDataStatus = 'ready'
 }) => {
     const [isEditingToken, setIsEditingToken] = useState(false);
     const [nameValue, setNameValue] = useState(bot.title.rendered);
@@ -307,6 +330,8 @@ const Bot = ({
     };
 
     const handleToggleChatStatus = async (chatId, currentStatus) => {
+        if (updatingStatusIds.includes(chatId)) return;
+
         const connectionIndex = bot2ChatConnections.findIndex(c => c.data.from === bot.id && c.data.to === chatId);
         if (connectionIndex === -1) return;
 
@@ -324,15 +349,16 @@ const Bot = ({
         setUpdatingStatusIds(prev => [...prev, chatId]);
 
         try {
-            let res = setBot2ChatConnectionStatus(connection.data.id, newStatus, setBot2ChatConnections);
-
-            // If the status was 'pending', we need to connect the chat to the all channels this bot is connected to.
-            if (currentStatus === 'pending') {
-                const channels = bot2ChannelConnections.filter(c => c.data.from === bot.id);
-                for (const channel of channels) {
-                    await connectChat2Channel(chatId, channel.data.to, setChat2ChannelConnections)
-                }
-            }
+            await updateBotChatStatus({
+                connectionId: connection.data.id,
+                newStatus,
+                currentStatus,
+                chatId,
+                botId: bot.id,
+                bot2ChannelConnections,
+                setBot2ChatConnections,
+                setChat2ChannelConnections,
+            });
 
         } catch (err) {
             console.error('Failed to update chat status', err);
@@ -342,6 +368,8 @@ const Bot = ({
     };
 
     const handleDisconnectChat = async (chatId, botID) => {
+        if (updatingStatusIds.includes(chatId)) return;
+
         const connectionIndex = bot2ChatConnections.findIndex(c => c.data.from === botID && c.data.to === chatId);
         if (connectionIndex === -1 || !window.confirm( wp.i18n.__( 'Are you sure you want to delete this chat?', 'cf7-telegram' )) ) return;
 
@@ -376,6 +404,7 @@ const Bot = ({
         handleToggleChatStatus={handleToggleChatStatus}
         handleDisconnectChat={handleDisconnectChat}
         online={online}
+        chatDataStatus={chatDataStatus}
     />);
 };
 

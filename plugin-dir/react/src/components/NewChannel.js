@@ -3,7 +3,7 @@
 import React from 'react';
 import {createChannel} from "../utils/main";
 
-const NewChannel = ({setChannels}) => {
+const NewChannel = ({setChannels, disabled = false}) => {
     const handleCreateChannel = async () => {
         try {
             await createChannel(wp.i18n.__( 'Channel Name', 'cf7-telegram' ), setChannels);
@@ -14,7 +14,7 @@ const NewChannel = ({setChannels}) => {
     };
 
     return (
-        <button className="add-button add-channel-button" onClick={handleCreateChannel}>
+        <button className="add-button add-channel-button" onClick={handleCreateChannel} disabled={disabled}>
             {wp.i18n.__( 'Create Channel', 'cf7-telegram' )}
         </button>
     );

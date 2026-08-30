@@ -15,7 +15,9 @@ final class SettingsTest extends Cf7tg_TestCase {
 		$this->assertSame( 'failed', $data['status'] );
 		$this->assertSame( true, $data['can_retry'] );
 		$this->assertSame( true, $data['is_failed'] );
-		$this->assertSame( 'Synthetic failure.', $data['last_error']['message'] );
+		$this->assertSame( 'migration_failed', $data['last_error']['category'] );
+		$this->assertSame( '1.0-alpha', $data['last_error']['step'] );
+		$this->assertSame( 'A migration step could not be completed.', $data['last_error']['message'] );
 		$this->assertSame( true, Settings::shouldShowMigrationActionButton() );
 	}
 

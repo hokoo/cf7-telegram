@@ -1,7 +1,8 @@
 import React from 'react';
 import {act, render} from '@testing-library/react';
 import {apiPingBot, apiUpdateBotToken} from '../utils/api';
-import Bot, {getUpdateDiagnostic, saveBotTokenTransactionally} from './Bot';
+import {connectChat2Channel, setBot2ChatConnectionStatus} from '../utils/main';
+import Bot, {getUpdateDiagnostic, saveBotTokenTransactionally, updateBotChatStatus} from './Bot';
 
 let mockBotViewProps;
 
@@ -111,6 +112,50 @@ describe('getUpdateDiagnostic', () => {
         expect(getUpdateDiagnostic({hasWebhookConflict: true, errors: []})).toBe('webhook_conflict');
         expect(getUpdateDiagnostic({hasWebhookConflict: false, errors: [{errorType: 'transport'}]})).toBe('update_error');
         expect(getUpdateDiagnostic({hasWebhookConflict: false, errors: []})).toBeNull();
+    });
+});
+
+describe('updateBotChatStatus', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    it('does not connect a pending chat when the status mutation fails', async () => {
+        setBot2ChatConnectionStatus.mockRejectedValueOnce(new Error('status failed'));
+
+        await expect(updateBotChatStatus({
+            connectionId: 11,
+            newStatus: 'active',
+            currentStatus: 'pending',
+            chatId: 101,
+            botId: 1,
+            bot2ChannelConnections: [{data: {from: 1, to: 20}}],
+            setBot2ChatConnections: jest.fn(),
+            setChat2ChannelConnections: jest.fn(),
+        })).rejects.toThrow('status failed');
+
+        expect(connectChat2Channel).not.toHaveBeenCalled();
+    });
+
+    it('connects a pending chat only after the status mutation succeeds', async () => {
+        setBot2ChatConnectionStatus.mockResolvedValueOnce({id: 11});
+        connectChat2Channel.mockResolvedValueOnce({id: 12});
+
+        await updateBotChatStatus({
+            connectionId: 11,
+            newStatus: 'active',
+            currentStatus: 'pending',
+            chatId: 101,
+            botId: 1,
+            bot2ChannelConnections: [{data: {from: 1, to: 20}}],
+            setBot2ChatConnections: jest.fn(),
+            setChat2ChannelConnections: jest.fn(),
+        });
+
+        expect(setBot2ChatConnectionStatus).toHaveBeenCalledTimes(1);
+        expect(connectChat2Channel).toHaveBeenCalledTimes(1);
+        expect(setBot2ChatConnectionStatus.mock.invocationCallOrder[0])
+            .toBeLessThan(connectChat2Channel.mock.invocationCallOrder[0]);
     });
 });
 
