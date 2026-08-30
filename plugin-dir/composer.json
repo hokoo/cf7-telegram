@@ -25,8 +25,7 @@
     "hokoo/wppostable": "dev-master",
     "hokoo/wpconnections": "dev-master",
     "ext-json": "*",
-    "php": ">=8.0",
-    "irazasyed/telegram-bot-sdk": "^3.0"
+    "php": ">=8.0"
   },
   "autoload": {
     "psr-4": {

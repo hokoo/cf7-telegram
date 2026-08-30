@@ -10,6 +10,9 @@ ZIP_NAME="${ZIP_NAME:-${PLUGIN_SLUG}-wp-plugin.zip}"
 ZIP_PATH="${ZIP_PATH:-$DIST_DIR/$ZIP_NAME}"
 SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-}"
 
+# ZIP headers store local timestamps, so pin the timezone for cross-host reproducibility.
+export TZ=UTC
+
 case "$DIST_DIR" in
 	/*) ;;
 	*) DIST_DIR="$ROOT_DIR/$DIST_DIR" ;;
@@ -46,7 +49,14 @@ require_command zip
 [ -f "$PLUGIN_DIR/react/package-lock.json" ] || fail "React package-lock.json not found"
 
 if [ -z "$SOURCE_DATE_EPOCH" ]; then
-	SOURCE_DATE_EPOCH="$(git -C "$ROOT_DIR" log -1 --format=%ct 2>/dev/null || date +%s)"
+	SOURCE_DATE_EPOCH="$(
+		git -C "$ROOT_DIR" log -1 --format=%ct -- \
+			"$PLUGIN_DIR" \
+			"$ROOT_DIR/scripts/build-release-zip.sh" \
+			"$ROOT_DIR/scripts/validate-release-zip.sh" \
+			2>/dev/null || true
+	)"
+	SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-$(date +%s)}"
 fi
 
 printf 'Installing React dependencies...\n'

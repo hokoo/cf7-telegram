@@ -19,7 +19,7 @@ if ( ! defined( 'WPCF7TG_PLUGIN_NAME' ) ) {
 }
 
 if ( ! defined( 'WPCF7TG_VERSION' ) ) {
-	define( 'WPCF7TG_VERSION', '1.0.11' );
+	define( 'WPCF7TG_VERSION', '1.0.12' );
 }
 
 if ( ! defined( 'WPCF7TG_FILE' ) ) {
@@ -30,10 +30,12 @@ if ( ! class_exists( 'WP_Error' ) ) {
 	class WP_Error {
 		private string $code;
 		private string $message;
+		private $data;
 
-		public function __construct( string $code = '', string $message = '' ) {
+		public function __construct( string $code = '', string $message = '', $data = null ) {
 			$this->code = $code;
 			$this->message = $message;
+			$this->data = $data;
 		}
 
 		public function get_error_code(): string {
@@ -42,6 +44,10 @@ if ( ! class_exists( 'WP_Error' ) ) {
 
 		public function get_error_message(): string {
 			return $this->message;
+		}
+
+		public function get_error_data() {
+			return $this->data;
 		}
 	}
 }
@@ -254,7 +260,7 @@ class Cf7tg_Test_Wpdb extends wpdb {
 	public function query( string $query ): int {
 		$this->rows_affected = 0;
 
-		if ( preg_match( '/DELETE FROM `?([^`\s]+)`? WHERE connection_id = (\d+)/i', $query, $matches ) && $this->isConnectionsMetaTable( $matches[1] ) ) {
+		if ( preg_match( '/DELETE FROM `?([^`\s]+)`? WHERE `?connection_id`? = (\d+)/i', $query, $matches ) && $this->isConnectionsMetaTable( $matches[1] ) ) {
 			$connection_id = (int) $matches[2];
 			$before = count( $GLOBALS['wp_connection_meta_rows'] );
 			$GLOBALS['wp_connection_meta_rows'] = array_values(
@@ -267,7 +273,7 @@ class Cf7tg_Test_Wpdb extends wpdb {
 			return $this->rows_affected;
 		}
 
-		if ( preg_match( '/DELETE FROM `?([^`\s]+)`? WHERE connection_id IN \(([^)]*)\)/i', $query, $matches ) && $this->isConnectionsMetaTable( $matches[1] ) ) {
+		if ( preg_match( '/DELETE FROM `?([^`\s]+)`? WHERE `?connection_id`? IN \(([^)]*)\)/i', $query, $matches ) && $this->isConnectionsMetaTable( $matches[1] ) ) {
 			$ids = $this->parseIntegerList( $matches[2] );
 			$before = count( $GLOBALS['wp_connection_meta_rows'] );
 			$GLOBALS['wp_connection_meta_rows'] = array_values(
@@ -280,7 +286,7 @@ class Cf7tg_Test_Wpdb extends wpdb {
 			return $this->rows_affected;
 		}
 
-		if ( preg_match( '/DELETE FROM `?([^`\s]+)`? WHERE ID IN \(([^)]*)\)/i', $query, $matches ) && $this->isConnectionsTable( $matches[1] ) ) {
+		if ( preg_match( '/DELETE FROM `?([^`\s]+)`? WHERE `?ID`? IN \(([^)]*)\)/i', $query, $matches ) && $this->isConnectionsTable( $matches[1] ) ) {
 			$ids = $this->parseIntegerList( $matches[2] );
 			$before = count( $GLOBALS['wp_connection_rows'] );
 			$GLOBALS['wp_connection_rows'] = array_values(
@@ -523,6 +529,12 @@ if ( ! function_exists( '__' ) ) {
 	}
 }
 
+if ( ! function_exists( 'sanitize_text_field' ) ) {
+	function sanitize_text_field( string $text ): string {
+		return trim( strip_tags( $text ) );
+	}
+}
+
 if ( ! function_exists( '_x' ) ) {
 	function _x( string $text, string $context, string $domain = 'default' ): string {
 		return $text;
@@ -641,6 +653,57 @@ if ( ! function_exists( 'wpcf7_add_form_tag' ) ) {
 if ( ! function_exists( 'is_wp_error' ) ) {
 	function is_wp_error( $thing ): bool {
 		return $thing instanceof WP_Error;
+	}
+}
+
+if ( ! function_exists( 'wp_remote_post' ) ) {
+	function wp_remote_post( string $url, array $args = [] ) {
+		$GLOBALS['wp_remote_post_requests'][] = [
+			'url'  => $url,
+			'args' => $args,
+		];
+
+		if ( is_callable( $GLOBALS['wp_remote_post_handler'] ?? null ) ) {
+			return call_user_func( $GLOBALS['wp_remote_post_handler'], $url, $args );
+		}
+
+		return [
+			'response' => [
+				'code' => 200,
+			],
+			'headers'  => [],
+			'body'     => '{"ok":true,"result":true}',
+		];
+	}
+}
+
+if ( ! function_exists( 'wp_remote_retrieve_response_code' ) ) {
+	function wp_remote_retrieve_response_code( $response ): int {
+		return (int) ( $response['response']['code'] ?? 0 );
+	}
+}
+
+if ( ! function_exists( 'wp_remote_retrieve_body' ) ) {
+	function wp_remote_retrieve_body( $response ): string {
+		return (string) ( $response['body'] ?? '' );
+	}
+}
+
+if ( ! function_exists( 'wp_remote_retrieve_header' ) ) {
+	function wp_remote_retrieve_header( $response, string $header ) {
+		$headers = $response['headers'] ?? [];
+
+		if ( ! is_array( $headers ) ) {
+			return '';
+		}
+
+		foreach ( $headers as $name => $value ) {
+			if ( strtolower( (string) $name ) === strtolower( $header ) ) {
+				return is_array( $value ) ? reset( $value ) : $value;
+			}
+		}
+
+		return '';
 	}
 }
 
@@ -1087,6 +1150,8 @@ function cf7tg_test_reset_environment(): void {
 	$GLOBALS['wp_connection_rows'] = [];
 	$GLOBALS['wp_connection_meta_rows'] = [];
 	$GLOBALS['wpdb_inserts'] = [];
+	$GLOBALS['wp_remote_post_requests'] = [];
+	$GLOBALS['wp_remote_post_handler'] = null;
 	$GLOBALS['wp_schedule_errors'] = [];
 	$GLOBALS['wp_next_post_id'] = 1;
 	$GLOBALS['wp_next_connection_id'] = 1;

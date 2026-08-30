@@ -9,6 +9,11 @@ use iTRON\cf7Telegram\Collections\ChatCollection;
 use iTRON\cf7Telegram\Controllers\CF7;
 use iTRON\cf7Telegram\Exceptions\BotApiNotInitialized;
 use iTRON\cf7Telegram\Exceptions\Telegram;
+use iTRON\cf7Telegram\Telegram\TelegramDeliveryResult;
+use iTRON\cf7Telegram\Telegram\TelegramGateway;
+use iTRON\cf7Telegram\Telegram\TelegramMessageFormatter;
+use iTRON\cf7Telegram\Telegram\TelegramRedactor;
+use iTRON\cf7Telegram\Telegram\WordPressTelegramGateway;
 use iTRON\cf7Telegram\Traits\PropertyInitializationChecker;
 use iTRON\wpConnections\Connection;
 use iTRON\wpConnections\Exceptions\ConnectionNotFound;
@@ -22,9 +27,6 @@ use iTRON\wpPostAble\Exceptions\wppaLoadPostException;
 use iTRON\wpPostAble\Exceptions\wppaSavePostException;
 use iTRON\wpPostAble\wpPostAble;
 use iTRON\wpPostAble\wpPostAbleTrait;
-use Telegram\Bot\Api;
-use Telegram\Bot\Exceptions\TelegramSDKException;
-use Telegram\Bot\Objects\User;
 
 class Bot extends Entity implements wpPostAble{
 	use WPPostAbleTrait;
@@ -36,6 +38,7 @@ class Bot extends Entity implements wpPostAble{
 	const LEGACY_TOKEN_CONST = 'WPFC7TG_BOT_TOKEN';
 	const TOKEN_SOURCE_PARAM = 'tokenSource';
 	const TOKEN_SOURCE_LEGACY_CONST = 'legacy_global_constant';
+	const TELEGRAM_BOT_ID_PARAM = 'telegramBotID';
 	const EMPTY_TOKEN_MASK = '[%s]'; /** @see isTokenEmpty() method */
 	public const FETCH_UPDATES_LOCK_KEY_PATTERN = 'cf7tg_fetch_updates_lock_%d';
 	public const FETCH_UPDATES_LOCK_PREFIX = 'cf7tg_fetch_updates_lock_';
@@ -43,7 +46,7 @@ class Bot extends Entity implements wpPostAble{
 
 	public ChatCollection $chats;
 
-	protected Api $api;
+	protected TelegramGateway $api;
 
 	/**
 	 * @throws wppaLoadPostException
@@ -58,17 +61,26 @@ class Bot extends Entity implements wpPostAble{
 	}
 
 	private function initAPI() {
-		if ( is_null( $this->getToken() ) ) {
+		if ( $this->isPropertyInitialized( 'api' ) ) {
+			unset( $this->api );
+		}
+
+		$token = $this->getToken();
+
+		if ( ! is_string( $token ) || $this->isTokenEmpty() ) {
 			$this->setBotStatus( self::STATUS_OFFLINE );
 			$this->logger->write( 'Bot token is not set.', 'Bot initialization error.', Logger::LEVEL_ATTENTION );
 			return;
 		}
 
-		try {
-			$this->api = new Api( $this->getToken() );
-		} catch ( TelegramSDKException $e ) {
-			$this->logger->write( $e->getMessage(), 'Bot initialization error.', Logger::LEVEL_CRITICAL );
-		}
+		$this->api = $this->createGateway( $token );
+	}
+
+	private function createGateway( string $token ): TelegramGateway {
+		$gateway = new WordPressTelegramGateway( $token );
+
+		$filteredGateway = apply_filters( 'cf7tg_telegram_gateway', $gateway, $token, $this );
+		return $filteredGateway instanceof TelegramGateway ? $filteredGateway : $gateway;
 	}
 
 	public static function getEmptyToken(): string {
@@ -149,6 +161,93 @@ class Bot extends Entity implements wpPostAble{
 		$this->savePost();
 		$this->initAPI();
 		return $this;
+	}
+
+	/**
+	 * Saves a new token only after Telegram accepts it.
+	 *
+	 * @throws Telegram
+	 * @throws wppaSavePostException
+	 */
+	public function replaceTokenIfValid( string $token ): array {
+		$token = trim( $token );
+
+		if ( '' === $token ) {
+			throw new Telegram( 'Bot token is empty.' );
+		}
+
+		$result = $this->createGateway( $token )->getMe();
+
+		if ( ! $result->ok ) {
+			$this->logger->write(
+				TelegramRedactor::data(
+					[
+						'wpPostID'  => $this->getPost()->ID,
+						'token'     => $token,
+						'status'    => $result->status,
+						'errorCode' => $result->errorCode,
+						'errorType' => $result->errorType,
+					],
+					$token
+				),
+				'Bot token validation failed',
+				Logger::LEVEL_WARNING
+			);
+
+			throw new Telegram( $result->description, $result->errorCode );
+		}
+
+		$identity = $this->telegramBotIdentity( $result->result );
+		if ( '' === $identity ) {
+			throw new Telegram( 'Telegram did not return a bot identity.' );
+		}
+
+		$previousIdentity = (string) $this->getParam( self::TELEGRAM_BOT_ID_PARAM );
+		if ( '' === $previousIdentity && hash_equals( (string) $this->getToken(), $token ) ) {
+			$previousIdentity = $identity;
+		}
+
+		$identityChanged = '' === $previousIdentity ? null : ! hash_equals( $previousIdentity, $identity );
+
+		$this->setParam( self::TOKEN_SOURCE_PARAM, '' );
+		$this->setParam( 'token', $token );
+		$this->setParam( self::TELEGRAM_BOT_ID_PARAM, $identity );
+		$this->setBotPropertiesFromTelegramUser( is_array( $result->result ) ? $result->result : [] );
+		$this->savePost();
+		$this->api = $this->createGateway( $token );
+
+		$relationsReset = true === $identityChanged ? $this->disconnectAllRelations() : false;
+
+		return [
+			'botID'           => $identity,
+			'identityChanged' => $identityChanged,
+			'relationsReset'  => $relationsReset,
+		];
+	}
+
+	private function telegramBotIdentity( $user ): string {
+		if ( ! is_array( $user ) || ! isset( $user['id'] ) || ! is_scalar( $user['id'] ) ) {
+			return '';
+		}
+
+		return trim( (string) $user['id'] );
+	}
+
+	private function setBotPropertiesFromTelegramUser( array $user ): void {
+		if ( ! empty( $user['username'] ) && is_scalar( $user['username'] ) ) {
+			$this->setTitle( sanitize_text_field( (string) $user['username'] ) );
+		}
+
+		$this->setParam( 'lastStatus', self::STATUS_ONLINE );
+	}
+
+	private function disconnectAllRelations(): bool {
+		$botID = $this->getPost()->ID;
+		$chatCount = $this->client->getBot2ChatRelation()->detachConnections( new Query\Connection( $botID ) );
+		$channelCount = $this->client->getBot2ChannelRelation()->detachConnections( new Query\Connection( $botID ) );
+		unset( $this->chats );
+
+		return 0 < ( $chatCount + $channelCount );
 	}
 
 	public function getLastUpdateID(): int {
@@ -273,37 +372,86 @@ class Bot extends Entity implements wpPostAble{
 	/**
 	 * @throws Telegram
 	 */
-	public function sendMessage( Chat $chat, string $message, string $mode, bool $throwOnError = true, array $extra = [] ) {
-		try {
-			$this->getAPI()->sendMessage( [
-				'chat_id'                  => $chat->getChatID(),
-				'text'                     => $message,
-				'parse_mode'               => $mode,
-				'disable_web_page_preview' => true,
-			] );
-		} catch ( TelegramSDKException|BotApiNotInitialized $e ) {
+	public function sendMessage( Chat $chat, string $message, string $mode, bool $throwOnError = true, array $extra = [] ): array {
+		$results = [];
+		$mode = TelegramMessageFormatter::normalizeMode( $mode );
+
+		foreach ( TelegramMessageFormatter::chunks( $message ) as $chunkIndex => $chunk ) {
+			$args = array_filter(
+				[
+					'chat_id'                  => $chat->getChatID(),
+					'text'                     => $chunk,
+					'parse_mode'               => $mode,
+					'disable_web_page_preview' => true,
+				],
+				static fn( $value ): bool => '' !== $value && null !== $value
+			);
+			$args = apply_filters( 'wpcf7tg_sendMessage', $args, $chat->getChatID(), $mode );
+			$args = apply_filters( 'cf7tg_telegram_send_message_args', $args, $chat, $this, $extra );
+
+			$result = $this->requestSendMessage( $args );
+
+			if ( ! $result->ok && $this->shouldRetryAsPlaintext( $result, $mode ) ) {
+				$fallbackArgs = $args;
+				$fallbackArgs['text'] = TelegramMessageFormatter::plaintext( $chunk, $mode );
+				unset( $fallbackArgs['parse_mode'] );
+				$result = $this->requestSendMessage( $fallbackArgs );
+			}
+
+			$results[] = $result;
+			do_action( 'cf7tg_telegram_delivery_result', $result, $chat, $this, $extra );
+			do_action( 'wpcf7tg_message_sent', $args, $extra['instance'] ?? null );
+
+			if ( $result->ok ) {
+				continue;
+			}
+
 			$this->logger->write(
 				[
-					'telegramChatID'=> $chat->getChatID(),
-					'chatTitle'     => $chat->getTitle(),
-					'chatPostID'    => $chat->getPost()->ID,
-					'extras'        => $extra,
+					'chatPostID' => $chat->getPost()->ID,
+					'chunk'      => $chunkIndex + 1,
+					'status'        => $result->status,
+					'errorCode'     => $result->errorCode,
+					'retryAfter'    => $result->retryAfter,
+					'errorType'     => $result->errorType,
 				],
-				$e->getMessage() . " [chatID:{$chat->getChatID()}]",
+				'Telegram delivery failed.',
 				Logger::LEVEL_CRITICAL
 			);
 
 			if ( $throwOnError ) {
 				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped
-				throw new Telegram( $e->getMessage(), $e->getCode(), $e );
+				throw new Telegram( TelegramRedactor::text( $result->description, $this->getToken() ), $result->errorCode );
 			}
 		}
+
+		return $results;
+	}
+
+	private function requestSendMessage( array $args ): TelegramDeliveryResult {
+		try {
+			return $this->getAPI()->sendMessage( $args );
+		} catch ( \Throwable $exception ) {
+			return TelegramDeliveryResult::failure(
+				0,
+				(int) $exception->getCode(),
+				$exception->getMessage(),
+				null,
+				TelegramDeliveryResult::ERROR_TRANSPORT
+			);
+		}
+	}
+
+	private function shouldRetryAsPlaintext( TelegramDeliveryResult $result, string $mode ): bool {
+		return '' !== $mode
+			&& 400 === $result->errorCode
+			&& ( str_contains( strtolower( $result->description ), 'parse' ) || str_contains( strtolower( $result->description ), 'entities' ) );
 	}
 
 	/**
 	 * @throws BotApiNotInitialized
 	 */
-	public function getAPI(): Api {
+	public function getAPI(): TelegramGateway {
 		$approach = 0;
 		while ( ! $this->isPropertyInitialized( 'api' ) ) {
 			if ( ! $approach++ ) {
@@ -359,49 +507,148 @@ class Bot extends Entity implements wpPostAble{
 	public function ping(): bool {
 		try {
 			$res = $this->getAPI()->getMe();
-		} catch ( TelegramSDKException $e ) {
+		} catch ( BotApiNotInitialized $e ) {
 			$this->setBotStatus( self::STATUS_OFFLINE );
 			$this->logger->write(
 				[
-					'botTitle'          => $this->getTitle(),
 					'wpPostID'          => $this->getPost()->ID,
-					'botTokenFirst13'   => substr( $this->getToken(), 0, 13 ),
-				],
-				'Bot is unreachable'
-			);
-
-			return false;
-		} catch ( BotApiNotInitialized $e ) {
-			$this->logger->write(
-				[
-					'botTitle' => $this->getTitle(),
-					'wpPostID' => $this->getPost()->ID,
-					'error'    => $e->getMessage(),
+					'error'             => $e->getMessage(),
 				],
 				'Bot cannot be pinged'
 			);
 			return false;
 		}
 
-		if ( $res instanceof User ) {
-			$this->setBotStatus( self::STATUS_ONLINE );
-			$this->setTitle( $res->get( 'username' ) );
+		if ( $res->ok ) {
+			$user = is_array( $res->result ) ? $res->result : [];
+			$identity = $this->telegramBotIdentity( $user );
+			if ( '' !== $identity ) {
+				$this->setParam( self::TELEGRAM_BOT_ID_PARAM, $identity );
+			}
+			$this->setBotPropertiesFromTelegramUser( $user );
 			$this->savePost();
 			return true;
 		}
 
 		$this->setBotStatus( self::STATUS_OFFLINE );
 		$this->logger->write(
-			[
-				'botTitle'          => $this->getTitle(),
-				'wpPostID'          => $this->getPost()->ID,
-				'botTokenFirst13'   => substr( $this->getToken(), 0, 13 ),
-				'response'          => $res,
-			],
+			TelegramRedactor::data(
+				[
+					'wpPostID'  => $this->getPost()->ID,
+					'status'    => $res->status,
+					'errorCode' => $res->errorCode,
+					'errorType' => $res->errorType,
+				],
+				$this->getToken()
+			),
 			'Bot is unreachable'
 		);
 
 		return false;
+	}
+
+	private function getWebhookInfoResult(): TelegramDeliveryResult {
+		try {
+			return $this->getAPI()->getWebhookInfo();
+		} catch ( BotApiNotInitialized $e ) {
+			$this->logger->write(
+				[
+					'wpPostID' => $this->getPost()->ID,
+					'error'    => $e->getMessage(),
+				],
+				'Bot webhook status cannot be checked',
+				Logger::LEVEL_WARNING
+			);
+			return TelegramDeliveryResult::failure(
+				0,
+				0,
+				$e->getMessage(),
+				null,
+				TelegramDeliveryResult::ERROR_TRANSPORT
+			);
+		}
+	}
+
+	private function summarizeWebhookInfo( array $webhookInfo ): array {
+		return [
+			'urlSet'             => ! empty( $webhookInfo['url'] ),
+			'pendingUpdateCount' => (int) ( $webhookInfo['pending_update_count'] ?? 0 ),
+			'lastErrorDate'      => isset( $webhookInfo['last_error_date'] ) ? (int) $webhookInfo['last_error_date'] : null,
+			'maxConnections'     => isset( $webhookInfo['max_connections'] ) ? (int) $webhookInfo['max_connections'] : null,
+		];
+	}
+
+	private function messageHasBotCommand( array $message ): bool {
+		foreach ( (array) ( $message['entities'] ?? [] ) as $entity ) {
+			if ( 'bot_command' === ( $entity['type'] ?? '' ) ) {
+				return true;
+			}
+		}
+
+		return str_starts_with( trim( (string) ( $message['text'] ?? '' ) ), '/' );
+	}
+
+	private function isStartCommand( string $text ): bool {
+		$text = trim( $text );
+		if ( '' === $text ) {
+			return false;
+		}
+
+		$command = strtok( $text, " \t\r\n" );
+		if ( '/' . CF7::CMD === $command ) {
+			return true;
+		}
+
+		$botName = ltrim( $this->getTitle(), '@' );
+		return '' !== $botName && 0 === strcasecmp( '/' . CF7::CMD . '@' . $botName, $command );
+	}
+
+	private function processUpdate( array $update, RestBotUpdates $result, array &$processedChatIDs ): void {
+		$message = is_array( $update['message'] ?? null ) ? $update['message'] : [];
+
+		if ( empty( $message ) || ! $this->messageHasBotCommand( $message ) ) {
+			return;
+		}
+
+		if ( ! $this->isStartCommand( (string) ( $message['text'] ?? '' ) ) ) {
+			return;
+		}
+
+		$tgChatID = Util::sanitizeTelegramChatID( $message['chat']['id'] ?? '' );
+		if ( '' === $tgChatID ) {
+			throw new \UnexpectedValueException( 'Telegram chat ID is empty after sanitization.' );
+		}
+
+		if ( isset( $processedChatIDs[ $tgChatID ] ) ) {
+			return;
+		}
+
+		$processedChatIDs[ $tgChatID ] = true;
+		$chat = Util::getChatByTelegramID( $tgChatID );
+
+		if ( ! $chat ) {
+			$chat = Util::createChatFromArray( is_array( $message['chat'] ?? null ) ? $message['chat'] : [] );
+			$result->hasNewChats = true;
+		}
+
+		if ( $this->getChats()->contains( $chat ) ) {
+			if ( '' === $chat->getBotConnectionStatus( $this ) ) {
+				$chat->setPending( $this );
+				$chat->setDate( (string) ( $message['date'] ?? time() ) );
+				$chat->savePost();
+			}
+			return;
+		}
+
+		$connection = $this->connectChat( $chat );
+		if ( ! $connection ) {
+			throw new \RuntimeException( 'Bot-chat connection was not created.' );
+		}
+
+		$chat->setPending( $this );
+		$chat->setDate( (string) ( $message['date'] ?? time() ) );
+		$chat->savePost();
+		$result->hasNewConnections = true;
 	}
 
 	/**
@@ -412,7 +659,7 @@ class Bot extends Entity implements wpPostAble{
 	 */
 	public function fetchUpdates(): RestBotUpdates {
 		$result = new RestBotUpdates();
-		$maxFetchedUpdateID = $this->getLastUpdateID();
+		$lastConsumedUpdateID = $this->getLastUpdateID();
 
 		if ( ! $this->acquireFetchUpdatesLock() ) {
 			return $result;
@@ -420,21 +667,60 @@ class Bot extends Entity implements wpPostAble{
 
 		try {
 			try {
-				$updates = $this->getAPI()->getUpdates( [
+				$webhookResult = $this->getWebhookInfoResult();
+				if ( ! $webhookResult->ok ) {
+					$result->errors[] = $webhookResult->jsonSerialize();
+					return $result;
+				}
+
+				$webhookInfo = is_array( $webhookResult->result ) ? $webhookResult->result : [];
+				if ( ! empty( $webhookInfo['url'] ) ) {
+					$result->hasWebhookConflict = true;
+					$result->webhookInfo = $this->summarizeWebhookInfo( $webhookInfo );
+					$this->logger->write(
+						[
+							'wpPostID'    => $this->getPost()->ID,
+							'webhookInfo' => $result->webhookInfo,
+						],
+						'Bot has an active Telegram webhook. getUpdates skipped.',
+						Logger::LEVEL_WARNING
+					);
+					return $result;
+				}
+
+				$updatesResult = $this->getAPI()->getUpdates( [
 					'offset'  => $this->getLastUpdateID() + 1,
 					'limit'   => 10,
 					'timeout' => 0,
 				] );
-			} catch ( TelegramSDKException $e ) {
+
+				if ( ! $updatesResult->ok ) {
+					$result->errors[] = $updatesResult->jsonSerialize();
+					$this->logger->write(
+						TelegramRedactor::data(
+							[
+								'wpPostID'  => $this->getPost()->ID,
+								'status'    => $updatesResult->status,
+								'errorCode' => $updatesResult->errorCode,
+								'errorType' => $updatesResult->errorType,
+							],
+							$this->getToken()
+						),
+						'Bot has failed to fetch updates'
+					);
+					return $result;
+				}
+
+				$updates = is_array( $updatesResult->result ) ? $updatesResult->result : [];
+			} catch ( BotApiNotInitialized $e ) {
 				$this->logger->write(
 					[
-						'botTitle'          => $this->getTitle(),
 						'wpPostID'          => $this->getPost()->ID,
-						'botTokenFirst13'   => substr( $this->getToken(), 0, 13 ),
 						'error'             => $e->getMessage(),
 					],
 					'Bot has failed to fetch updates'
 				);
+				return $result;
 			}
 
 			if ( empty( $updates ) ) {
@@ -452,86 +738,52 @@ class Bot extends Entity implements wpPostAble{
 			 * In case the chat is already connected, it should be ignored.
 			 */
 
+			usort(
+				$updates,
+				static fn( $left, $right ): int => (int) ( is_array( $left ) ? ( $left['update_id'] ?? 0 ) : 0 ) <=> (int) ( is_array( $right ) ? ( $right['update_id'] ?? 0 ) : 0 )
+			);
+
 			$processedChatIDs = [];
 
 			foreach ( $updates as $update ) {
-				$updateID = (int) ( $update->updateId ?? $update->get( 'update_id' ) ?? 0 );
-				$maxFetchedUpdateID = max( $maxFetchedUpdateID, $updateID );
+				$update = is_array( $update ) ? $update : [];
+				$updateID = (int) ( $update['update_id'] ?? 0 );
+				if ( $updateID <= $lastConsumedUpdateID ) {
+					continue;
+				}
 
 				try {
-					$message = $update->getMessage();
-
-					if ( $message->isEmpty() || ! $message->hasCommand() ) {
-						continue;
-					}
-
-					if ( '/' . CF7::CMD !== trim( (string) $message->get( 'text' ) ) ) {
-						continue;
-					}
-
-					$tgChatID = Util::sanitizeTelegramChatID( $update->getChat()->get( 'id' ) );
-
-					if ( '' === $tgChatID ) {
-						throw new \UnexpectedValueException( 'Telegram chat ID is empty after sanitization.' );
-					}
-
-					if ( isset( $processedChatIDs[ $tgChatID ] ) ) {
-						continue;
-					}
-
-					$processedChatIDs[ $tgChatID ] = true;
-					$chat                          = Util::getChatByTelegramID( $tgChatID );
-
-					if ( ! $chat ) {
-						$chat                = Util::createChat( $update->getChat() );
-						$result->hasNewChats = true;
-					}
-
-					$wpChatID = $chat->getPost()->ID ?? null;
-
-					if ( ! $this->getChats()->contains( $chat ) ) {
-						$connection = $this->connectChat( $chat );
-
-						if ( ! $connection ) {
-							throw new \RuntimeException( 'Bot-chat connection was not created.' );
-						}
-
-						$chat->setPending( $this );
-						$chat->setDate( (string) $update->message->date );
-						$chat->savePost();
-
-						$result->hasNewConnections = true;
-					}
+					$this->processUpdate( $update, $result, $processedChatIDs );
+					$lastConsumedUpdateID = $updateID;
 				} catch ( \Throwable $e ) {
+					$result->errors[] = [
+						'errorType' => 'update_processing',
+						'updateID'  => $updateID,
+					];
 					$this->logger->write(
 						[
-							'botTitle'        => $this->getTitle(),
 							'wpPostID'        => $this->getPost()->ID,
-							'botTokenFirst13' => substr( $this->getToken(), 0, 13 ),
 							'updateID'        => $updateID,
-							'tgChatID'        => $tgChatID ?? '',
-							'wpChatID'        => $wpChatID ?? '',
 							'error'           => $e->getMessage(),
 						],
 						'Bot has failed to process a single update',
 						Logger::LEVEL_WARNING
 					);
+					break;
 				}
 			}
 
 			return $result;
 		} finally {
-			if ( $maxFetchedUpdateID > $this->getLastUpdateID() ) {
+			if ( $lastConsumedUpdateID > $this->getLastUpdateID() ) {
 				try {
-					$this->setLastUpdateID( $maxFetchedUpdateID );
+					$this->setLastUpdateID( $lastConsumedUpdateID );
 				} catch ( \Throwable $e ) {
 					$this->logger->write(
 						[
-							'botTitle'        => $this->getTitle(),
 							'wpPostID'        => $this->getPost()->ID,
-							'botTokenFirst13' => substr( $this->getToken(), 0, 13 ),
 							'lastUpdateID'    => $this->getLastUpdateID(),
-							'newLastUpdateID' => $maxFetchedUpdateID,
+							'newLastUpdateID' => $lastConsumedUpdateID,
 							'error'           => $e->getMessage(),
 						],
 						'Bot has failed to persist last update ID',

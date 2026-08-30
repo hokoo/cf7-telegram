@@ -1,9 +1,5 @@
-import {
-    disconnectConnectionBot2Channel,
-    disconnectConnectionBot2Chat,
-} from '../utils/main';
-import {apiSaveBot} from '../utils/api';
-import {saveBotTokenAndDisconnect} from './Bot';
+import {apiUpdateBotToken} from '../utils/api';
+import {getUpdateDiagnostic, saveBotTokenTransactionally} from './Bot';
 
 jest.mock('./BotView', () => () => null);
 
@@ -11,31 +7,29 @@ jest.mock('../utils/api', () => ({
     apiDeleteBot: jest.fn(),
     apiFetchUpdates: jest.fn(),
     apiPingBot: jest.fn(),
-    apiSaveBot: jest.fn(),
+    apiUpdateBotToken: jest.fn(),
     fetchBot: jest.fn(),
 }));
 
 jest.mock('../utils/main', () => ({
     connectChat2Channel: jest.fn(),
-    disconnectConnectionBot2Channel: jest.fn(),
     disconnectConnectionBot2Chat: jest.fn(),
     setBot2ChatConnectionStatus: jest.fn(),
 }));
 
-describe('saveBotTokenAndDisconnect', () => {
+describe('saveBotTokenTransactionally', () => {
     beforeEach(() => {
         jest.clearAllMocks();
-        apiSaveBot.mockResolvedValue({});
-        disconnectConnectionBot2Chat.mockResolvedValue(true);
-        disconnectConnectionBot2Channel.mockResolvedValue(true);
+        apiUpdateBotToken.mockResolvedValue({identityChanged: false, relationsReset: false});
     });
 
-    it('does not disconnect chats when the updated bot stays offline', async () => {
-        const pingBot = jest.fn().mockResolvedValue(false);
+    it('leaves client relations untouched when token validation fails', async () => {
+        apiUpdateBotToken.mockRejectedValueOnce(new Error('Invalid token'));
+        const pingBot = jest.fn();
         const setBot2ChatConnections = jest.fn();
         const setBot2ChannelConnections = jest.fn();
 
-        await expect(saveBotTokenAndDisconnect({
+        await expect(saveBotTokenTransactionally({
             botId: 1,
             token: '  new-token  ',
             pingBot,
@@ -49,20 +43,20 @@ describe('saveBotTokenAndDisconnect', () => {
                 {data: {id: 22, from: 2, to: 302}},
             ],
             setBot2ChannelConnections,
-        })).rejects.toThrow('Bot did not come online after token update.');
+        })).rejects.toThrow('Invalid token');
 
-        expect(apiSaveBot).toHaveBeenCalledWith(1, '', 'new-token');
-        expect(pingBot).toHaveBeenCalledWith({force: true, skipEditingCheck: true});
-        expect(disconnectConnectionBot2Chat).not.toHaveBeenCalled();
-        expect(disconnectConnectionBot2Channel).not.toHaveBeenCalled();
+        expect(apiUpdateBotToken).toHaveBeenCalledWith(1, 'new-token');
+        expect(pingBot).not.toHaveBeenCalled();
+        expect(setBot2ChatConnections).not.toHaveBeenCalled();
+        expect(setBot2ChannelConnections).not.toHaveBeenCalled();
     });
 
-    it('disconnects only the current bot relations after a successful token update', async () => {
-        const pingBot = jest.fn().mockResolvedValue(true);
+    it('preserves relations when the token still belongs to the same bot', async () => {
+        const pingBot = jest.fn().mockResolvedValue(false);
         const setBot2ChatConnections = jest.fn();
         const setBot2ChannelConnections = jest.fn();
 
-        await saveBotTokenAndDisconnect({
+        await saveBotTokenTransactionally({
             botId: 1,
             token: 'new-token',
             pingBot,
@@ -78,9 +72,37 @@ describe('saveBotTokenAndDisconnect', () => {
             setBot2ChannelConnections,
         });
 
-        expect(disconnectConnectionBot2Chat).toHaveBeenCalledTimes(1);
-        expect(disconnectConnectionBot2Chat).toHaveBeenCalledWith(11, setBot2ChatConnections);
-        expect(disconnectConnectionBot2Channel).toHaveBeenCalledTimes(1);
-        expect(disconnectConnectionBot2Channel).toHaveBeenCalledWith(21, setBot2ChannelConnections);
+        expect(setBot2ChatConnections).not.toHaveBeenCalled();
+        expect(setBot2ChannelConnections).not.toHaveBeenCalled();
+        expect(pingBot).toHaveBeenCalledWith({force: true, skipEditingCheck: true});
+    });
+
+    it('removes only current bot relations from client state after server reset', async () => {
+        apiUpdateBotToken.mockResolvedValueOnce({identityChanged: true, relationsReset: true});
+        const setBot2ChatConnections = jest.fn();
+        const setBot2ChannelConnections = jest.fn();
+
+        await saveBotTokenTransactionally({
+            botId: 1,
+            token: 'new-token',
+            pingBot: jest.fn().mockResolvedValue(true),
+            bot2ChatConnections: [],
+            setBot2ChatConnections,
+            bot2ChannelConnections: [],
+            setBot2ChannelConnections,
+        });
+
+        const chatUpdater = setBot2ChatConnections.mock.calls[0][0];
+        const channelUpdater = setBot2ChannelConnections.mock.calls[0][0];
+        expect(chatUpdater([{data: {from: 1}}, {data: {from: 2}}])).toEqual([{data: {from: 2}}]);
+        expect(channelUpdater([{data: {from: 1}}, {data: {from: 2}}])).toEqual([{data: {from: 2}}]);
+    });
+});
+
+describe('getUpdateDiagnostic', () => {
+    it('distinguishes webhook conflicts and update errors', () => {
+        expect(getUpdateDiagnostic({hasWebhookConflict: true, errors: []})).toBe('webhook_conflict');
+        expect(getUpdateDiagnostic({hasWebhookConflict: false, errors: [{errorType: 'transport'}]})).toBe('update_error');
+        expect(getUpdateDiagnostic({hasWebhookConflict: false, errors: []})).toBeNull();
     });
 });

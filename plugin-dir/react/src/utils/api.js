@@ -1,6 +1,16 @@
 /* global cf7TelegramData */
 
-const apiRequest = async (url, method, body) => {
+const appendQueryParams = (url, params) => {
+    const queryString = params.toString();
+
+    if (!queryString) {
+        return url;
+    }
+
+    return `${url}${url.includes('?') ? '&' : '?'}${queryString}`;
+}
+
+const apiRequest = async (url, method, body, options = {}) => {
     method = method ?? 'GET';
 
     let query = {
@@ -23,9 +33,7 @@ const apiRequest = async (url, method, body) => {
             body = null;
         }
 
-        if (params.toString()) {
-            url += '?' + params.toString();
-        }
+        url = appendQueryParams(url, params);
     }
 
     if (body) {
@@ -36,11 +44,57 @@ const apiRequest = async (url, method, body) => {
         const response = await fetch(url, query);
 
         if (!response.ok) throw new Error('Network response was not ok');
-        return await response.json();
+
+        const data = await response.json();
+        return options.includeResponse ? {data, response} : data;
     } catch (error) {
         console.error('API request error:', error);
         throw error;
     }
+}
+
+const mergePageItems = (items, pageItems) => {
+    const seenIds = new Set(items.map(item => item?.id));
+
+    return items.concat(
+        pageItems.filter(item => {
+            if (!item || typeof item.id === 'undefined') {
+                return true;
+            }
+
+            if (seenIds.has(item.id)) {
+                return false;
+            }
+
+            seenIds.add(item.id);
+            return true;
+        })
+    );
+}
+
+const fetchAllPages = async (url, params = {}) => {
+    const perPage = 100;
+    let page = 1;
+    let totalPages = 1;
+    let items = [];
+
+    do {
+        const {data, response} = await apiRequest(
+            url,
+            'GET',
+            {...params, per_page: perPage, page},
+            {includeResponse: true}
+        );
+
+        items = mergePageItems(items, Array.isArray(data) ? data : []);
+
+        const totalPagesHeader = response.headers?.get?.('X-WP-TotalPages');
+        const parsedTotalPages = Number.parseInt(totalPagesHeader, 10);
+        totalPages = Number.isFinite(parsedTotalPages) && parsedTotalPages > 0 ? parsedTotalPages : page;
+        page += 1;
+    } while (page <= totalPages);
+
+    return items;
 }
 
 export const fetchClient = async () => {
@@ -62,7 +116,10 @@ export const fetchBots = async () => {
 };
 
 export const fetchChats = async () => {
-    return await apiRequest(cf7TelegramData.routes.chats)
+    return await fetchAllPages(
+        cf7TelegramData.routes.chats,
+        {order: 'asc', orderby: 'id'}
+    )
 };
 
 export const fetchChannels = async () => {
@@ -197,9 +254,12 @@ export const apiDeleteChannel = async (channelId) => {
 export const apiCreateBot = async (title, token) => {
     let newBotData = {
         title: title,
-        token: token ?? '',
         status: 'publish',
     };
+
+    if (token?.trim()) {
+        newBotData.token = token.trim();
+    }
 
     return await apiRequest(
         cf7TelegramData.routes.bots,
@@ -234,6 +294,14 @@ export const apiSaveBot = async (botId, title, token) => {
         `${cf7TelegramData.routes.bots}${botId}`,
         'POST',
         botData
+    );
+}
+
+export const apiUpdateBotToken = async (botId, token) => {
+    return await apiRequest(
+        `${cf7TelegramData.routes.bots}${botId}/token`,
+        'POST',
+        {token}
     );
 }
 
