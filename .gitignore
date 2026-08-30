@@ -2,6 +2,7 @@
 /plugin-dir/vendor/
 /wordpress/
 /wp-content/
+/dist/
 
 /index.php
 /*-config.php

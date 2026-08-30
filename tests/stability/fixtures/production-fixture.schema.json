@@ -1,0 +1,213 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/cf7-telegram/e1-production-fixture.schema.json",
+  "title": "CF7 Telegram E1 Redacted Production Fixture",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "source",
+    "redaction",
+    "wordpress",
+    "plugin",
+    "options",
+    "posts",
+    "connections",
+    "cron"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "source": {
+      "type": "object",
+      "required": [
+        "captured_at_gmt",
+        "site_class",
+        "origin"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "captured_at_gmt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "site_class": {
+          "type": "string",
+          "enum": [
+            "fresh",
+            "legacy",
+            "partially_migrated",
+            "damaged"
+          ]
+        },
+        "origin": {
+          "type": "string",
+          "description": "Opaque non-customer identifier, for example support-ticket hash."
+        }
+      }
+    },
+    "redaction": {
+      "type": "object",
+      "required": [
+        "tokens_removed",
+        "chat_ids_hashed",
+        "emails_hashed",
+        "free_text_redacted"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "tokens_removed": {
+          "type": "boolean",
+          "const": true
+        },
+        "chat_ids_hashed": {
+          "type": "boolean",
+          "const": true
+        },
+        "emails_hashed": {
+          "type": "boolean",
+          "const": true
+        },
+        "free_text_redacted": {
+          "type": "boolean",
+          "const": true
+        }
+      }
+    },
+    "wordpress": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "version": {
+          "type": "string"
+        },
+        "php_version": {
+          "type": "string"
+        },
+        "db_version": {
+          "type": "string"
+        }
+      }
+    },
+    "plugin": {
+      "type": "object",
+      "required": [
+        "from_version",
+        "to_version"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "from_version": {
+          "type": "string"
+        },
+        "to_version": {
+          "type": "string"
+        },
+        "active": {
+          "type": "boolean"
+        }
+      }
+    },
+    "options": {
+      "type": "object",
+      "additionalProperties": {
+        "type": [
+          "string",
+          "number",
+          "boolean",
+          "array",
+          "object",
+          "null"
+        ]
+      },
+      "propertyNames": {
+        "pattern": "^(cf7tg_|cf7t_|wpcf7_telegram_)"
+      }
+    },
+    "posts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "post_type",
+          "status",
+          "meta"
+        ],
+        "additionalProperties": true,
+        "properties": {
+          "post_type": {
+            "type": "string",
+            "enum": [
+              "wpcf7_contact_form",
+              "cf7tg_bot",
+              "cf7tg_chat",
+              "cf7tg_channel"
+            ]
+          },
+          "status": {
+            "type": "string"
+          },
+          "title_hash": {
+            "type": "string"
+          },
+          "content_shape": {
+            "type": "string"
+          },
+          "meta": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      }
+    },
+    "connections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "relation",
+          "from_type",
+          "to_type"
+        ],
+        "additionalProperties": true,
+        "properties": {
+          "relation": {
+            "type": "string",
+            "enum": [
+              "chat2channel",
+              "form2channel",
+              "bot2channel",
+              "bot2chat",
+              "unknown"
+            ]
+          },
+          "from_type": {
+            "type": "string"
+          },
+          "to_type": {
+            "type": "string"
+          },
+          "meta_keys": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "cron": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "cf7tg_cleanup": {
+          "type": "array"
+        },
+        "cf7tg_migrations": {
+          "type": "array"
+        }
+      }
+    }
+  }
+}

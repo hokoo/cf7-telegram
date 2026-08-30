@@ -22,6 +22,12 @@ clear.all:
 npm.build:
 	docker-compose -p cf7t exec node bash -c "cd ./plugin-dir/react && npm run dev-build"
 
+release.zip:
+	bash ./scripts/build-release-zip.sh
+
+release.zip.validate:
+	bash ./scripts/validate-release-zip.sh ./dist/cf7-telegram-wp-plugin.zip
+
 php.connect:
 	docker-compose -p cf7t exec php bash
 
@@ -58,4 +64,3 @@ else
 			echo "❗ Source JSON file not found: cf7-telegram-$(LOCALE)-*.json"; \
 		fi'
 endif
-

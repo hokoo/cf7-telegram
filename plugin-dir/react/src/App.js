@@ -16,7 +16,6 @@ import {
     fetchBotsForChannels,
     fetchBotsForChats,
     fetchChatsForChannels,
-    apiDeleteChat
 } from './utils/api';
 
 const mapBot2ChatConnections = (connections) => connections.map(rel => {
@@ -58,7 +57,6 @@ const App = () => {
         fetchForms().then(setForms);
         fetchBots().then(setBots);
 
-        // Load chats and relations together so the garbage collector never sees a partial snapshot.
         loadChatData();
 
         fetchFormsForChannels().then(setForm2ChannelConnections);
@@ -78,29 +76,12 @@ const App = () => {
             });
     }, []);
 
-    // Chat-garbage collector. When chats has a chat that is not in bot2ChatConnections, destroy it.
-    useEffect(() => {
-        const chatIdsInBot2ChatConnections = bot2ChatConnections.map(rel => rel.data.to);
-        const chatsToRemove = chats.filter(chat => !chatIdsInBot2ChatConnections.includes(chat.id));
-        const chatIdsToRemove = chatsToRemove.map(chat => chat.id);
-
-        if (chatIdsToRemove.length === 0) return;
-
-        const deletePromises = chatIdsToRemove.map(chatId => apiDeleteChat(chatId));
-        Promise.all(deletePromises)
-            .then(() => {
-                setChats(currentChats => currentChats.filter(chat => chatIdsInBot2ChatConnections.includes(chat.id)));
-            })
-            .catch(error => {
-                console.error("Error deleting chats:", error);
-            });
-    }, [chats, bot2ChatConnections])
-
     if (loading) return <div>{wp.i18n.__( 'Loading data...', 'cf7-telegram' )}</div>;
 
-    const canShowMigrationAction = Boolean(cf7TelegramData?.migration?.show_action_button)
-        && bots.length === 0
-        && channels.length === 0;
+    const migrationStatus = cf7TelegramData?.migration?.status || {};
+    const canShowMigrationAction = Boolean(cf7TelegramData?.migration?.show_action_button);
+    const canRetryMigration = migrationStatus.can_retry !== false;
+    const migrationError = migrationStatus.last_error?.message;
 
     return (
         <>
@@ -169,10 +150,19 @@ const App = () => {
                         value={cf7TelegramData?.migration?.nonce}
                     />
                     <p>
-                        {wp.i18n.__( 'We detected settings from an older version that couldn’t be migrated automatically. Click the button below to migrate them to the new version.', 'cf7-telegram' )}
+                        {migrationStatus.is_failed
+                            ? wp.i18n.__( 'Data migration failed. You can retry it now.', 'cf7-telegram' )
+                            : wp.i18n.__( 'We detected settings from an older version that couldn’t be migrated automatically. Click the button below to migrate them to the new version.', 'cf7-telegram' )}
                     </p>
-                    <button type="submit" className="button button-primary">
-                        {wp.i18n.__( 'Run migration', 'cf7-telegram' )}
+                    {migrationError && (
+                        <p className="cf7-tg-migration-error">
+                            {migrationError}
+                        </p>
+                    )}
+                    <button type="submit" className="button button-primary" disabled={!canRetryMigration}>
+                        {migrationStatus.is_failed
+                            ? wp.i18n.__( 'Retry migration', 'cf7-telegram' )
+                            : wp.i18n.__( 'Run migration', 'cf7-telegram' )}
                     </button>
                 </form>
             </div>
