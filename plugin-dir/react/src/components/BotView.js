@@ -21,16 +21,12 @@ const BotView = ({
     setTokenValue,
     handleToggleChatStatus,
     handleDisconnectChat,
-    online,
-    renderEditTokenCount
+    online
 }) => {
 
     let status = online === true ? 'online' : online === false ? 'offline' : 'unknown';
     let truncatedName = nameValue.slice(0, 18);
     const fullBotName = `@${nameValue}`;
-
-    isEditingToken && renderEditTokenCount.current < 1 && setTokenValue('');
-    isEditingToken && renderEditTokenCount.current++;
 
     // Trimmed token for display (only last 4 characters)
     const trimmedToken = isTokenEmpty ? tokenValue : `***${tokenValue.slice(-4)}`;
@@ -108,7 +104,7 @@ const BotView = ({
                                 return (
                                     <li key={chat.id} className={`chat-item ${status.toLowerCase()}`}>
                                         <span className="chat-name"
-                                              title={status.toWellFormed()}
+                                              title={String(status)}
                                         >{chat.title.rendered}</span>
 
                                         <span

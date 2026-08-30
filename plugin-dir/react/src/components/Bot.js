@@ -60,7 +60,6 @@ const Bot = ({
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState(null);
     const [updatingStatusIds, setUpdatingStatusIds] = useState([]);
-    const renderEditTokenCount = useRef(0);
 
     const relatedChatIds = bot2ChatConnections
         .filter(connection => connection.data.from === bot.id)
@@ -231,8 +230,8 @@ const Bot = ({
         }
 
         setError(null);
+        setTokenValue('');
         setIsEditingToken(true);
-        renderEditTokenCount.current = 0;
     };
 
     const cancelEdit = () => {
@@ -377,7 +376,6 @@ const Bot = ({
         handleToggleChatStatus={handleToggleChatStatus}
         handleDisconnectChat={handleDisconnectChat}
         online={online}
-        renderEditTokenCount={renderEditTokenCount}
     />);
 };
 

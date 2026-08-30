@@ -1,7 +1,14 @@
-import {apiUpdateBotToken} from '../utils/api';
-import {getUpdateDiagnostic, saveBotTokenTransactionally} from './Bot';
+import React from 'react';
+import {act, render} from '@testing-library/react';
+import {apiPingBot, apiUpdateBotToken} from '../utils/api';
+import Bot, {getUpdateDiagnostic, saveBotTokenTransactionally} from './Bot';
 
-jest.mock('./BotView', () => () => null);
+let mockBotViewProps;
+
+jest.mock('./BotView', () => (props) => {
+    mockBotViewProps = props;
+    return null;
+});
 
 jest.mock('../utils/api', () => ({
     apiDeleteBot: jest.fn(),
@@ -104,5 +111,60 @@ describe('getUpdateDiagnostic', () => {
         expect(getUpdateDiagnostic({hasWebhookConflict: true, errors: []})).toBe('webhook_conflict');
         expect(getUpdateDiagnostic({hasWebhookConflict: false, errors: [{errorType: 'transport'}]})).toBe('update_error');
         expect(getUpdateDiagnostic({hasWebhookConflict: false, errors: []})).toBeNull();
+    });
+});
+
+describe('Bot token editing', () => {
+    let timeoutSpy;
+
+    beforeEach(() => {
+        jest.clearAllMocks();
+        mockBotViewProps = null;
+        apiPingBot.mockResolvedValue({online: false, botName: 'test_bot'});
+        timeoutSpy = jest.spyOn(global, 'setTimeout').mockImplementation(() => 0);
+    });
+
+    afterEach(() => {
+        timeoutSpy.mockRestore();
+    });
+
+    it('initializes edit state outside BotView render and restores it on cancel', async () => {
+        let view;
+        await act(async () => {
+            view = render(
+                <Bot
+                    bot={{
+                        id: 1,
+                        title: {rendered: 'test_bot'},
+                        token: '1234',
+                        isTokenEmpty: false,
+                        isTokenDefinedByConst: false,
+                    }}
+                    chats={[]}
+                    bot2ChatConnections={[]}
+                    setBots={jest.fn()}
+                    setBot2ChatConnections={jest.fn()}
+                    bot2ChannelConnections={[]}
+                    setBot2ChannelConnections={jest.fn()}
+                    setChat2ChannelConnections={jest.fn()}
+                    loadChatData={jest.fn()}
+                />
+            );
+            await Promise.resolve();
+        });
+
+        expect(mockBotViewProps).not.toBeNull();
+
+        act(() => mockBotViewProps.handleEditToken());
+
+        expect(mockBotViewProps.isEditingToken).toBe(true);
+        expect(mockBotViewProps.tokenValue).toBe('');
+
+        act(() => mockBotViewProps.handleKeyDown({key: 'Escape'}));
+
+        expect(mockBotViewProps.isEditingToken).toBe(false);
+        expect(mockBotViewProps.tokenValue).toBe('1234');
+
+        view.unmount();
     });
 });
