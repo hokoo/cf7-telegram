@@ -30,7 +30,7 @@ E1.3 does not close E2, E3, or E4 defects. It makes them reproducible and preven
 
 ## Baseline Verification
 
-Verified on 2026-08-30 with WordPress 7.0.4, Contact Form 7 6.0.6, PHP 8.2, and a production-style corrective candidate ZIP whose header remains `1.0.10` until the separate `1.0.11` version bump:
+Verified on 2026-08-30 with WordPress 7.0.4, Contact Form 7 6.0.6, PHP 8.2, and a production-style corrective candidate ZIP. The final release gate uses candidate version `1.0.11` while retaining published `1.0.10` as an upgrade baseline:
 
 - `fresh`: all install, activation, cleanup cron, deactivation, and uninstall assertions passed;
 - `upgrade-0.10`: all lifecycle and rollback assertions passed; migration scheduling failed as an E2 blocker;

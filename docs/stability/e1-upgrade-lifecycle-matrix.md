@@ -1,6 +1,6 @@
 # Epic 1 Upgrade And Lifecycle Smoke Matrix
 
-Epic 1 treats `1.0.10` as already published. The stability harness validates a corrective local candidate against published WordPress.org artifacts, including the published `1.0.10` baseline. The candidate header remains `1.0.10` until a separate `1.0.11` version bump; the release tag gate rejects `v1.0.11` before that bump.
+Epic 1 treats `1.0.10` as already published. The stability harness validates the `1.0.11` corrective candidate against published WordPress.org artifacts, including the published `1.0.10` baseline. Tagging and publication remain separate release actions.
 
 ## Scope
 
@@ -46,7 +46,7 @@ Use an externally built production zip as the corrective candidate:
 
 ```bash
 CF7TG_CANDIDATE_ZIP=/absolute/path/cf7-telegram-wp-plugin.zip \
-CF7TG_EXPECTED_CANDIDATE_VERSION=1.0.10 \
+CF7TG_EXPECTED_CANDIDATE_VERSION=1.0.11 \
 tests/stability/e1-smoke-matrix.sh
 ```
 

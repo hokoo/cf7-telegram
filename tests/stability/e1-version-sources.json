@@ -3,7 +3,7 @@
   "plugin_slug": "cf7-telegram",
   "release_assumptions": {
     "published_1_0_10": true,
-    "note": "Epic 1 treats 1.0.10 as already released; local plugin-dir is the corrective candidate even when its header version is still 1.0.10."
+    "note": "Epic 1 treats 1.0.10 as already released; the local corrective candidate is version 1.0.11."
   },
   "candidate": {
     "source_priority": [

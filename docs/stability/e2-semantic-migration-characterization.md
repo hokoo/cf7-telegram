@@ -133,4 +133,4 @@ Independent Epic 2 QA passed on `93b969a`:
 - independent final `legacy-heavy` 1.0.10 run `20260830T192149Z-87942`: `96/96`;
 - real WordPress constant-only lifecycle completed without persisting the secret or emitting missing-table database warnings.
 
-Epic 2 is closed. Publishing, tagging, and a `1.0.11` version bump remain outside Epic 2.
+Epic 2 is closed. The combined E1/E2 pull request prepares version `1.0.11`; tagging and publication remain separate release actions.
