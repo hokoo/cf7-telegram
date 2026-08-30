@@ -1,0 +1,59 @@
+{
+  "schema": 1,
+  "plugin_slug": "cf7-telegram",
+  "release_assumptions": {
+    "published_1_0_10": true,
+    "note": "Epic 1 treats 1.0.10 as already released; local plugin-dir is the corrective candidate even when its header version is still 1.0.10."
+  },
+  "candidate": {
+    "source_priority": [
+      "CF7TG_CANDIDATE_ZIP",
+      "dist/cf7-telegram-wp-plugin.zip",
+      "complete local plugin-dir fallback"
+    ],
+    "override_env": "CF7TG_CANDIDATE_ZIP",
+    "expected_version_env": "CF7TG_EXPECTED_CANDIDATE_VERSION",
+    "header_path_in_zip": "cf7-telegram/cf7-telegram.php"
+  },
+  "legacy_versions": [
+    {
+      "matrix_id": "0.10",
+      "version": "0.10.2",
+      "url": "https://downloads.wordpress.org/plugin/cf7-telegram.0.10.2.zip",
+      "sha256": "55b996c375011dcbcb36ef518f6233065dae42d243a02baa064926d4be6be762",
+      "note": "WordPress.org has no exact 0.10 zip; 0.10.2 is the latest published 0.10.x artifact."
+    },
+    {
+      "matrix_id": "0.11",
+      "version": "0.11",
+      "url": "https://downloads.wordpress.org/plugin/cf7-telegram.0.11.zip",
+      "sha256": "0e770d55fa20bbfec58a29d322d475da9c0cec0f8cbf415cbb9ebd26af2ba433"
+    },
+    {
+      "matrix_id": "1.0.9",
+      "version": "1.0.9",
+      "url": "https://downloads.wordpress.org/plugin/cf7-telegram.1.0.9.zip",
+      "sha256": "402e421cce02c193b3cb81b67ee882ae523805a956edbd23500b8444a403af48"
+    },
+    {
+      "matrix_id": "1.0.10",
+      "version": "1.0.10",
+      "url": "https://downloads.wordpress.org/plugin/cf7-telegram.1.0.10.zip",
+      "sha256": "1a55d7a8b427c105f8863926bb2395a92c25d64ffd98378d157c3486efb83ea3",
+      "note": "Published baseline for corrective release validation."
+    }
+  ],
+  "wordpress": {
+    "core_version_env": "CF7TG_E1_WP_VERSION",
+    "default_core_version": "7.0.4",
+    "cli_image_env": "CF7TG_E1_WP_CLI_IMAGE",
+    "default_cli_image": "wordpress:cli-php8.2"
+  },
+  "dependencies": {
+    "contact_form_7": {
+      "wp_org_slug": "contact-form-7",
+      "version_env": "CF7TG_E1_CF7_VERSION",
+      "default_version": "6.0.6"
+    }
+  }
+}

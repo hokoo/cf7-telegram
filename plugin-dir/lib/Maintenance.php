@@ -12,8 +12,11 @@ class Maintenance {
 	public const CRON_HOOK = 'cf7tg_cleanup';
 	public const CRON_SCHEDULE = 'cf7tg_cleanup_interval';
 	public const CLEANUP_LOCK_OPTION = 'cf7tg_cleanup_lock';
+	public const CRON_LAST_ERROR_OPTION = 'cf7tg_cleanup_cron_last_error';
 	public const DEFAULT_INTERVAL = 24 * HOUR_IN_SECONDS; // Seconds.
 	public const CLEANUP_LOCK_TTL = 300; // Seconds.
+
+	private const LEGACY_EARLY_ACCESS_OPTION = 'cf7t_early_access';
 
 	private const OPTION_PREFIXES = [
 		'cf7tg_',
@@ -61,14 +64,21 @@ class Maintenance {
 	}
 
 	public static function ensureScheduled(): void {
-		if ( wp_next_scheduled( self::CRON_HOOK ) ) {
+		self::ensureScheduleRegistered();
+
+		$now = time();
+		$interval = self::getCleanupInterval();
+
+		if ( ! self::hasAnyScheduledCleanupEvent() ) {
+			self::scheduleSingleCleanup( $now );
+		}
+
+		if ( self::hasRecurringCleanupEvent( $interval ) ) {
 			return;
 		}
 
-		$now = time();
-
-		wp_schedule_single_event( $now, self::CRON_HOOK );
-		wp_schedule_event( $now + self::getCleanupInterval(), self::CRON_SCHEDULE, self::CRON_HOOK );
+		self::clearScheduledCleanupEvents( self::CRON_SCHEDULE );
+		self::scheduleRecurringCleanup( $now + $interval );
 	}
 
 	public static function hasCleanupLock( int $ttl = self::CLEANUP_LOCK_TTL ): bool {
@@ -359,7 +369,7 @@ class Maintenance {
 			}
 		}
 
-		delete_option( Settings::EARLY_FLAG_OPTION );
+		delete_option( self::LEGACY_EARLY_ACCESS_OPTION );
 		delete_option( Migration::FIX_1_0_FLAG );
 		delete_option( self::CLEANUP_LOCK_OPTION );
 	}
@@ -436,6 +446,182 @@ class Maintenance {
 		$interval = (int) apply_filters( 'cf7tg/cleanupInterval', $interval );
 
 		return max( MINUTE_IN_SECONDS, $interval );
+	}
+
+	private static function ensureScheduleRegistered(): void {
+		add_filter( 'cron_schedules', [ self::class, 'registerSchedule' ] );
+	}
+
+	private static function scheduleSingleCleanup( int $timestamp ): void {
+		if ( self::functionAcceptsParameter( 'wp_schedule_single_event', 4 ) ) {
+			self::storeScheduleResult(
+				wp_schedule_single_event( $timestamp, self::CRON_HOOK, [], true ),
+				'single'
+			);
+			return;
+		}
+
+		self::storeScheduleResult(
+			wp_schedule_single_event( $timestamp, self::CRON_HOOK ),
+			'single'
+		);
+	}
+
+	private static function scheduleRecurringCleanup( int $timestamp ): void {
+		if ( self::functionAcceptsParameter( 'wp_schedule_event', 5 ) ) {
+			$result = wp_schedule_event( $timestamp, self::CRON_SCHEDULE, self::CRON_HOOK, [], true );
+
+			if ( self::isWpError( $result ) && 'invalid_schedule' === $result->get_error_code() ) {
+				self::ensureScheduleRegistered();
+				$result = wp_schedule_event( $timestamp, self::CRON_SCHEDULE, self::CRON_HOOK, [], true );
+			}
+
+			self::storeScheduleResult( $result, 'recurring' );
+			return;
+		}
+
+		self::storeScheduleResult(
+			wp_schedule_event( $timestamp, self::CRON_SCHEDULE, self::CRON_HOOK ),
+			'recurring'
+		);
+	}
+
+	private static function hasRecurringCleanupEvent( int $interval ): bool {
+		foreach ( self::getScheduledCleanupEvents() as $event ) {
+			if ( self::CRON_SCHEDULE !== ( $event['schedule'] ?? false ) ) {
+				continue;
+			}
+
+			if ( isset( $event['interval'] ) && (int) $event['interval'] !== $interval ) {
+				continue;
+			}
+
+			return true;
+		}
+
+		return false;
+	}
+
+	private static function hasAnyScheduledCleanupEvent(): bool {
+		return ! empty( self::getScheduledCleanupEvents() );
+	}
+
+	private static function getScheduledCleanupEvents(): array {
+		if ( ! function_exists( '_get_cron_array' ) ) {
+			$event = function_exists( 'wp_get_scheduled_event' ) ? wp_get_scheduled_event( self::CRON_HOOK, [] ) : false;
+
+			if ( ! $event ) {
+				return [];
+			}
+
+			return [
+				[
+					'schedule' => $event->schedule ?? false,
+					'interval' => $event->interval ?? null,
+				],
+			];
+		}
+
+		$events = [];
+		$key = md5( serialize( [] ) );
+
+		/*
+		 * Public wp_get_scheduled_event() returns only the next matching hook.
+		 * It cannot see a later recurring cleanup when an immediate single cleanup exists first.
+		 */
+		foreach ( _get_cron_array() as $timestamp => $cron ) {
+			if ( ! isset( $cron[ self::CRON_HOOK ][ $key ] ) ) {
+				continue;
+			}
+
+			$events[] = $cron[ self::CRON_HOOK ][ $key ];
+		}
+
+		return $events;
+	}
+
+	private static function clearScheduledCleanupEvents( string $schedule ): void {
+		if ( ! function_exists( '_get_cron_array' ) || ! function_exists( '_set_cron_array' ) ) {
+			return;
+		}
+
+		$crons = _get_cron_array();
+		$key = md5( serialize( [] ) );
+		$changed = false;
+
+		foreach ( $crons as $timestamp => $cron ) {
+			if (
+				! isset( $cron[ self::CRON_HOOK ][ $key ] ) ||
+				$schedule !== ( $cron[ self::CRON_HOOK ][ $key ]['schedule'] ?? false )
+			) {
+				continue;
+			}
+
+			unset( $crons[ $timestamp ][ self::CRON_HOOK ][ $key ] );
+			$changed = true;
+
+			if ( empty( $crons[ $timestamp ][ self::CRON_HOOK ] ) ) {
+				unset( $crons[ $timestamp ][ self::CRON_HOOK ] );
+			}
+
+			if ( empty( $crons[ $timestamp ] ) ) {
+				unset( $crons[ $timestamp ] );
+			}
+		}
+
+		if ( $changed ) {
+			_set_cron_array( $crons );
+		}
+	}
+
+	private static function functionAcceptsParameter( string $functionName, int $parameterCount ): bool {
+		try {
+			return ( new \ReflectionFunction( $functionName ) )->getNumberOfParameters() >= $parameterCount;
+		} catch ( \ReflectionException $e ) {
+			return false;
+		}
+	}
+
+	private static function isWpError( $value ): bool {
+		if ( function_exists( 'is_wp_error' ) ) {
+			return is_wp_error( $value );
+		}
+
+		return $value instanceof \WP_Error;
+	}
+
+	private static function storeScheduleResult( $result, string $type ): void {
+		if ( true === $result ) {
+			delete_option( self::CRON_LAST_ERROR_OPTION );
+			return;
+		}
+
+		if ( self::isWpError( $result ) ) {
+			update_option(
+				self::CRON_LAST_ERROR_OPTION,
+				[
+					'type'    => $type,
+					'code'    => $result->get_error_code(),
+					'message' => $result->get_error_message(),
+					'time'    => time(),
+				],
+				false
+			);
+			return;
+		}
+
+		if ( false === $result ) {
+			update_option(
+				self::CRON_LAST_ERROR_OPTION,
+				[
+					'type'    => $type,
+					'code'    => 'schedule_failed',
+					'message' => '',
+					'time'    => time(),
+				],
+				false
+			);
+		}
 	}
 
 	private static function getConnectionsTableName(): string {

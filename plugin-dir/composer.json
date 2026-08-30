@@ -32,5 +32,8 @@
     "psr-4": {
       "iTRON\\cf7Telegram\\": "lib"
     }
+  },
+  "scripts": {
+    "test": "php tests/run.php"
   }
 }
