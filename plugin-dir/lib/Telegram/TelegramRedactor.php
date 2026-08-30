@@ -17,11 +17,20 @@ class TelegramRedactor {
 
 	public static function text( string $text, ?string $token = null ): string {
 		if ( null !== $token && '' !== $token ) {
-			$text = str_replace( $token, self::tokenLabel( $token ), $text );
+			$variants = [ $token ];
+			$encoded  = $token;
+
+			for ( $depth = 0; $depth < 3; $depth++ ) {
+				$encoded    = rawurlencode( $encoded );
+				$variants[] = $encoded;
+			}
+
+			$text = str_replace( array_unique( $variants ), self::tokenLabel( $token ), $text );
 		}
 
-		$text = preg_replace( '/bot\d{5,}:[A-Za-z0-9_-]{8,}/', 'bot[telegram-token]', $text ) ?? $text;
-		return preg_replace( '/\d{5,}:[A-Za-z0-9_-]{8,}/', '[telegram-token]', $text ) ?? $text;
+		$separator = '(?::|%(?:25)*3a)';
+		$text = preg_replace( '/bot\d{5,}' . $separator . '[A-Za-z0-9_-]{8,}/i', 'bot[telegram-token]', $text ) ?? $text;
+		return preg_replace( '/\d{5,}' . $separator . '[A-Za-z0-9_-]{8,}/i', '[telegram-token]', $text ) ?? $text;
 	}
 
 	public static function data( $data, ?string $token = null ) {

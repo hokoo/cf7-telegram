@@ -44,7 +44,7 @@ class WordPressTelegramGateway implements TelegramGateway {
 				]
 			);
 		} catch ( Throwable $exception ) {
-			return TelegramDeliveryResult::failure(
+			return $this->failure(
 				0,
 				0,
 				$exception->getMessage(),
@@ -54,7 +54,7 @@ class WordPressTelegramGateway implements TelegramGateway {
 		}
 
 		if ( is_wp_error( $response ) ) {
-			return TelegramDeliveryResult::failure(
+			return $this->failure(
 				0,
 				0,
 				$response->get_error_message(),
@@ -68,7 +68,7 @@ class WordPressTelegramGateway implements TelegramGateway {
 		$retryAfter = $this->retryAfter( $response, is_array( $body ) ? $body : [] );
 
 		if ( ! is_array( $body ) ) {
-			return TelegramDeliveryResult::failure(
+			return $this->failure(
 				$status,
 				0,
 				'Invalid Telegram response.',
@@ -78,7 +78,7 @@ class WordPressTelegramGateway implements TelegramGateway {
 		}
 
 		if ( $status < 200 || $status >= 300 ) {
-			return TelegramDeliveryResult::failure(
+			return $this->failure(
 				$status,
 				(int) ( $body['error_code'] ?? 0 ),
 				(string) ( $body['description'] ?? 'Telegram HTTP request failed.' ),
@@ -93,12 +93,22 @@ class WordPressTelegramGateway implements TelegramGateway {
 			return $result;
 		}
 
-		return TelegramDeliveryResult::failure(
+		return $this->failure(
 			$status,
 			(int) ( $body['error_code'] ?? 0 ),
 			(string) ( $body['description'] ?? 'Telegram request failed.' ),
 			$retryAfter,
 			TelegramDeliveryResult::ERROR_TELEGRAM
+		);
+	}
+
+	private function failure( int $status, int $errorCode, string $description, ?int $retryAfter, string $errorType ): TelegramDeliveryResult {
+		return TelegramDeliveryResult::failure(
+			$status,
+			$errorCode,
+			TelegramRedactor::text( $description, $this->token ),
+			$retryAfter,
+			$errorType
 		);
 	}
 

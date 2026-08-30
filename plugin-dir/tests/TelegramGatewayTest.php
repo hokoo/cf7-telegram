@@ -40,8 +40,8 @@ final class TelegramGatewayTest extends Cf7tg_TestCase {
 
 	public function testWordPressGatewayNormalizesWpErrorWithoutLeakingToken(): void {
 		$token = '123456789:TEST_SECRET_TOKEN_VALUE';
-		$GLOBALS['wp_remote_post_handler'] = static function () use ( $token ): WP_Error {
-			return new WP_Error( 'http_request_failed', 'Could not connect to bot' . $token . '/getMe' );
+		$GLOBALS['wp_remote_post_handler'] = static function ( string $url ): WP_Error {
+			return new WP_Error( 'http_request_failed', 'Could not connect to ' . $url );
 		};
 
 		$result = ( new WordPressTelegramGateway( $token ) )->getMe();
@@ -50,6 +50,7 @@ final class TelegramGatewayTest extends Cf7tg_TestCase {
 		$this->assertSame( TelegramDeliveryResult::ERROR_TRANSPORT, $result->errorType );
 		$this->assertSame( 0, $result->status );
 		$this->assertFalse( str_contains( $result->description, $token ) );
+		$this->assertFalse( str_contains( $result->description, rawurlencode( $token ) ) );
 		$this->assertTrue( str_contains( $result->description, '[telegram-token]' ) );
 	}
 
