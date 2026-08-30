@@ -10,6 +10,9 @@ ZIP_NAME="${ZIP_NAME:-${PLUGIN_SLUG}-wp-plugin.zip}"
 ZIP_PATH="${ZIP_PATH:-$DIST_DIR/$ZIP_NAME}"
 SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-}"
 
+# ZIP headers store local timestamps, so pin the timezone for cross-host reproducibility.
+export TZ=UTC
+
 case "$DIST_DIR" in
 	/*) ;;
 	*) DIST_DIR="$ROOT_DIR/$DIST_DIR" ;;
