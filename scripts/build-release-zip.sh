@@ -66,7 +66,10 @@ printf 'Building React production assets...\n'
 CI=false npm --prefix "$PLUGIN_DIR/react" run build
 
 [ -d "$PLUGIN_DIR/react/build" ] || fail "React build was not generated"
-[ -f "$PLUGIN_DIR/react/build/index.html" ] || fail "React build index was not generated"
+[ -f "$PLUGIN_DIR/react/build/settings-content.html" ] || fail "React settings content was not generated"
+[ -f "$PLUGIN_DIR/react/build/static/js/main.js" ] || fail "React admin script was not generated"
+[ -f "$PLUGIN_DIR/react/build/static/js/main.asset.php" ] || fail "React admin asset metadata was not generated"
+[ -f "$PLUGIN_DIR/react/build/static/css/main.css" ] || fail "React admin stylesheet was not generated"
 
 STAGE_DIR="$(mktemp -d)"
 cleanup() {
@@ -91,6 +94,8 @@ rsync -a --delete \
 	--exclude '/react/package-lock.json' \
 	--exclude '/react/README.md' \
 	--exclude '/react/config-overrides.js' \
+	--exclude '/react/webpack.config.js' \
+	--exclude '/react/jest-unit.config.js' \
 	--exclude '/phpunit.xml' \
 	--exclude '/.git' \
 	--exclude '/.gitignore' \

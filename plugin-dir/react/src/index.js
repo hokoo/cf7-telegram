@@ -1,11 +1,11 @@
 import React from 'react';
-import ReactDOM from 'react-dom/client';
+import { render } from '@wordpress/element';
 import './App.scss';
 import App from './App';
 
-const root = ReactDOM.createRoot(document.getElementById('settings-content'));
-root.render(
+render(
     <React.StrictMode>
         <App/>
-    </React.StrictMode>
+    </React.StrictMode>,
+    document.getElementById('settings-content')
 );

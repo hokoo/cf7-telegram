@@ -77,7 +77,9 @@ for entry in "${ZIP_ENTRIES[@]}"; do
 		"${PLUGIN_SLUG}/react/package.json"|\
 		"${PLUGIN_SLUG}/react/package-lock.json"|\
 		"${PLUGIN_SLUG}/react/README.md"|\
-		"${PLUGIN_SLUG}/react/config-overrides.js")
+		"${PLUGIN_SLUG}/react/config-overrides.js"|\
+		"${PLUGIN_SLUG}/react/webpack.config.js"|\
+		"${PLUGIN_SLUG}/react/jest-unit.config.js")
 			fail "React development file is present: $entry"
 			;;
 		"${PLUGIN_SLUG}/tests"|\
@@ -138,8 +140,10 @@ grep -q "ComposerAutoloaderInit${AUTOLOADER_SUFFIX}" "$PLUGIN_ROOT/vendor/autolo
 grep -q "class ComposerAutoloaderInit${AUTOLOADER_SUFFIX}" "$PLUGIN_ROOT/vendor/composer/autoload_real.php" || fail "Composer real autoloader suffix is not deterministic"
 grep -q "class ComposerStaticInit${AUTOLOADER_SUFFIX}" "$PLUGIN_ROOT/vendor/composer/autoload_static.php" || fail "Composer static autoloader suffix is not deterministic"
 [ -d "$PLUGIN_ROOT/react/build" ] || fail "React build directory missing: $PLUGIN_SLUG/react/build"
-[ -f "$PLUGIN_ROOT/react/build/index.html" ] || fail "React build index missing: $PLUGIN_SLUG/react/build/index.html"
-[ -s "$PLUGIN_ROOT/react/build/asset-manifest.json" ] || fail "React asset manifest missing or empty"
+[ -f "$PLUGIN_ROOT/react/build/settings-content.html" ] || fail "React settings content missing: $PLUGIN_SLUG/react/build/settings-content.html"
+[ -f "$PLUGIN_ROOT/react/build/static/js/main.js" ] || fail "React admin script missing: $PLUGIN_SLUG/react/build/static/js/main.js"
+[ -f "$PLUGIN_ROOT/react/build/static/css/main.css" ] || fail "React admin stylesheet missing: $PLUGIN_SLUG/react/build/static/css/main.css"
+[ -s "$PLUGIN_ROOT/react/build/static/js/main.asset.php" ] || fail "React asset metadata missing or empty: $PLUGIN_SLUG/react/build/static/js/main.asset.php"
 [ -f "$README_PATH" ] || fail "WordPress readme missing: $PLUGIN_SLUG/readme.txt"
 
 header_version="$(sed -nE 's/^[[:space:]]*\*[[:space:]]*Version:[[:space:]]*([^[:space:]]+).*/\1/p' "$ENTRYPOINT_PATH" | head -n 1)"
