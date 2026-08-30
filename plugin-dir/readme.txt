@@ -44,6 +44,13 @@ This plugin uses [API Telegram](https://core.telegram.org/api "Telegram docs") a
 
 == Changelog ==
 
+= 1.0.13 =
+- Make Telegram bot actions POST-first and harden the administration interface against partial loading, pagination, and retry failures.
+- Preserve WordPress administration notices and improve diagnostics without exposing bot tokens or contact details.
+- Add automatic 30-day and 10,000-row log retention with configurable limits.
+- Verify the release ZIP across supported WordPress, PHP, and Contact Form 7 versions, including install, upgrade, uninstall, and rollback workflows.
+- Add reproducible build, Plugin Check, dependency audit, artifact hygiene, browser canary, and manually approved WordPress.org promotion gates.
+
 = 1.0.12 =
 - Replace the Telegram SDK with a smaller WordPress HTTP integration and safer error handling.
 - Validate bot tokens before saving them and preserve existing chat connections when the bot identity is unchanged.
