@@ -14,6 +14,18 @@ if ( ! defined( 'MINUTE_IN_SECONDS' ) ) {
 	define( 'MINUTE_IN_SECONDS', 60 );
 }
 
+if ( ! defined( 'WPCF7TG_PLUGIN_NAME' ) ) {
+	define( 'WPCF7TG_PLUGIN_NAME', 'cf7-telegram/cf7-telegram.php' );
+}
+
+if ( ! defined( 'WPCF7TG_VERSION' ) ) {
+	define( 'WPCF7TG_VERSION', '1.0.10' );
+}
+
+if ( ! defined( 'WPCF7TG_FILE' ) ) {
+	define( 'WPCF7TG_FILE', dirname( __DIR__ ) . '/cf7-telegram.php' );
+}
+
 if ( ! class_exists( 'WP_Error' ) ) {
 	class WP_Error {
 		private string $code;
@@ -186,7 +198,18 @@ if ( ! function_exists( 'apply_filters' ) ) {
 
 if ( ! function_exists( 'do_action' ) ) {
 	function do_action( string $hook_name, ...$args ): void {
-		apply_filters( $hook_name, null, ...$args );
+		if ( empty( $GLOBALS['wp_filter'][ $hook_name ] ) ) {
+			return;
+		}
+
+		ksort( $GLOBALS['wp_filter'][ $hook_name ] );
+
+		foreach ( $GLOBALS['wp_filter'][ $hook_name ] as $callbacks ) {
+			foreach ( $callbacks as $callback ) {
+				$call_args = array_slice( $args, 0, $callback['accepted_args'] );
+				call_user_func_array( $callback['function'], $call_args );
+			}
+		}
 	}
 }
 
@@ -207,6 +230,31 @@ if ( ! function_exists( 'sanitize_title' ) ) {
 		$title = strtolower( $title );
 		$title = preg_replace( '/[^a-z0-9_-]+/', '-', $title ) ?: '';
 		return trim( $title, '-' );
+	}
+}
+
+if ( ! function_exists( 'sanitize_key' ) ) {
+	function sanitize_key( string $key ): string {
+		$key = strtolower( $key );
+		return preg_replace( '/[^a-z0-9_\\-]/', '', $key ) ?: '';
+	}
+}
+
+if ( ! function_exists( 'trailingslashit' ) ) {
+	function trailingslashit( string $value ): string {
+		return rtrim( $value, '/\\' ) . '/';
+	}
+}
+
+if ( ! function_exists( 'untrailingslashit' ) ) {
+	function untrailingslashit( string $value ): string {
+		return rtrim( $value, '/\\' );
+	}
+}
+
+if ( ! function_exists( 'plugin_dir_path' ) ) {
+	function plugin_dir_path( string $file ): string {
+		return trailingslashit( dirname( $file ) );
 	}
 }
 
@@ -482,19 +530,21 @@ function cf7tg_test_reset_environment(): void {
 
 function cf7tg_test_cron_events( string $hook ): array {
 	$events = [];
-	$key = md5( serialize( [] ) );
 
 	foreach ( _get_cron_array() as $timestamp => $cron ) {
-		if ( ! isset( $cron[ $hook ][ $key ] ) ) {
+		if ( ! isset( $cron[ $hook ] ) ) {
 			continue;
 		}
 
-		$events[] = array_merge(
-			[
-				'timestamp' => (int) $timestamp,
-			],
-			$cron[ $hook ][ $key ]
-		);
+		foreach ( $cron[ $hook ] as $event_key => $event ) {
+			$events[] = array_merge(
+				[
+					'timestamp' => (int) $timestamp,
+					'event_key' => (string) $event_key,
+				],
+				$event
+			);
+		}
 	}
 
 	return $events;
