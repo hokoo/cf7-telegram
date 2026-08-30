@@ -62,7 +62,7 @@ for entry in "${ZIP_ENTRIES[@]}"; do
 		*/node_modules/*|*/.git/*|*/.github/*|*/.env|*/.env.*|*/.gitignore)
 			fail "development or hidden artifact is present: $entry"
 			;;
-		*/local-dev/*|*/benchmark/*|*/benchmarks/*|*/coverage/*)
+		*/local-dev/*)
 			fail "local development artifact is present: $entry"
 			;;
 		"${PLUGIN_SLUG}/react/src/"*|"${PLUGIN_SLUG}/react/public/"*|"${PLUGIN_SLUG}/react/scripts/"*)
@@ -137,11 +137,6 @@ for entry in "${ZIP_ENTRIES[@]}"; do
 			;;
 		"${PLUGIN_SLUG,,}/vendor/"*/test/*|\
 		"${PLUGIN_SLUG,,}/vendor/"*/tests/*|\
-		"${PLUGIN_SLUG,,}/vendor/"*/build/*|\
-		"${PLUGIN_SLUG,,}/vendor/"*/builds/*|\
-		"${PLUGIN_SLUG,,}/vendor/"*/benchmark/*|\
-		"${PLUGIN_SLUG,,}/vendor/"*/benchmarks/*|\
-		"${PLUGIN_SLUG,,}/vendor/"*/coverage/*|\
 		"${PLUGIN_SLUG,,}/vendor/"*/doc/*|\
 		"${PLUGIN_SLUG,,}/vendor/"*/docs/*|\
 		"${PLUGIN_SLUG,,}/vendor/"*/example/*|\
@@ -154,6 +149,10 @@ for entry in "${ZIP_ENTRIES[@]}"; do
 		"${PLUGIN_SLUG,,}/vendor/"*/psalm/*|\
 		"${PLUGIN_SLUG,,}/vendor/"*/docker/*)
 			fail "vendor development directory is present: $entry"
+			;;
+		"${PLUGIN_SLUG,,}/vendor/ramsey/collection/build"|\
+		"${PLUGIN_SLUG,,}/vendor/ramsey/collection/build/"*)
+			fail "vendor build artifact is present: $entry"
 			;;
 		"${PLUGIN_SLUG,,}/vendor/"*/phpunit*|\
 		"${PLUGIN_SLUG,,}/vendor/"*/phpstan*|\

@@ -61,12 +61,52 @@ run_report() {
 require_command composer
 require_command jq
 require_command npm
+require_command readlink
 
 [ -d "$PLUGIN_DIR" ] || fail "plugin directory not found: $PLUGIN_DIR"
 [ -d "$REACT_DIR" ] || fail "React directory not found: $REACT_DIR"
 [ -f "$ROOT_DIR/composer.lock" ] || fail "root composer.lock not found"
 [ -f "$PLUGIN_DIR/composer.lock" ] || fail "plugin composer.lock not found"
 [ -f "$REACT_DIR/package-lock.json" ] || fail "React package-lock.json not found"
+
+case "$REPORT_DIR" in
+	/*) ;;
+	*) REPORT_DIR="$ROOT_DIR/$REPORT_DIR" ;;
+esac
+
+ROOT_DIR="$(readlink -m "$ROOT_DIR")"
+REPORT_DIR="$(readlink -m "$REPORT_DIR")"
+DIST_ROOT="$(readlink -m "$ROOT_DIR/dist")"
+TMP_ROOT="$(readlink -m "${TMPDIR:-/tmp}")"
+RUNNER_TEMP_ROOT=""
+
+if [ -n "${RUNNER_TEMP:-}" ]; then
+	RUNNER_TEMP_ROOT="$(readlink -m "$RUNNER_TEMP")"
+fi
+
+is_within() {
+	local child="$1"
+	local parent="$2"
+
+	[ -n "$parent" ] || return 1
+	[ "$child" != "$parent" ] || return 1
+
+	case "$child/" in
+		"$parent"/*) return 0 ;;
+	esac
+
+	return 1
+}
+
+if [ -z "$REPORT_DIR" ] || [ "$REPORT_DIR" = "/" ] || [ "$REPORT_DIR" = "$ROOT_DIR" ]; then
+	fail "unsafe audit report directory: $REPORT_DIR"
+fi
+
+if ! is_within "$REPORT_DIR" "$DIST_ROOT" && \
+	! is_within "$REPORT_DIR" "$TMP_ROOT" && \
+	! is_within "$REPORT_DIR" "$RUNNER_TEMP_ROOT"; then
+	fail "audit report directory must be under $DIST_ROOT, $TMP_ROOT, or RUNNER_TEMP"
+fi
 
 rm -rf "$REPORT_DIR"
 mkdir -p "$REPORT_DIR"

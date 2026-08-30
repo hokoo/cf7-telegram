@@ -113,13 +113,9 @@ composer --working-dir="$PLUGIN_STAGE" install --no-dev --no-interaction --prefe
 [ -f "$PLUGIN_STAGE/vendor/autoload.php" ] || fail "Composer autoload was not generated"
 
 rm -f "$PLUGIN_STAGE/composer.json" "$PLUGIN_STAGE/composer.lock"
+rm -rf "$PLUGIN_STAGE/vendor/ramsey/collection/build"
 
 find "$PLUGIN_STAGE/vendor" -depth -type d \( \
-	-iname 'build' -o \
-	-iname 'builds' -o \
-	-iname 'benchmark' -o \
-	-iname 'benchmarks' -o \
-	-iname 'coverage' -o \
 	-name 'local-dev' -o \
 	-iname 'test' -o \
 	-iname 'tests' -o \
