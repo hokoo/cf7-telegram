@@ -40,6 +40,12 @@ Runs after each Telegram delivery attempt. A Telegram failure does not abort the
 Action <code>wpcf7tg_messages_sent( $list, $output, $mode, $submission )</code>
 Runs after all configured recipients have been attempted.
 
+Constant <code>WPCF7TG_LOG_RETENTION_DAYS</code> and filter <code>cf7tg/logRetentionDays</code>
+Set the log retention period in days. The default is 30; set it to 0 to disable age-based pruning.
+
+Constant <code>WPCF7TG_LOG_MAX_ROWS</code> and filter <code>cf7tg/logMaxRows</code>
+Set the maximum number of newest log rows to retain. The default is 10000.
+
 This plugin uses [API Telegram](https://core.telegram.org/api "Telegram docs") and sends remote HTTP requests to Telegram servers to deliver notifications.
 
 == Changelog ==
