@@ -6,7 +6,6 @@ if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 
 use iTRON\cf7Telegram\Channel;
 use iTRON\cf7Telegram\Client;
-use iTRON\wpConnections\Exceptions\RelationNotFound;
 use iTRON\wpConnections\Query;
 
 class CF7 {
@@ -70,26 +69,61 @@ class CF7 {
 		endif;
 
 		$targetChannels = $client->getChannels()->filterByIDs( $connections->column( 'to' ) );
+		$deliveries = [];
 		foreach ( $targetChannels as $channel ) {
 			/** @var Channel $channel */
 			try {
-				$channel->doSendOut( apply_filters( 'cf7tg_filtered_message', $output, $instance, $mode ), $mode );
-			} catch ( RelationNotFound $e ) {
-				// @todo log
+				$deliveries = array_merge(
+					$deliveries,
+					$channel->doSendOut( apply_filters( 'cf7tg_filtered_message', $output, $instance, $mode ), $mode, $instance )
+				);
+			} catch ( \Throwable $exception ) {
+				do_action( 'cf7tg_telegram_delivery_exception', $exception, $channel, $instance );
 			}
+		}
+
+		if ( ! empty( $deliveries ) ) {
+			$legacyList = [];
+			foreach ( $deliveries as $delivery ) {
+				$chatID = $delivery['chatID'] ?? null;
+				if ( null !== $chatID ) {
+					$legacyList[ $chatID ] = [ 'id' => $chatID ];
+				}
+			}
+
+			do_action( 'wpcf7tg_messages_sent', $legacyList, $output, $mode, $instance );
+			do_action( 'cf7tg_telegram_deliveries_completed', $deliveries, $output, $mode, $instance );
 		}
 	}
 
 	public static function markdown( $content ){
-		$tags = apply_filters( 'cf7tg_markdown', self::$markdown_tags );
-		extract( $tags );
+		$tags = apply_filters( 'wpcf7tg_markdown', self::$markdown_tags );
+		$tags = apply_filters( 'cf7tg_markdown', $tags );
 
-		$content = ! empty( $bold ) ? str_replace( $bold, '*', $content ) : $content;
-		$content = ! empty( $italic ) ? str_replace( $italic, '_', $content ) : $content;
-		$content = ! empty( $code ) ? str_replace( $code, ' ``` ', $content ) : $content;
-		$content = ! empty( $underline ) ? str_replace( $underline, '__', $content ) : $content;
-		$content = ! empty( $strike ) ? str_replace( $strike, '~', $content ) : $content;
+		$replacements = [
+			'bold'      => '*',
+			'italic'    => '_',
+			'code'      => ' ``` ',
+			'underline' => '__',
+			'strike'    => '~',
+		];
+
+		$placeholders = [];
+		foreach ( $replacements as $group => $marker ) {
+			foreach ( (array) ( $tags[ $group ] ?? [] ) as $index => $tag ) {
+				$placeholder = "\x1A" . $group . $index . "\x1A";
+				$placeholders[ $placeholder ] = $marker;
+				$content = str_replace( $tag, $placeholder, $content );
+			}
+		}
+
+		$content = self::escapeMarkdownText( $content );
+		$content = str_replace( array_keys( $placeholders ), array_values( $placeholders ), $content );
 
 		return apply_filters( 'cf7tg_markdown_content', $content, $tags );
+	}
+
+	private static function escapeMarkdownText( string $content ): string {
+		return preg_replace( '/([_*`\[])/', '\\\\$1', $content ) ?? $content;
 	}
 }

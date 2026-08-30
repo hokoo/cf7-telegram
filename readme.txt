@@ -5,7 +5,7 @@ Tags: contact form telegram,contact form 7,telegram
 Requires at least: 5.6
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.0.11
+Stable tag: 1.0.12
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -31,9 +31,25 @@ Use it to skip sending a Telegram message.
 Filter <code>wpcf7tg_markdown</code>
 Use it to customize the allowed Markdown tags.
 
+Filter <code>wpcf7tg_sendMessage( $args, $chat_id, $mode )</code>
+Use it to customize Telegram <code>sendMessage</code> arguments for each recipient and message chunk.
+
+Action <code>wpcf7tg_message_sent( $args, $submission )</code>
+Runs after each Telegram delivery attempt. A Telegram failure does not abort the Contact Form 7 submission.
+
+Action <code>wpcf7tg_messages_sent( $list, $output, $mode, $submission )</code>
+Runs after all configured recipients have been attempted.
+
 This plugin uses [API Telegram](https://core.telegram.org/api "Telegram docs") and sends remote HTTP requests to Telegram servers to deliver notifications.
 
 == Changelog ==
+
+= 1.0.12 =
+- Replace the Telegram SDK with a smaller WordPress HTTP integration and safer error handling.
+- Validate bot tokens before saving them and preserve existing chat connections when the bot identity is unchanged.
+- Make update polling webhook-aware and prevent failed updates from being skipped.
+- Load every page of Telegram chats in the administration interface.
+- Improve Unicode message chunking, plaintext fallback, multi-recipient delivery, and legacy hook compatibility.
 
 = 1.0.11 =
 - Make legacy migrations self-healing, retryable, and safe to run repeatedly.

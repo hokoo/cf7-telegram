@@ -4,7 +4,6 @@ namespace iTRON\cf7Telegram;
 
 if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 
-use Illuminate\Support\Collection;
 use iTRON\wpPostAble\Exceptions\wppaCreatePostException;
 use iTRON\wpPostAble\Exceptions\wppaLoadPostException;
 use iTRON\wpPostAble\Exceptions\wppaSavePostException;
@@ -121,13 +120,13 @@ class Util {
 	/**
 	 * @throws wppaSavePostException
 	 */
-	static function createChat( Collection $tg_chat ): Chat {
-		$chatID    = self::sanitizeTelegramChatID( $tg_chat->get( 'id' ) );
-		$chatType  = self::sanitizeTelegramChatType( $tg_chat->get( 'type' ) );
-		$firstName = self::sanitizeTelegramText( $tg_chat->get( 'first_name' ) ?? '' );
-		$lastName  = self::sanitizeTelegramText( $tg_chat->get( 'last_name' ) ?? '' );
-		$username  = self::sanitizeTelegramText( $tg_chat->get( 'username' ) ?? '' );
-		$title     = self::sanitizeTelegramText( $tg_chat->get( 'title' ) ?? '' );
+	static function createChat( $tg_chat ): Chat {
+		$chatID    = self::sanitizeTelegramChatID( self::telegramValue( $tg_chat, 'id' ) );
+		$chatType  = self::sanitizeTelegramChatType( self::telegramValue( $tg_chat, 'type' ) );
+		$firstName = self::sanitizeTelegramText( self::telegramValue( $tg_chat, 'first_name' ) ?? '' );
+		$lastName  = self::sanitizeTelegramText( self::telegramValue( $tg_chat, 'last_name' ) ?? '' );
+		$username  = self::sanitizeTelegramText( self::telegramValue( $tg_chat, 'username' ) ?? '' );
+		$title     = self::sanitizeTelegramText( self::telegramValue( $tg_chat, 'title' ) ?? '' );
 
 		if ( '' === $title ) {
 			$title = trim( $firstName . ' ' . $lastName );
@@ -152,6 +151,34 @@ class Util {
 			->publish();
 
 		return $chat;
+	}
+
+	/**
+	 * @throws wppaSavePostException
+	 */
+	static function createChatFromArray( array $tg_chat ): Chat {
+		return self::createChat( $tg_chat );
+	}
+
+	public static function telegramValue( $data, string $key, $default = null ) {
+		if ( is_array( $data ) ) {
+			return array_key_exists( $key, $data ) ? $data[ $key ] : $default;
+		}
+
+		if ( $data instanceof \ArrayAccess && isset( $data[ $key ] ) ) {
+			return $data[ $key ];
+		}
+
+		if ( is_object( $data ) && method_exists( $data, 'get' ) ) {
+			$value = $data->get( $key );
+			return null === $value ? $default : $value;
+		}
+
+		if ( is_object( $data ) && property_exists( $data, $key ) ) {
+			return $data->$key;
+		}
+
+		return $default;
 	}
 
 	/**

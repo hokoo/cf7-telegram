@@ -7,7 +7,7 @@ if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 use iTRON\cf7Telegram\Collections\BotCollection;
 use iTRON\cf7Telegram\Collections\ChatCollection;
 use iTRON\cf7Telegram\Collections\FormCollection;
-use iTRON\cf7Telegram\Exceptions\Telegram;
+use iTRON\cf7Telegram\Telegram\TelegramDeliveryResult;
 use iTRON\wpConnections\Abstracts\Connection;
 use iTRON\wpConnections\Exceptions\ConnectionWrongData;
 use iTRON\wpConnections\Exceptions\MissingParameters;
@@ -202,11 +202,11 @@ class Channel extends Entity implements wpPostAble{
 	 * @throws RelationNotFound
 	 * not @throws Telegram exception due to throwOnError is set to false.
 	 */
-	public function doSendOut(string $message, string $mode ) {
+	public function doSendOut( string $message, string $mode, $instance = null ): array {
 		$chats = $this->getChats();
 
 		if ( $chats->isEmpty() ) {
-			return;
+			return [];
 		}
 
 		$bot = $this->getBot();
@@ -220,13 +220,38 @@ class Channel extends Entity implements wpPostAble{
 				'Channel has no bot connected. Telegram send skipped.',
 				Logger::LEVEL_WARNING
 			);
-			return;
+			return [];
 		}
 
+		$deliveries = [];
 		foreach ( $chats as $chat ) {
 			/** @var Chat $chat */
-			$bot->sendMessage( $chat, $message, $mode, false, [ $this ] );
+			try {
+				$results = $bot->sendMessage(
+					$chat,
+					$message,
+					$mode,
+					false,
+					[ 'channel' => $this, 'instance' => $instance ]
+				);
+			} catch ( \Throwable $exception ) {
+				$results = [ TelegramDeliveryResult::failure(
+					0,
+					(int) $exception->getCode(),
+					$exception->getMessage(),
+					null,
+					TelegramDeliveryResult::ERROR_TRANSPORT
+				) ];
+			}
+
+			$deliveries[] = [
+				'chatID'     => $chat->getChatID(),
+				'chatPostID' => $chat->getPost()->ID,
+				'results'    => $results,
+			];
 		}
+
+		return $deliveries;
 	}
 
 	/**

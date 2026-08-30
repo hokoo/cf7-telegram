@@ -7,4 +7,7 @@ if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 class RestBotUpdates {
 	public bool $hasNewChats = false;
 	public bool $hasNewConnections = false;
+	public bool $hasWebhookConflict = false;
+	public ?array $webhookInfo = null;
+	public array $errors = [];
 }

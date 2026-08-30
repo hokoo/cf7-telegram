@@ -54,6 +54,28 @@ class BotController extends Controller {
 				],
 			]
 		);
+
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->rest_base . '/(?P<id>[\d]+)' . '/token',
+			[
+				'args' => [
+					'id' => [
+						'description' => 'Unique identifier for the bot.',
+						'type'        => 'integer',
+					],
+					'token' => [
+						'required' => true,
+						'type'     => 'string',
+					],
+				],
+				[
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => [ $this, 'replace_token' ],
+					'permission_callback' => [ $this, 'update_item_permissions_check' ],
+				],
+			]
+		);
 	}
 
 	/**
@@ -102,6 +124,36 @@ class BotController extends Controller {
 		return $result;
 	}
 
+	public function replace_token( $request ): WP_Error|WP_REST_Response|WP_HTTP_Response {
+		try {
+			$bot = new Bot( (int) $request['id'] );
+		} catch ( wppaException $exception ) {
+			return new WP_Error(
+				'rest_post_invalid_id',
+				'Invalid bot ID.',
+				[ 'status' => 404 ]
+			);
+		}
+
+		try {
+			$result = $bot->replaceTokenIfValid( (string) $request['token'] );
+		} catch ( \iTRON\cf7Telegram\Exceptions\Telegram $exception ) {
+			return new WP_Error(
+				'rest_bot_token_invalid',
+				$exception->getMessage(),
+				[ 'status' => 400 ]
+			);
+		} catch ( \Throwable $exception ) {
+			return new WP_Error(
+				'rest_bot_token_update_failed',
+				'Bot token could not be updated.',
+				[ 'status' => 500 ]
+			);
+		}
+
+		return rest_ensure_response( $result );
+	}
+
 	/**
 	 * @param $post
 	 * @param $request
@@ -114,6 +166,7 @@ class BotController extends Controller {
 		$base = sprintf( '%s/%s', $this->namespace, $this->rest_base );
 		$response->add_link( 'ping', rest_url( trailingslashit( $base ) . $post->ID . '/ping' ) );
 		$response->add_link( 'fetch_updates', rest_url( trailingslashit( $base ) . $post->ID . '/fetch_updates' ) );
+		$response->add_link( 'replace_token', rest_url( trailingslashit( $base ) . $post->ID . '/token' ) );
 
 		return $response;
 	}

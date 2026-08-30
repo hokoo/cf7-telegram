@@ -188,6 +188,18 @@ class Chat extends Entity implements WPPostAble{
 	}
 
 	/**
+	 * Returns an empty status when a bot relation exists but its metadata was not persisted.
+	 *
+	 * @throws ConnectionNotFound
+	 * @throws RelationNotFound
+	 */
+	public function getBotConnectionStatus( Bot $bot ): string {
+		$connection = $this->getBotConnection( $bot );
+		$meta = $connection->meta->where( 'key', self::STATUS_KEY )->first();
+		return $meta ? (string) $meta->value : '';
+	}
+
+	/**
 	 * @throws ConnectionNotFound
 	 * @throws RelationNotFound
 	 */
