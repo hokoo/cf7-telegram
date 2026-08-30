@@ -124,12 +124,22 @@ if [ -d assets ]; then
 	svn update --set-depth infinity assets
 fi
 
-[ ! -e "tags/${VERSION}" ] || fail "version ${VERSION} is already present in SVN tags"
-
 plugin_version="$(sed -nE 's/^[[:space:]]*\*[[:space:]]*Version:[[:space:]]*([^[:space:]]+).*/\1/p' "${BUILD_DIR}/${SLUG}.php" | head -n 1)"
 stable_tag="$(sed -nE 's/^Stable tag:[[:space:]]*([^[:space:]]+).*/\1/p' "${BUILD_DIR}/readme.txt" | head -n 1)"
 [ "${plugin_version}" = "${VERSION}" ] || fail "plugin header version ${plugin_version:-missing} does not match ${VERSION}"
 [ "${stable_tag}" = "${VERSION}" ] || fail "readme stable tag ${stable_tag:-missing} does not match ${VERSION}"
+
+if [ -e "tags/${VERSION}" ]; then
+	svn update --set-depth infinity "tags/${VERSION}"
+	trunk_diff="$(rsync -rcn --delete --exclude '.svn' --itemize-changes "${BUILD_DIR}/" trunk/)"
+	tag_diff="$(rsync -rcn --delete --exclude '.svn' --itemize-changes "${BUILD_DIR}/" "tags/${VERSION}/")"
+	if [ -n "${trunk_diff}" ] || [ -n "${tag_diff}" ]; then
+		fail "version ${VERSION} exists in SVN but trunk/tag do not match the exact candidate"
+	fi
+
+	printf 'Plugin %s version %s is already deployed exactly; no SVN commit is needed.\n' "${SLUG}" "${VERSION}"
+	exit 0
+fi
 
 printf 'Syncing verified build into SVN trunk...\n'
 rsync -rc --delete --delete-excluded "${BUILD_DIR}/" trunk/

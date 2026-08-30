@@ -81,7 +81,8 @@ jq -e \
 		and (
 			[.support_matrix[] | select(.required == true) | .matrix_id] as $required
 			| [.evidence[] | select(.step == "lifecycle" and .status == "pass") | .row] as $passed
-			| all($required[]; . as $row | $passed | index($row) != null)
+			| ($required | length) > 0
+			and all($required[]; . as $row | $passed | index($row) != null)
 		)
 		and any(
 			.row_summaries[].evidence[];

@@ -87,4 +87,14 @@ if "${REPO_ROOT}/scripts/verify-promotion-evidence.sh" >/dev/null 2>&1; then
 	exit 1
 fi
 
+DB_SNAPSHOT="${WORKDIR}/rollback.sql"
+export DB_SNAPSHOT
+jq '.support_matrix = []' "${SUPPORT_SUMMARY}" > "${WORKDIR}/support-empty-matrix.json"
+SUPPORT_SUMMARY="${WORKDIR}/support-empty-matrix.json"
+export SUPPORT_SUMMARY
+if "${REPO_ROOT}/scripts/verify-promotion-evidence.sh" >/dev/null 2>&1; then
+	printf 'Promotion evidence test failed: empty required support matrix was accepted.\n' >&2
+	exit 1
+fi
+
 printf 'Promotion evidence regression test passed.\n'

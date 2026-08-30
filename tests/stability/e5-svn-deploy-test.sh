@@ -66,6 +66,26 @@ svn status --xml "${WORKING_COPY}" | python3 "${REPO_ROOT}/scripts/svn-status.py
 	exit 1
 }
 
+svn commit --quiet "${WORKING_COPY}" -m 'Publish prepared candidate'
+rerun_output="$(
+	"${REPO_ROOT}/scripts/deploy-wordpress-svn.sh" \
+		--slug cf7-telegram \
+		--version 1.0.13 \
+		--build-dir "${BUILD_DIR}" \
+		--svn-url "file://${REPOSITORY}" \
+		--working-copy "${WORKING_COPY}" \
+		--dry-run \
+		--keep-working-copy
+)"
+grep -q 'already deployed exactly' <<<"${rerun_output}" || {
+	printf 'SVN deploy test failed: exact existing tag was not treated idempotently.\n' >&2
+	exit 1
+}
+[ "$(svnlook youngest "${REPOSITORY}")" = '2' ] || {
+	printf 'SVN deploy test failed: idempotent rerun changed the repository revision.\n' >&2
+	exit 1
+}
+
 STATUS_FIXTURE="${WORKDIR}/status.xml"
 cat > "${STATUS_FIXTURE}" <<'XML'
 <?xml version="1.0" encoding="UTF-8"?>

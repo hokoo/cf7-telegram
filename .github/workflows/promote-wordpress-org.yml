@@ -70,6 +70,7 @@ jobs:
         run: |
           set -Eeuo pipefail
 
+          [ "$GITHUB_REF" = 'refs/heads/master' ] || { echo "Promotion workflow must run from master" >&2; exit 1; }
           [[ "$CANARY_RUN_ID" =~ ^[0-9]+$ ]] || { echo "Invalid canary run ID" >&2; exit 1; }
           [[ "$EXPECTED_SHA256" =~ ^[0-9a-fA-F]{64}$ ]] || { echo "Invalid candidate SHA-256" >&2; exit 1; }
 
@@ -88,6 +89,7 @@ jobs:
           [ "$(jq -r '.conclusion' <<<"$run_json")" = "success" ]
           [ "$(jq -r '.event' <<<"$run_json")" = "release" ]
           [ "$(jq -r '.head_sha' <<<"$run_json")" = "$release_sha" ]
+          [ "$(jq -r '.path' <<<"$run_json")" = ".github/workflows/build-zip.yml" ]
 
           canary_tag="$(jq -r '.head_branch' <<<"$run_json")"
           canary_json="$(gh release view "$canary_tag" --json isDraft,isPrerelease)"
@@ -176,14 +178,23 @@ jobs:
           name: ${{ env.PROMOTION_BUNDLE }}
           path: promotion
 
-      - name: Recheck immutable candidate
+      - name: Recheck immutable candidate and rollback state after approval
         env:
           EXPECTED_SHA256: ${{ needs.verify-promotion.outputs.candidate_sha256 }}
+          ROLLBACK_VERSION: ${{ inputs.rollback_version }}
+          ROLLBACK_SHA256: ${{ inputs.rollback_sha256 }}
         shell: bash
         run: |
           set -Eeuo pipefail
           actual_sha256="$(sha256sum promotion/final/cf7-telegram-wp-plugin.zip | awk '{print $1}')"
           [ "$actual_sha256" = "$EXPECTED_SHA256" ]
+          rollback_sha256="$(sha256sum promotion/rollback.zip | awk '{print $1}')"
+          [ "$rollback_sha256" = "${ROLLBACK_SHA256,,}" ]
+          current_version="$(curl -fsSL 'https://api.wordpress.org/plugins/info/1.2/?action=plugin_information&request%5Bslug%5D=cf7-telegram' | jq -r '.version')"
+          [ "$current_version" = "$ROLLBACK_VERSION" ] || {
+            echo "WordPress.org changed to $current_version while approval was pending" >&2
+            exit 1
+          }
           EXPECTED_VERSION="${{ needs.verify-promotion.outputs.version }}" scripts/validate-release-zip.sh promotion/final/cf7-telegram-wp-plugin.zip
           mkdir -p release-work
           unzip -q promotion/final/cf7-telegram-wp-plugin.zip -d release-work
