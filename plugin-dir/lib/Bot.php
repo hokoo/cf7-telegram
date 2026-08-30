@@ -34,6 +34,9 @@ class Bot extends Entity implements wpPostAble{
 	const STATUS_OFFLINE = 'offline';
 	const TOKEN_CONST_MASK = 'WPFC7TG_BOT_TOKEN__%d';
 	const EMPTY_TOKEN_MASK = '[%s]'; /** @see isTokenEmpty() method */
+	public const FETCH_UPDATES_LOCK_KEY_PATTERN = 'cf7tg_fetch_updates_lock_%d';
+	public const FETCH_UPDATES_LOCK_PREFIX = 'cf7tg_fetch_updates_lock_';
+	public const FETCH_UPDATES_LOCK_TTL = 60;
 
 	public ChatCollection $chats;
 
@@ -278,10 +281,14 @@ class Bot extends Entity implements wpPostAble{
 	}
 
 	private function getFetchUpdatesLockKey(): string {
-		return sprintf( 'cf7tg_fetch_updates_lock_%d', $this->getPost()->ID );
+		return sprintf( self::FETCH_UPDATES_LOCK_KEY_PATTERN, $this->getPost()->ID );
 	}
 
-	private function acquireFetchUpdatesLock( int $ttl = 60 ): bool {
+	private function acquireFetchUpdatesLock( int $ttl = self::FETCH_UPDATES_LOCK_TTL ): bool {
+		if ( Maintenance::hasCleanupLock() ) {
+			return false;
+		}
+
 		$lockKey  = $this->getFetchUpdatesLockKey();
 		$lockedAt = (int) get_option( $lockKey, 0 );
 		$now      = time();
@@ -294,7 +301,16 @@ class Bot extends Entity implements wpPostAble{
 			delete_option( $lockKey );
 		}
 
-		return add_option( $lockKey, $now, '', false );
+		if ( ! add_option( $lockKey, $now, '', false ) ) {
+			return false;
+		}
+
+		if ( Maintenance::hasCleanupLock() ) {
+			$this->releaseFetchUpdatesLock();
+			return false;
+		}
+
+		return true;
 	}
 
 	private function releaseFetchUpdatesLock(): void {
