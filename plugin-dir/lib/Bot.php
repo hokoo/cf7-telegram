@@ -33,6 +33,9 @@ class Bot extends Entity implements wpPostAble{
 	const STATUS_ONLINE  = 'online';
 	const STATUS_OFFLINE = 'offline';
 	const TOKEN_CONST_MASK = 'WPFC7TG_BOT_TOKEN__%d';
+	const LEGACY_TOKEN_CONST = 'WPFC7TG_BOT_TOKEN';
+	const TOKEN_SOURCE_PARAM = 'tokenSource';
+	const TOKEN_SOURCE_LEGACY_CONST = 'legacy_global_constant';
 	const EMPTY_TOKEN_MASK = '[%s]'; /** @see isTokenEmpty() method */
 	public const FETCH_UPDATES_LOCK_KEY_PATTERN = 'cf7tg_fetch_updates_lock_%d';
 	public const FETCH_UPDATES_LOCK_PREFIX = 'cf7tg_fetch_updates_lock_';
@@ -89,6 +92,10 @@ class Bot extends Entity implements wpPostAble{
 	}
 
 	public function getTokenConstName(): string {
+		if ( $this->usesLegacyTokenConstant() ) {
+			return self::LEGACY_TOKEN_CONST;
+		}
+
 		return sprintf( self::TOKEN_CONST_MASK, $this->getPost()->ID );
 	}
 
@@ -98,17 +105,46 @@ class Bot extends Entity implements wpPostAble{
 	 * @return bool
 	 */
 	public function isTokenDefined(): bool {
-		return defined( $this->getTokenConstName() );
+		return defined( $this->getTokenConstName() ) || $this->isLegacyTokenConstantDefined();
 	}
 
 	public function getToken() {
-		return $this->isTokenDefined() ? constant( $this->getTokenConstName() ) : $this->getParam( 'token' );
+		if ( defined( $this->getTokenConstName() ) ) {
+			return constant( $this->getTokenConstName() );
+		}
+
+		if ( $this->isLegacyTokenConstantDefined() ) {
+			return constant( self::LEGACY_TOKEN_CONST );
+		}
+
+		return $this->getParam( 'token' );
+	}
+
+	public function usesLegacyTokenConstant(): bool {
+		return self::TOKEN_SOURCE_LEGACY_CONST === $this->getParam( self::TOKEN_SOURCE_PARAM );
+	}
+
+	public function isLegacyTokenConstantDefined(): bool {
+		return $this->usesLegacyTokenConstant() && defined( self::LEGACY_TOKEN_CONST );
+	}
+
+	/**
+	 * Marks this bot as backed by the historical global constant without storing its value.
+	 *
+	 * @throws wppaSavePostException
+	 */
+	public function setLegacyTokenConstantSource(): self {
+		$this->setParam( self::TOKEN_SOURCE_PARAM, self::TOKEN_SOURCE_LEGACY_CONST );
+		$this->savePost();
+		$this->initAPI();
+		return $this;
 	}
 
 	/**
 	 * @throws wppaSavePostException
 	 */
 	public function setToken( string $token ): self {
+		$this->setParam( self::TOKEN_SOURCE_PARAM, '' );
 		$this->setParam( 'token', trim( $token ) );
 		$this->savePost();
 		$this->initAPI();
