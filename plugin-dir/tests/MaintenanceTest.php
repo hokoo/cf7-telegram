@@ -92,6 +92,28 @@ final class MaintenanceTest extends Cf7tg_TestCase {
 		$this->assertSame( 2 * HOUR_IN_SECONDS, $recurring[0]['interval'] );
 	}
 
+	public function testEnsureScheduledCollapsesDuplicateRecurringCleanupEvents(): void {
+		add_filter(
+			'cron_schedules',
+			[ Maintenance::class, 'registerSchedule' ]
+		);
+		wp_schedule_event( time() + HOUR_IN_SECONDS, Maintenance::CRON_SCHEDULE, Maintenance::CRON_HOOK );
+		wp_schedule_event( time() + 2 * HOUR_IN_SECONDS, Maintenance::CRON_SCHEDULE, Maintenance::CRON_HOOK );
+
+		Maintenance::ensureScheduled();
+
+		$this->assertSame( 1, $this->countCronEventsBySchedule( Maintenance::CRON_HOOK, Maintenance::CRON_SCHEDULE ) );
+	}
+
+	public function testEnsureScheduledReplacesLegacyRecurringSchedule(): void {
+		wp_schedule_event( time() + HOUR_IN_SECONDS, 'daily', Maintenance::CRON_HOOK );
+
+		Maintenance::ensureScheduled();
+
+		$this->assertSame( 0, $this->countCronEventsBySchedule( Maintenance::CRON_HOOK, 'daily' ) );
+		$this->assertSame( 1, $this->countCronEventsBySchedule( Maintenance::CRON_HOOK, Maintenance::CRON_SCHEDULE ) );
+	}
+
 	public function testEnsureScheduledStoresRecurringScheduleFailure(): void {
 		add_filter(
 			'pre_schedule_event',

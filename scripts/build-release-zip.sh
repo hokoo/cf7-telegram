@@ -97,7 +97,27 @@ composer --working-dir="$PLUGIN_STAGE" install --no-dev --no-interaction --prefe
 
 [ -f "$PLUGIN_STAGE/vendor/autoload.php" ] || fail "Composer autoload was not generated"
 
-find "$PLUGIN_STAGE/vendor" -depth -type d \( -name 'local-dev' -o -iname 'test' -o -iname 'tests' \) -exec rm -rf {} +
+find "$PLUGIN_STAGE/vendor" -depth -type d \( \
+	-name 'local-dev' -o \
+	-iname 'test' -o \
+	-iname 'tests' -o \
+	-iname 'doc' -o \
+	-iname 'docs' -o \
+	-iname 'example' -o \
+	-iname 'examples' -o \
+	-iname 'vendor-bin' -o \
+	-iname 'phpstan' -o \
+	-iname 'psalm' -o \
+	-iname 'docker' \
+\) -exec rm -rf {} +
+find "$PLUGIN_STAGE/vendor" -type f \( \
+	-iname 'phpunit*' -o \
+	-iname 'phpstan*' -o \
+	-iname 'psalm*' -o \
+	-iname 'phpcs*' -o \
+	-iname '.php_cs*' -o \
+	-iname 'dockerfile*' \
+\) -delete
 find "$PLUGIN_STAGE" -type f \( -name '*.key' -o -name '*.pem' -o -name '*.sql' -o -name '*.zip' -o -name '*.tgz' -o -name '*.tar' -o -name '*.tar.gz' \) -delete
 find "$PLUGIN_STAGE" -depth -name '.*' -exec rm -rf {} +
 

@@ -4,6 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PLUGIN_SLUG="${PLUGIN_SLUG:-cf7-telegram}"
 ENTRYPOINT="${ENTRYPOINT:-cf7-telegram.php}"
+AUTOLOADER_SUFFIX="${AUTOLOADER_SUFFIX:-Cf7Telegram}"
 ZIP_PATH="${1:-}"
 EXPECTED_VERSION="${EXPECTED_VERSION:-${2:-}}"
 
@@ -52,6 +53,7 @@ for entry in "${ZIP_ENTRIES[@]}"; do
 	esac
 
 	name="${entry##*/}"
+	lower_entry="${entry,,}"
 	if [[ "$name" == .* ]]; then
 		fail "hidden file or directory is present: $entry"
 	fi
@@ -90,6 +92,29 @@ for entry in "${ZIP_ENTRIES[@]}"; do
 			fail "possible secret file is present: $entry"
 			;;
 	esac
+
+	case "$lower_entry" in
+		"${PLUGIN_SLUG,,}/vendor/"*/test/*|\
+		"${PLUGIN_SLUG,,}/vendor/"*/tests/*|\
+		"${PLUGIN_SLUG,,}/vendor/"*/doc/*|\
+		"${PLUGIN_SLUG,,}/vendor/"*/docs/*|\
+		"${PLUGIN_SLUG,,}/vendor/"*/example/*|\
+		"${PLUGIN_SLUG,,}/vendor/"*/examples/*|\
+		"${PLUGIN_SLUG,,}/vendor/"*/vendor-bin/*|\
+		"${PLUGIN_SLUG,,}/vendor/"*/phpstan/*|\
+		"${PLUGIN_SLUG,,}/vendor/"*/psalm/*|\
+		"${PLUGIN_SLUG,,}/vendor/"*/docker/*)
+			fail "vendor development directory is present: $entry"
+			;;
+		"${PLUGIN_SLUG,,}/vendor/"*/phpunit*|\
+		"${PLUGIN_SLUG,,}/vendor/"*/phpstan*|\
+		"${PLUGIN_SLUG,,}/vendor/"*/psalm*|\
+		"${PLUGIN_SLUG,,}/vendor/"*/phpcs*|\
+		"${PLUGIN_SLUG,,}/vendor/"*/.php_cs*|\
+		"${PLUGIN_SLUG,,}/vendor/"*/dockerfile*)
+			fail "vendor development file is present: $entry"
+			;;
+	esac
 done
 
 TMP_DIR="$(mktemp -d)"
@@ -107,6 +132,11 @@ README_PATH="$PLUGIN_ROOT/readme.txt"
 [ -d "$PLUGIN_ROOT" ] || fail "plugin root missing: $PLUGIN_SLUG"
 [ -f "$ENTRYPOINT_PATH" ] || fail "plugin entrypoint missing: $PLUGIN_SLUG/$ENTRYPOINT"
 [ -f "$PLUGIN_ROOT/vendor/autoload.php" ] || fail "Composer autoload missing: $PLUGIN_SLUG/vendor/autoload.php"
+[ -f "$PLUGIN_ROOT/vendor/composer/autoload_real.php" ] || fail "Composer real autoloader missing"
+[ -f "$PLUGIN_ROOT/vendor/composer/autoload_static.php" ] || fail "Composer static autoloader missing"
+grep -q "ComposerAutoloaderInit${AUTOLOADER_SUFFIX}" "$PLUGIN_ROOT/vendor/autoload.php" || fail "Composer autoloader suffix is not deterministic"
+grep -q "class ComposerAutoloaderInit${AUTOLOADER_SUFFIX}" "$PLUGIN_ROOT/vendor/composer/autoload_real.php" || fail "Composer real autoloader suffix is not deterministic"
+grep -q "class ComposerStaticInit${AUTOLOADER_SUFFIX}" "$PLUGIN_ROOT/vendor/composer/autoload_static.php" || fail "Composer static autoloader suffix is not deterministic"
 [ -d "$PLUGIN_ROOT/react/build" ] || fail "React build directory missing: $PLUGIN_SLUG/react/build"
 [ -f "$PLUGIN_ROOT/react/build/index.html" ] || fail "React build index missing: $PLUGIN_SLUG/react/build/index.html"
 [ -s "$PLUGIN_ROOT/react/build/asset-manifest.json" ] || fail "React asset manifest missing or empty"

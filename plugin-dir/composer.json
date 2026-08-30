@@ -35,5 +35,8 @@
   },
   "scripts": {
     "test": "php tests/run.php"
+  },
+  "config": {
+    "autoloader-suffix": "Cf7Telegram"
   }
 }

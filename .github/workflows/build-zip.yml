@@ -75,6 +75,19 @@ jobs:
       - name: Build and validate release zip
         run: EXPECTED_VERSION="${{ steps.release_version.outputs.value }}" scripts/build-release-zip.sh
 
+      - name: Verify release zip reproducibility
+        shell: bash
+        run: |
+          reference_zip="${RUNNER_TEMP}/cf7-telegram-reference.zip"
+          cp "${ZIP_PATH}" "$reference_zip"
+          EXPECTED_VERSION="${{ steps.release_version.outputs.value }}" scripts/build-release-zip.sh
+
+          if ! cmp -s "$reference_zip" "${ZIP_PATH}"; then
+            sha256sum "$reference_zip" "${ZIP_PATH}"
+            echo "Release ZIP is not reproducible." >&2
+            exit 1
+          fi
+
       - name: Run isolated stability matrix
         env:
           CF7TG_CANDIDATE_ZIP: ${{ github.workspace }}/${{ env.ZIP_PATH }}

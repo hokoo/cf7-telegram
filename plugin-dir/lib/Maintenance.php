@@ -73,11 +73,11 @@ class Maintenance {
 			self::scheduleSingleCleanup( $now );
 		}
 
-		if ( self::hasRecurringCleanupEvent( $interval ) ) {
+		if ( self::hasExpectedRecurringCleanupEvent( $interval ) ) {
 			return;
 		}
 
-		self::clearScheduledCleanupEvents( self::CRON_SCHEDULE );
+		self::clearRecurringCleanupEvents();
 		self::scheduleRecurringCleanup( $now + $interval );
 	}
 
@@ -486,20 +486,23 @@ class Maintenance {
 		);
 	}
 
-	private static function hasRecurringCleanupEvent( int $interval ): bool {
-		foreach ( self::getScheduledCleanupEvents() as $event ) {
-			if ( self::CRON_SCHEDULE !== ( $event['schedule'] ?? false ) ) {
-				continue;
-			}
+	private static function hasExpectedRecurringCleanupEvent( int $interval ): bool {
+		$recurringEvents = array_values(
+			array_filter(
+				self::getScheduledCleanupEvents(),
+				static fn( array $event ): bool => ! empty( $event['schedule'] )
+			)
+		);
 
-			if ( isset( $event['interval'] ) && (int) $event['interval'] !== $interval ) {
-				continue;
-			}
-
-			return true;
+		if ( 1 !== count( $recurringEvents ) ) {
+			return false;
 		}
 
-		return false;
+		$event = $recurringEvents[0];
+
+		return self::CRON_SCHEDULE === ( $event['schedule'] ?? false )
+			&& isset( $event['interval'] )
+			&& (int) $event['interval'] === $interval;
 	}
 
 	private static function hasAnyScheduledCleanupEvent(): bool {
@@ -540,7 +543,7 @@ class Maintenance {
 		return $events;
 	}
 
-	private static function clearScheduledCleanupEvents( string $schedule ): void {
+	private static function clearRecurringCleanupEvents(): void {
 		if ( ! function_exists( '_get_cron_array' ) || ! function_exists( '_set_cron_array' ) ) {
 			return;
 		}
@@ -552,7 +555,7 @@ class Maintenance {
 		foreach ( $crons as $timestamp => $cron ) {
 			if (
 				! isset( $cron[ self::CRON_HOOK ][ $key ] ) ||
-				$schedule !== ( $cron[ self::CRON_HOOK ][ $key ]['schedule'] ?? false )
+				empty( $cron[ self::CRON_HOOK ][ $key ]['schedule'] )
 			) {
 				continue;
 			}
