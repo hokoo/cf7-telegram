@@ -147,23 +147,18 @@ const openAdmin = async (page, baseURL) => {
 	await expect(page.getByRole('heading', {name: /Telegram notificator settings/i})).toBeVisible();
 };
 
-const runControlAction = async (page, action) => {
-	const result = await page.evaluate(async (controlAction) => {
-		const body = new FormData();
-		body.append('action', 'cf7tg_e5_browser_control');
-		body.append('e5_action', controlAction);
+const runControlAction = async (page, baseURL, action) => {
+	const response = await page.request.post(`${baseURL}/wp-admin/admin-ajax.php`, {
+		form: {
+			action: 'cf7tg_e5_browser_control',
+			e5_action: action,
+		},
+	});
 
-		const response = await fetch(window.ajaxurl, {
-			method: 'POST',
-			credentials: 'same-origin',
-			body,
-		});
-
-		return {
-			status: response.status,
-			body: await response.json(),
-		};
-	}, action);
+	const result = {
+		status: response.status(),
+		body: await response.json(),
+	};
 
 	evidence.control_actions.push({action, result});
 	expect(result.status).toBe(200);
@@ -285,7 +280,8 @@ test('candidate admin browser lifecycle smoke', async ({baseURL, page}) => {
 			'Built admin assets should load with HTTP 200.'
 		);
 
-		await runControlAction(page, 'reactivate-candidate');
+		await page.goto('about:blank');
+		await runControlAction(page, baseURL, 'reactivate-candidate');
 		await openAdmin(page, baseURL);
 
 		const runtime = await page.evaluate(() => ({
@@ -385,7 +381,7 @@ test('candidate admin browser lifecycle smoke', async ({baseURL, page}) => {
 		};
 	});
 
-	await runControlAction(page, 'fail-channel-once');
+	await runControlAction(page, baseURL, 'fail-channel-once');
 	allowRecoverableApiConsoleError = true;
 	await page.goto(`${adminUrl(baseURL)}&e5_retry_probe=1`, {waitUntil: 'domcontentloaded'});
 	await expect(page.locator('.cf7-tg-load-status')).toBeVisible();
