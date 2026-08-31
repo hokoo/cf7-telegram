@@ -147,6 +147,22 @@ jobs:
           CF7TG_E5_BROWSER_RESULTS_DIR: ${{ github.workspace }}/test-evidence/browser
         run: tests/stability/e5-browser-smoke.sh
 
+      - name: Run fake Telegram form delivery E2E
+        if: ${{ github.event_name == 'pull_request' || github.event_name == 'release' }}
+        env:
+          CF7TG_CANDIDATE_ZIP: ${{ github.workspace }}/${{ env.ZIP_PATH }}
+          CF7TG_EXPECTED_CANDIDATE_VERSION: ${{ steps.release_version.outputs.value }}
+          CF7TG_E6_RESULTS_DIR: ${{ github.workspace }}/test-evidence/fake-telegram-e2e
+        run: tests/stability/e6-form-delivery-smoke.sh --skip-browser-install
+
+      - name: Upload fake Telegram E2E evidence
+        if: ${{ always() && (github.event_name == 'pull_request' || github.event_name == 'release') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: cf7-telegram-fake-telegram-e2e-evidence
+          path: test-evidence/fake-telegram-e2e
+          if-no-files-found: error
+
       - name: Upload browser canary evidence
         if: ${{ always() && (github.event_name == 'pull_request' || github.event_name == 'release') }}
         uses: actions/upload-artifact@v4

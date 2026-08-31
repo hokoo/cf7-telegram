@@ -118,7 +118,7 @@ Evidence:
 
 ### E6. Fake Telegram Form Delivery And Admin Setup E2E
 
-Status: in progress, delivery/admin/failure batches locally verified
+Status: in progress, delivery/admin/failure/CI batches locally verified
 
 Plan document: `docs/stability/e6-fake-telegram-e2e-plan.md`
 
@@ -170,7 +170,9 @@ Tasking guidance:
 - E6.4 admin setup browser coverage is implemented and passing; it also fixed
   non-pretty REST delete URL construction for bot/channel/chat removal.
 - E6.5 partial Telegram failure evidence is implemented and passing.
-- Next runnable batch: E6.6 CI gate and evidence artifacts.
+- E6.6 CI gate and evidence artifact upload are implemented for pull request
+  and release runs.
+- Next runnable batch: independent E6 QA.
 
 ## Deferred Epic
 

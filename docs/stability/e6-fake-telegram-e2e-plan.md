@@ -1,6 +1,6 @@
 # Epic 6 Fake Telegram Form Delivery And Admin Setup E2E
 
-Status: in progress, E6.2-E6.5 implemented and locally verified
+Status: in progress, E6.2-E6.6 implemented and locally verified
 
 ## Outcome
 
@@ -15,6 +15,7 @@ E6.1 was approved by the owner on 2026-08-31. The approved contract uses fake
 Telegram transport only, keeps E6 in the current epic/evidence style, and starts
 with E6.2 plus E6.3 as the first execution batch. E6.2, E6.3, E6.4, and E6.5 are
 implemented and locally verified by `tests/stability/e6-form-delivery-smoke.sh`.
+E6.6 wires that smoke into pull request and release CI with uploaded evidence.
 
 Approved decision:
 
@@ -384,7 +385,7 @@ Notes/Risks:
 
 ### E6.6 CI Gate And Evidence Artifacts
 
-Status: waiting_dependency
+Status: completed
 
 Goal: wire the fake Telegram E2E gate into CI with useful failure artifacts.
 
@@ -428,6 +429,34 @@ Dependencies:
 Notes/Risks:
 
 - Recommended placement: PR and release only, not every push.
+
+## Runbook
+
+Local full smoke:
+
+```bash
+scripts/build-release-zip.sh
+tests/stability/e6-form-delivery-smoke.sh --skip-browser-install
+```
+
+Expected local outputs:
+
+- `summary.json` with `failed_steps: 0`.
+- `browser-result.json`, `playwright-report.json`, WordPress logs, Docker
+  compose file, and fake Telegram evidence under the E6 results directory.
+- Fake Telegram evidence includes sanitized Bot API calls and token hashes, not
+  raw bot tokens.
+
+GitHub CI:
+
+- `.github/workflows/build-zip.yml` runs
+  `tests/stability/e6-form-delivery-smoke.sh --skip-browser-install` on
+  `pull_request` and `release` events after the verified candidate ZIP and E5
+  browser canary are available.
+- CI uploads `cf7-telegram-fake-telegram-e2e-evidence` from
+  `test-evidence/fake-telegram-e2e` on `always()` for those events.
+- Push-only runs still execute source, unit, release ZIP, audit, and lifecycle
+  gates; E6 is intentionally scoped to PR/release runtime.
 
 ### QA E6 Independent Fake Telegram Verification
 
@@ -495,5 +524,4 @@ Notes/Risks:
 
 ## Readiness Verdict
 
-E6.1, E6.2, E6.3, E6.4, and E6.5 are closed locally. E6.6 is the next runnable
-batch for CI wiring and artifact upload. QA remains behind E6.6.
+E6.1-E6.6 are closed locally. QA remains behind committed CI evidence.
