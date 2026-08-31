@@ -14,7 +14,12 @@ const NewChannel = ({setChannels, disabled = false}) => {
     };
 
     return (
-        <button className="add-button add-channel-button" onClick={handleCreateChannel} disabled={disabled}>
+        <button
+            className="add-button add-channel-button"
+            data-testid="cf7tg-create-channel"
+            onClick={handleCreateChannel}
+            disabled={disabled}
+        >
             {wp.i18n.__( 'Create Channel', 'cf7-telegram' )}
         </button>
     );

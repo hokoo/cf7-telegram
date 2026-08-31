@@ -36,7 +36,7 @@ SUMMARY_WRITTEN=0
 CURRENT_PROJECT=""
 WP_WEB_IMAGE=""
 
-REQUIRED_CHECKS='["fake-transport-active","public-form-renders","cf7-submit-success","send-message-attempts","no-unexpected-recipient","no-token-leakage","no-page-errors","no-console-errors"]'
+REQUIRED_CHECKS='["fake-transport-active","public-form-renders","cf7-submit-success","send-message-attempts","no-unexpected-recipient","no-token-leakage","no-page-errors","no-console-errors","admin-empty-state","admin-bot-created","admin-bot-token-validated","admin-channel-created","admin-form-selectable","admin-chat-discovered","admin-relations-assigned","admin-delivery-targets-assigned-chat","admin-deletion-safety","admin-no-page-errors","admin-no-console-errors"]'
 
 usage() {
 	cat <<'USAGE'

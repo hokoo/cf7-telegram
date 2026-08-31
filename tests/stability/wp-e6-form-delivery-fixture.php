@@ -59,6 +59,141 @@ function cf7tg_e6_save_telegram_state( array $state ): void {
 	update_option( 'cf7tg_e6_fake_telegram_state', array_merge( cf7tg_e6_empty_telegram_state(), $state ), false );
 }
 
+function cf7tg_e6_fixture(): array {
+	$fixture = get_option( 'cf7tg_e6_fixture', [] );
+	return is_array( $fixture ) ? $fixture : [];
+}
+
+function cf7tg_e6_save_fixture( array $fixture ): array {
+	update_option( 'cf7tg_e6_fixture', $fixture, false );
+	return $fixture;
+}
+
+function cf7tg_e6_delete_posts_by_type( string $post_type ): int {
+	$post_ids = get_posts(
+		[
+			'post_type'      => $post_type,
+			'post_status'    => 'any',
+			'fields'         => 'ids',
+			'posts_per_page' => -1,
+		]
+	);
+
+	foreach ( $post_ids as $post_id ) {
+		wp_delete_post( (int) $post_id, true );
+	}
+
+	return count( $post_ids );
+}
+
+function cf7tg_e6_seed_chat( string $chat_id, string $title, string $username ): array {
+	if ( ! class_exists( '\iTRON\cf7Telegram\Chat' ) ) {
+		return [
+			'error' => 'chat_class_missing',
+		];
+	}
+
+	$chat = new \iTRON\cf7Telegram\Chat();
+	$chat->setTitle( $title );
+	$chat->setChatID( $chat_id );
+	$chat->setChatType( 'private' );
+	$chat->setUsername( $username );
+	$chat->savePost();
+	wp_update_post(
+		[
+			'ID'          => $chat->getPost()->ID,
+			'post_status' => 'publish',
+		]
+	);
+
+	return [
+		'post_id'  => (int) $chat->getPost()->ID,
+		'chat_id'  => $chat->getChatID(),
+		'title'    => $title,
+		'username' => $username,
+	];
+}
+
+function cf7tg_e6_reset_admin_flow(): array {
+	$deleted = [
+		'bots'     => cf7tg_e6_delete_posts_by_type( 'cf7tg_bot' ),
+		'channels' => cf7tg_e6_delete_posts_by_type( 'cf7tg_channel' ),
+		'chats'    => cf7tg_e6_delete_posts_by_type( 'cf7tg_chat' ),
+	];
+
+	$state = cf7tg_e6_empty_telegram_state();
+	cf7tg_e6_save_telegram_state( $state );
+
+	$safety_chat = cf7tg_e6_seed_chat( '990199', 'E6 Safety Chat', 'e6_safety_chat' );
+	$fixture = cf7tg_e6_fixture();
+	$fixture['admin_flow'] = [
+		'safety_chat'       => $safety_chat,
+		'update_chat_id'    => '990123',
+		'update_chat_title' => 'E6 Admin Chat',
+		'update_username'   => 'e6_admin_chat',
+	];
+	cf7tg_e6_save_fixture( $fixture );
+
+	return [
+		'active'   => true,
+		'deleted'  => $deleted,
+		'telegram' => $state,
+		'fixture'  => $fixture,
+	];
+}
+
+function cf7tg_e6_script_start_update(): array {
+	$fixture = cf7tg_e6_fixture();
+	$admin_flow = is_array( $fixture['admin_flow'] ?? null ) ? $fixture['admin_flow'] : [];
+	$chat_id = sanitize_text_field( wp_unslash( $_POST['chat_id'] ?? ( $admin_flow['update_chat_id'] ?? '990123' ) ) );
+	$title = sanitize_text_field( wp_unslash( $_POST['title'] ?? ( $admin_flow['update_chat_title'] ?? 'E6 Admin Chat' ) ) );
+	$username = sanitize_key( wp_unslash( $_POST['username'] ?? ( $admin_flow['update_username'] ?? 'e6_admin_chat' ) ) );
+	$update_id = max( 1, (int) ( $_POST['update_id'] ?? ( 990000 + time() % 100000 ) ) );
+
+	$state = cf7tg_e6_telegram_state();
+	$state['updates'] = [
+		[
+			'update_id' => $update_id,
+			'message'   => [
+				'message_id' => $update_id + 1,
+				'date'       => time(),
+				'text'       => '/cf7tg_start',
+				'entities'   => [
+					[
+						'offset' => 0,
+						'length' => 12,
+						'type'   => 'bot_command',
+					],
+				],
+				'chat'       => [
+					'id'         => $chat_id,
+					'type'       => 'private',
+					'first_name' => $title,
+					'username'   => $username,
+				],
+			],
+		],
+	];
+	cf7tg_e6_save_telegram_state( $state );
+
+	$fixture['admin_flow'] = array_merge(
+		$admin_flow,
+		[
+			'update_chat_id'    => $chat_id,
+			'update_chat_title' => $title,
+			'update_username'   => $username,
+			'update_id'         => $update_id,
+		]
+	);
+	cf7tg_e6_save_fixture( $fixture );
+
+	return [
+		'active'   => true,
+		'telegram' => $state,
+		'fixture'  => $fixture,
+	];
+}
+
 function cf7tg_e6_parse_telegram_params( array $args ): array {
 	$body = $args['body'] ?? '';
 	if ( is_string( $body ) && '' !== trim( $body ) ) {
@@ -279,7 +414,11 @@ function cf7tg_e6_fake_telegram_control(): void {
 	if ( 'reset' === $action ) {
 		$state = cf7tg_e6_empty_telegram_state();
 		cf7tg_e6_save_telegram_state( $state );
-		cf7tg_e6_control_response( [ 'active' => true, 'telegram' => $state, 'fixture' => get_option( 'cf7tg_e6_fixture', [] ) ] );
+		cf7tg_e6_control_response( [ 'active' => true, 'telegram' => $state, 'fixture' => cf7tg_e6_fixture() ] );
+	}
+
+	if ( 'admin-reset' === $action ) {
+		cf7tg_e6_control_response( cf7tg_e6_reset_admin_flow() );
 	}
 
 	if ( 'script-failure' === $action ) {
@@ -290,7 +429,11 @@ function cf7tg_e6_fake_telegram_control(): void {
 		$state = cf7tg_e6_telegram_state();
 		$state['failures'][ $key ] = (int) ( $state['failures'][ $key ] ?? 0 ) + $count;
 		cf7tg_e6_save_telegram_state( $state );
-		cf7tg_e6_control_response( [ 'active' => true, 'telegram' => $state, 'fixture' => get_option( 'cf7tg_e6_fixture', [] ) ] );
+		cf7tg_e6_control_response( [ 'active' => true, 'telegram' => $state, 'fixture' => cf7tg_e6_fixture() ] );
+	}
+
+	if ( 'script-start-update' === $action ) {
+		cf7tg_e6_control_response( cf7tg_e6_script_start_update() );
 	}
 
 	if ( 'evidence' === $action ) {
@@ -298,7 +441,7 @@ function cf7tg_e6_fake_telegram_control(): void {
 			[
 				'active'   => true,
 				'telegram' => cf7tg_e6_telegram_state(),
-				'fixture'  => get_option( 'cf7tg_e6_fixture', [] ),
+				'fixture'  => cf7tg_e6_fixture(),
 			]
 		);
 	}

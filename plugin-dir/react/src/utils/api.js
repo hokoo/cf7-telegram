@@ -74,6 +74,8 @@ const appendQueryParams = (url, params) => {
     return `${url}${url.includes('?') ? '&' : '?'}${queryString}`;
 }
 
+const forceDeleteUrl = (url, id) => appendQueryParams(`${url}${id}`, new URLSearchParams({force: 'true'}));
+
 const apiRequest = async (url, method, body, options = {}) => {
     method = method ?? 'GET';
     const requestUrl = url;
@@ -347,7 +349,7 @@ export const apiSetBot2ChatConnectionStatus = async (connectionID, status) => {
 
 export const apiDeleteChat = async (chatId) => {
     return await apiRequest(
-        `${cf7TelegramData.routes.chats}${chatId}/?force=true`,
+        forceDeleteUrl(cf7TelegramData.routes.chats, chatId),
         'DELETE'
     );
 }
@@ -377,7 +379,7 @@ export const apiSaveChannel = async (channelId, title) => {
 
 export const apiDeleteChannel = async (channelId) => {
     return await apiRequest(
-        `${cf7TelegramData.routes.channels}${channelId}/?force=true`,
+        forceDeleteUrl(cf7TelegramData.routes.channels, channelId),
         'DELETE'
     );
 }
@@ -401,7 +403,7 @@ export const apiCreateBot = async (title, token) => {
 
 export const apiDeleteBot = async (botId) => {
     return await apiRequest(
-        `${cf7TelegramData.routes.bots}${botId}/?force=true`,
+        forceDeleteUrl(cf7TelegramData.routes.bots, botId),
         'DELETE'
     );
 }

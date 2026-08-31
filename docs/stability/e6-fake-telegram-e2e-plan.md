@@ -1,6 +1,6 @@
 # Epic 6 Fake Telegram Form Delivery And Admin Setup E2E
 
-Status: in progress, E6.2/E6.3 implemented and locally verified
+Status: in progress, E6.2-E6.4 implemented and locally verified
 
 ## Outcome
 
@@ -13,8 +13,8 @@ behind that delivery graph are covered by browser E2E.
 
 E6.1 was approved by the owner on 2026-08-31. The approved contract uses fake
 Telegram transport only, keeps E6 in the current epic/evidence style, and starts
-with E6.2 plus E6.3 as the first execution batch. E6.2 and E6.3 are implemented
-and locally verified by `tests/stability/e6-form-delivery-smoke.sh`.
+with E6.2 plus E6.3 as the first execution batch. E6.2, E6.3, and E6.4 are
+implemented and locally verified by `tests/stability/e6-form-delivery-smoke.sh`.
 
 Approved decision:
 
@@ -254,7 +254,7 @@ Notes/Risks:
 
 ### E6.4 Admin Bot, Channel, Form And Chat Setup Browser Flow
 
-Status: waiting_dependency
+Status: completed
 
 Goal: cover the setup graph needed for delivery through the real plugin admin UI.
 
@@ -295,6 +295,9 @@ DoD:
   visibility/selection, chat discovery, relation assignment, and deletion safety
   against real WordPress REST state.
 - The test fails on stale DOM-only success if REST state did not change.
+- Local verification passed with admin UI creation/removal, form selection,
+  fake `/cf7tg_start` discovery, relation assignment, one-recipient
+  admin-built submit delivery, deletion safety, and no page/console errors.
 
 Acceptance criteria:
 
@@ -316,8 +319,10 @@ Dependencies:
 
 Notes/Risks:
 
-- Current UI may need accessible labels/test ids for reliable selectors; keep
-  production behavior unchanged.
+- Minimal `data-testid` attributes were added to existing controls/containers
+  for reliable browser selectors without changing production behavior.
+- E6.4 caught and fixed non-pretty REST delete URL construction for bot,
+  channel, and chat deletion.
 
 ### E6.5 Delivery Failure And Evidence Cases
 
@@ -485,6 +490,6 @@ Notes/Risks:
 
 ## Readiness Verdict
 
-E6.1, E6.2, and E6.3 are closed locally. E6.4 is the next runnable batch for
-admin setup coverage. E6.5 remains sequenced behind E6.4, and E6.6/QA remain
-behind the final E6 implementation shape and CI runtime check.
+E6.1, E6.2, E6.3, and E6.4 are closed locally. E6.5 is the next runnable batch
+for partial Telegram failure evidence. E6.6/QA remain behind the final E6
+implementation shape and CI runtime check.
