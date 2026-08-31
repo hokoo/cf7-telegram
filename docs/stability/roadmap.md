@@ -118,7 +118,7 @@ Evidence:
 
 ### E6. Fake Telegram Form Delivery And Admin Setup E2E
 
-Status: todo, pending execution approval
+Status: ready for owner decision, pending execution approval
 
 Plan document: `docs/stability/e6-fake-telegram-e2e-plan.md`
 
@@ -165,6 +165,7 @@ Tasking guidance:
 - Keep the current epic/evidence naming for E6 to preserve delivery traceability.
 - Re-run `$decompose-work` before implementation if the scope changes.
 - Do not restructure the full test tree inside E6; use E7 for that work.
+- Recommended first implementation batch after E6.1 approval: E6.2 plus E6.3.
 
 ## Deferred Epic
 
