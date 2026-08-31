@@ -52,6 +52,8 @@ release gate and would require secrets or human timing.
 - Dedicated isolated WordPress plus Playwright E2E harness.
 - Fake Telegram transport that records `getMe`, `getWebhookInfo`, `getUpdates`,
   and `sendMessage`.
+- Docker-level `api.telegram.org` egress guard so a broken intercept cannot
+  reach live Telegram.
 - Real public Contact Form 7 page submit.
 - Admin browser coverage for bot creation/removal.
 - Admin browser coverage for channel creation/removal.
@@ -170,6 +172,8 @@ DoD:
 - Fake Telegram calls are intercepted by the fixture `pre_http_request`
   transport.
 - Evidence is sanitized and stable across runs.
+- The isolated WordPress container maps `api.telegram.org` to localhost so
+  live Telegram egress is blocked even if the intercept regresses.
 
 Acceptance criteria:
 
@@ -360,7 +364,7 @@ DoD:
 - Failure artifacts are actionable and redacted.
 - Local verification passed with CF7 `mail_sent`, a scripted first-recipient
   `sendMessage` failure, a successful later-recipient `sendMessage`, redacted
-  evidence, and no page/console errors.
+  token/chat-identity evidence, and no page/console errors.
 
 Acceptance criteria:
 
@@ -445,7 +449,7 @@ Expected local outputs:
 - `browser-result.json`, `playwright-report.json`, WordPress logs, Docker
   compose file, and fake Telegram evidence under the E6 results directory.
 - Fake Telegram evidence includes sanitized Bot API calls and token hashes, not
-  raw bot tokens.
+  raw bot tokens, private chat labels, or private chat usernames.
 
 GitHub CI:
 

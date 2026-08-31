@@ -37,6 +37,7 @@ const requiredCheckIds = [
 	'admin-chat-discovered',
 	'admin-relations-assigned',
 	'admin-delivery-targets-assigned-chat',
+	'admin-evidence-redacted',
 	'admin-deletion-safety',
 	'admin-no-page-errors',
 	'admin-no-console-errors',
@@ -136,6 +137,28 @@ const telegramEvidence = async (page, baseURL) => {
 
 const sendMessageCalls = (data) => (data.telegram?.calls || [])
 	.filter((call) => call.method === 'sendMessage');
+
+const privateChatEvidenceCanaries = [
+	'E6 Delivery Chat 1',
+	'E6 Delivery Chat 2',
+	'E6 Unrelated Chat',
+	'E6 Safety Chat',
+	'E6 Admin Chat',
+	'e6_delivery_chat_1',
+	'e6_delivery_chat_2',
+	'e6_unrelated_chat',
+	'e6_safety_chat',
+	'e6_admin_chat',
+];
+
+const expectEvidenceRedacted = (data) => {
+	const serialized = JSON.stringify(data);
+	expect(serialized.includes('E6_FAKE_TOKEN')).toBe(false);
+	expect(serialized.includes(fullTokenCanary)).toBe(false);
+	expect(serialized.includes(adminFullTokenCanary)).toBe(false);
+	expect(privateChatEvidenceCanaries.some((value) => serialized.includes(value))).toBe(false);
+	return serialized;
+};
 
 const isCf7FeedbackResponse = (response) => (
 	response.request().method() === 'POST'
@@ -411,16 +434,14 @@ test('public CF7 submit records fake Telegram sendMessage attempts', async ({bas
 		return {recipients};
 	});
 
-	await expectCheck('no-token-leakage', 'Fake Telegram evidence does not expose the full bot token.', async () => {
+	await expectCheck('no-token-leakage', 'Fake Telegram evidence does not expose full tokens or private chat labels.', async () => {
 		const data = await telegramEvidence(page, baseURL);
-		const serialized = JSON.stringify(data);
-		expect(serialized).not.toContain('E6_FAKE_TOKEN');
-		expect(serialized).not.toContain(fullTokenCanary);
-		expect(serialized).not.toContain(adminFullTokenCanary);
+		const serialized = expectEvidenceRedacted(data);
 		expect(serialized).toContain(fixture.bot_token_hash);
 		return {
 			token_hash: fixture.bot_token_hash,
 			call_count: data.telegram?.calls?.length || 0,
+			private_chat_fields_redacted: true,
 		};
 	});
 
@@ -516,16 +537,14 @@ test('partial Telegram failure still attempts later recipients', async ({baseURL
 		};
 	});
 
-	await expectCheck('partial-failure-evidence-redacted', 'Partial failure evidence remains token-redacted.', async () => {
+	await expectCheck('partial-failure-evidence-redacted', 'Partial failure evidence remains token and chat identity redacted.', async () => {
 		const data = await telegramEvidence(page, baseURL);
-		const serialized = JSON.stringify(data);
-		expect(serialized).not.toContain('E6_FAKE_TOKEN');
-		expect(serialized).not.toContain(fullTokenCanary);
-		expect(serialized).not.toContain(adminFullTokenCanary);
+		const serialized = expectEvidenceRedacted(data);
 		expect(serialized).toContain(fixture.bot_token_hash);
 		return {
 			token_hash: fixture.bot_token_hash,
 			call_count: data.telegram?.calls?.length || 0,
+			private_chat_fields_redacted: true,
 		};
 	});
 
@@ -802,6 +821,16 @@ test('admin setup builds and removes the delivery graph through the plugin UI', 
 			status: body.status,
 			recipients: sendMessageCalls(data || {}).map((call) => call.params.chat_id),
 			marker,
+		};
+	});
+
+	await expectCheck('admin-evidence-redacted', 'Admin flow evidence remains token and chat identity redacted.', async () => {
+		const data = await telegramEvidence(page, baseURL);
+		expectEvidenceRedacted(data);
+		return {
+			call_count: data.telegram?.calls?.length || 0,
+			update_count: data.telegram?.updates?.length || 0,
+			private_chat_fields_redacted: true,
 		};
 	});
 

@@ -36,7 +36,7 @@ SUMMARY_WRITTEN=0
 CURRENT_PROJECT=""
 WP_WEB_IMAGE=""
 
-REQUIRED_CHECKS='["fake-transport-active","public-form-renders","cf7-submit-success","send-message-attempts","no-unexpected-recipient","no-token-leakage","no-page-errors","no-console-errors","partial-failure-cf7-success","partial-failure-recipient-continuity","partial-failure-evidence-redacted","partial-failure-no-page-errors","partial-failure-no-console-errors","admin-empty-state","admin-bot-created","admin-bot-token-validated","admin-channel-created","admin-form-selectable","admin-chat-discovered","admin-relations-assigned","admin-delivery-targets-assigned-chat","admin-deletion-safety","admin-no-page-errors","admin-no-console-errors"]'
+REQUIRED_CHECKS='["fake-transport-active","public-form-renders","cf7-submit-success","send-message-attempts","no-unexpected-recipient","no-token-leakage","no-page-errors","no-console-errors","partial-failure-cf7-success","partial-failure-recipient-continuity","partial-failure-evidence-redacted","partial-failure-no-page-errors","partial-failure-no-console-errors","admin-empty-state","admin-bot-created","admin-bot-token-validated","admin-channel-created","admin-form-selectable","admin-chat-discovered","admin-relations-assigned","admin-delivery-targets-assigned-chat","admin-evidence-redacted","admin-deletion-safety","admin-no-page-errors","admin-no-console-errors"]'
 
 usage() {
 	cat <<'USAGE'
@@ -420,6 +420,8 @@ services:
     image: ${WP_WEB_IMAGE}
     depends_on:
       - db
+    extra_hosts:
+      - "api.telegram.org:127.0.0.1"
     ports:
       - "127.0.0.1:${WEB_PORT}:80"
     environment:
@@ -435,6 +437,8 @@ services:
     image: ${WP_CLI_IMAGE}
     depends_on:
       - db
+    extra_hosts:
+      - "api.telegram.org:127.0.0.1"
     working_dir: /var/www/html
     environment:
       WORDPRESS_DB_HOST: db:3306

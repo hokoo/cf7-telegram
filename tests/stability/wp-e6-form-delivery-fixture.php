@@ -134,12 +134,7 @@ function cf7tg_e6_reset_admin_flow(): array {
 	];
 	cf7tg_e6_save_fixture( $fixture );
 
-	return [
-		'active'   => true,
-		'deleted'  => $deleted,
-		'telegram' => $state,
-		'fixture'  => $fixture,
-	];
+	return array_merge( cf7tg_e6_public_control_payload( $state, $fixture ), [ 'deleted' => $deleted ] );
 }
 
 function cf7tg_e6_script_start_update(): array {
@@ -187,11 +182,7 @@ function cf7tg_e6_script_start_update(): array {
 	);
 	cf7tg_e6_save_fixture( $fixture );
 
-	return [
-		'active'   => true,
-		'telegram' => $state,
-		'fixture'  => $fixture,
-	];
+	return cf7tg_e6_public_control_payload( $state, $fixture );
 }
 
 function cf7tg_e6_parse_telegram_params( array $args ): array {
@@ -222,6 +213,82 @@ function cf7tg_e6_sanitize_params( array $params ): array {
 	}
 
 	return $sanitized;
+}
+
+function cf7tg_e6_public_fixture( array $fixture ): array {
+	$public = [];
+	foreach ( [ 'schema', 'form_id', 'page_id', 'page_url', 'bot_post_id', 'channel_post_id', 'chat_post_ids', 'expected_chat_ids', 'unexpected_chat_id', 'bot_token_hash' ] as $key ) {
+		if ( array_key_exists( $key, $fixture ) ) {
+			$public[ $key ] = $fixture[ $key ];
+		}
+	}
+
+	$admin_flow = is_array( $fixture['admin_flow'] ?? null ) ? $fixture['admin_flow'] : [];
+	if ( $admin_flow ) {
+		$public['admin_flow'] = [];
+		$safety_chat = is_array( $admin_flow['safety_chat'] ?? null ) ? $admin_flow['safety_chat'] : [];
+		if ( $safety_chat ) {
+			$public['admin_flow']['safety_chat'] = [];
+			foreach ( [ 'post_id', 'chat_id' ] as $key ) {
+				if ( array_key_exists( $key, $safety_chat ) ) {
+					$public['admin_flow']['safety_chat'][ $key ] = $safety_chat[ $key ];
+				}
+			}
+		}
+
+		foreach ( [ 'update_chat_id', 'update_id' ] as $key ) {
+			if ( array_key_exists( $key, $admin_flow ) ) {
+				$public['admin_flow'][ $key ] = $admin_flow[ $key ];
+			}
+		}
+	}
+
+	return $public;
+}
+
+function cf7tg_e6_public_telegram_state( array $state ): array {
+	$state = array_merge( cf7tg_e6_empty_telegram_state(), $state );
+	$updates = [];
+	foreach ( $state['updates'] as $update ) {
+		if ( ! is_array( $update ) ) {
+			continue;
+		}
+
+		$message = is_array( $update['message'] ?? null ) ? $update['message'] : [];
+		$chat    = is_array( $message['chat'] ?? null ) ? $message['chat'] : [];
+		$updates[] = [
+			'update_id' => (int) ( $update['update_id'] ?? 0 ),
+			'message'   => [
+				'message_id' => (int) ( $message['message_id'] ?? 0 ),
+				'date'       => (int) ( $message['date'] ?? 0 ),
+				'text'       => isset( $message['text'] ) ? (string) $message['text'] : '',
+				'entities'   => is_array( $message['entities'] ?? null ) ? $message['entities'] : [],
+				'chat'       => [
+					'id'   => isset( $chat['id'] ) ? (string) $chat['id'] : '',
+					'type' => isset( $chat['type'] ) ? (string) $chat['type'] : '',
+				],
+			],
+		];
+	}
+
+	return [
+		'schema'   => (int) ( $state['schema'] ?? 1 ),
+		'active'   => (bool) ( $state['active'] ?? false ),
+		'calls'    => is_array( $state['calls'] ?? null ) ? $state['calls'] : [],
+		'failures' => is_array( $state['failures'] ?? null ) ? $state['failures'] : [],
+		'updates'  => $updates,
+	];
+}
+
+function cf7tg_e6_public_control_payload( $state = null, $fixture = null ): array {
+	$state   = is_array( $state ) ? $state : cf7tg_e6_telegram_state();
+	$fixture = is_array( $fixture ) ? $fixture : cf7tg_e6_fixture();
+
+	return [
+		'active'   => true,
+		'telegram' => cf7tg_e6_public_telegram_state( $state ),
+		'fixture'  => cf7tg_e6_public_fixture( $fixture ),
+	];
 }
 
 function cf7tg_e6_response_summary( array $response, string $category ): array {
@@ -414,7 +481,7 @@ function cf7tg_e6_fake_telegram_control(): void {
 	if ( 'reset' === $action ) {
 		$state = cf7tg_e6_empty_telegram_state();
 		cf7tg_e6_save_telegram_state( $state );
-		cf7tg_e6_control_response( [ 'active' => true, 'telegram' => $state, 'fixture' => cf7tg_e6_fixture() ] );
+		cf7tg_e6_control_response( cf7tg_e6_public_control_payload( $state, cf7tg_e6_fixture() ) );
 	}
 
 	if ( 'admin-reset' === $action ) {
@@ -429,7 +496,7 @@ function cf7tg_e6_fake_telegram_control(): void {
 		$state = cf7tg_e6_telegram_state();
 		$state['failures'][ $key ] = (int) ( $state['failures'][ $key ] ?? 0 ) + $count;
 		cf7tg_e6_save_telegram_state( $state );
-		cf7tg_e6_control_response( [ 'active' => true, 'telegram' => $state, 'fixture' => cf7tg_e6_fixture() ] );
+		cf7tg_e6_control_response( cf7tg_e6_public_control_payload( $state, cf7tg_e6_fixture() ) );
 	}
 
 	if ( 'script-start-update' === $action ) {
@@ -437,13 +504,7 @@ function cf7tg_e6_fake_telegram_control(): void {
 	}
 
 	if ( 'evidence' === $action ) {
-		cf7tg_e6_control_response(
-			[
-				'active'   => true,
-				'telegram' => cf7tg_e6_telegram_state(),
-				'fixture'  => cf7tg_e6_fixture(),
-			]
-		);
+		cf7tg_e6_control_response( cf7tg_e6_public_control_payload() );
 	}
 
 	wp_send_json_error( [ 'message' => 'unknown_action' ], 400 );
