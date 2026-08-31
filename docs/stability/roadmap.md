@@ -189,12 +189,14 @@ coverage, CI gates, and release evidence traceability.
 
 Rationale:
 
-- The current `e1`, `e4`, `e5`, and planned `e6` names make delivery ownership
+- The current `e1`, `e4`, `e5`, and `e6` names make delivery ownership
   and release evidence easy to audit.
 - They are not the best long-term information architecture once the immediate
   stabilization work stops being the main axis of change.
 - Deferring the rewrite avoids large test-path churn while `1.0.13` is still
   settling with users.
+- The current E7 branch is a draft planning branch only; it documents goals,
+  decision gates, task boundaries, and no-coverage-loss QA before any path moves.
 
 Candidate taxonomy:
 
