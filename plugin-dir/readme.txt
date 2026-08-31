@@ -5,7 +5,7 @@ Tags: contact form telegram,contact form 7,telegram
 Requires at least: 5.6
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.0.13
+Stable tag: 1.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -52,6 +52,9 @@ Set the offline bot status retry interval and the online Telegram update polling
 This plugin uses [API Telegram](https://core.telegram.org/api "Telegram docs") and sends remote HTTP requests to Telegram servers to deliver notifications.
 
 == Changelog ==
+
+= 1.1 =
+- Add fake Telegram browser E2E coverage for form delivery, admin setup, partial delivery failures, and CI evidence collection.
 
 = 1.0.13 =
 - Make Telegram bot actions POST-first and harden the administration interface against partial loading, pagination, and retry failures.
