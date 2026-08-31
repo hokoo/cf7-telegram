@@ -41,6 +41,7 @@ add_action(
 		}
 
 		echo '<div id="cf7tg-e5-server-notice" class="notice notice-warning"><p>E5 browser smoke system notice should be hidden.</p></div>';
+		echo '<div id="cf7tg-e5-plugin-notice" class="notice cf7t-notice notice-error"><p>E5 browser smoke plugin notice should remain visible.</p></div>';
 	}
 );
 

@@ -303,11 +303,13 @@ test('candidate admin browser lifecycle smoke', async ({baseURL, page}) => {
 		};
 	});
 
-	await expectCheck('system-notices-hidden', 'System WordPress notices are hidden on the plugin screen.', async () => {
-		const notice = page.locator('#cf7tg-e5-server-notice');
-		await expect(notice).toHaveCount(1);
-		await expect(notice).toBeHidden();
-		return await notice.evaluate((element) => {
+	await expectCheck('system-notices-hidden', 'System WordPress notices are hidden while plugin notices remain visible.', async () => {
+		const systemNotice = page.locator('#cf7tg-e5-server-notice');
+		const pluginNotice = page.locator('#cf7tg-e5-plugin-notice');
+		await expect(systemNotice).toHaveCount(1);
+		await expect(systemNotice).toBeHidden();
+		await expect(pluginNotice).toBeVisible();
+		const system = await systemNotice.evaluate((element) => {
 			const style = window.getComputedStyle(element);
 			const rect = element.getBoundingClientRect();
 			return {
@@ -318,6 +320,17 @@ test('candidate admin browser lifecycle smoke', async ({baseURL, page}) => {
 				height: rect.height,
 			};
 		});
+		const plugin = await pluginNotice.evaluate((element) => {
+			const style = window.getComputedStyle(element);
+			const rect = element.getBoundingClientRect();
+			return {
+				display: style.display,
+				visibility: style.visibility,
+				width: rect.width,
+				height: rect.height,
+			};
+		});
+		return {system, plugin};
 	});
 
 	await expectCheck('full-page-background', 'The plugin background fills the complete WordPress content area.', async () => {
