@@ -1,6 +1,6 @@
 # Epic 6 Fake Telegram Form Delivery And Admin Setup E2E
 
-Status: ready for owner decision, pending execution approval
+Status: in progress, E6.2/E6.3 implemented and locally verified
 
 ## Outcome
 
@@ -11,10 +11,12 @@ behind that delivery graph are covered by browser E2E.
 
 ## Readiness Summary
 
-E6 is execution-shaped but still has one owner decision gate: E6.1 must approve
-the fake Telegram E2E contract, entity coverage, CI placement, and first batch.
+E6.1 was approved by the owner on 2026-08-31. The approved contract uses fake
+Telegram transport only, keeps E6 in the current epic/evidence style, and starts
+with E6.2 plus E6.3 as the first execution batch. E6.2 and E6.3 are implemented
+and locally verified by `tests/stability/e6-form-delivery-smoke.sh`.
 
-Recommended decision:
+Approved decision:
 
 - Use a dedicated E6 harness instead of extending the E5 browser canary.
 - Use fake Telegram transport only: no live Telegram API and no
@@ -25,7 +27,7 @@ Recommended decision:
 - Keep the current epic/evidence test naming for E6; defer suite-wide taxonomy
   cleanup to E7.
 
-First execution batch after approval: E6.2 plus E6.3.
+Completed first execution batch: E6.2 plus E6.3.
 
 ## Current Decision Candidate
 
@@ -76,7 +78,7 @@ release gate and would require secrets or human timing.
 
 ### E6.1 Fake Telegram E2E Contract, Entity Coverage And CI Placement
 
-Status: todo
+Status: completed
 
 Goal: approve the fake Telegram E2E contract, required bot/channel/form/chat
 coverage, CI placement, and first batch before implementation starts.
@@ -106,9 +108,8 @@ DoR:
 
 DoD:
 
-- Owner explicitly approves or redirects the contract.
-- Dependent tasks are moved from `waiting_dependency` to `todo` only after
-  approval.
+- Owner approved the contract on 2026-08-31.
+- E6.2 and E6.3 moved into the active execution batch after approval.
 
 Acceptance criteria:
 
@@ -131,7 +132,7 @@ Notes/Risks:
 
 ### E6.2 Dedicated Fake Telegram E2E Harness
 
-Status: waiting_dependency
+Status: completed
 
 Goal: add an isolated WordPress plus Playwright harness that can run without live
 Telegram access.
@@ -163,9 +164,10 @@ DoR:
 
 DoD:
 
-- Local E6 script can bootstrap WordPress, seed fixture, run a no-op Playwright
-  probe, and write summary/evidence JSON.
-- Fake Telegram calls never hit the network.
+- Local E6 script bootstraps WordPress, seeds fixture, runs Playwright, and
+  writes summary/evidence JSON.
+- Fake Telegram calls are intercepted by the fixture `pre_http_request`
+  transport.
 - Evidence is sanitized and stable across runs.
 
 Acceptance criteria:
@@ -189,7 +191,7 @@ Notes/Risks:
 
 ### E6.3 Public CF7 Submit Delivery Happy Path
 
-Status: waiting_dependency
+Status: completed
 
 Goal: prove that a real rendered CF7 form submission attempts Telegram delivery
 to the expected chats.
@@ -224,6 +226,9 @@ DoD:
   not occur.
 - Evidence includes submitted marker, recipient count, sanitized message params,
   and success result per recipient.
+- Local verification passed with `failed_steps: 0`, two expected `sendMessage`
+  attempts, no unexpected recipient, no token leakage, and no page/console
+  errors.
 
 Acceptance criteria:
 
@@ -480,6 +485,6 @@ Notes/Risks:
 
 ## Readiness Verdict
 
-E6 is ready for owner approval of E6.1. After that approval, E6.2 and E6.3 are
-the recommended first implementation batch. E6.4, E6.5, E6.6, and QA remain
-sequenced behind the harness and happy-path delivery proof.
+E6.1, E6.2, and E6.3 are closed locally. E6.4 is the next runnable batch for
+admin setup coverage. E6.5 remains sequenced behind E6.4, and E6.6/QA remain
+behind the final E6 implementation shape and CI runtime check.
