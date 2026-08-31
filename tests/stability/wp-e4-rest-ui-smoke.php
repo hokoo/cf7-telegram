@@ -476,13 +476,15 @@ $record(
 $candidate_css = WP_PLUGIN_DIR . '/cf7-telegram/react/build/static/css/main.css';
 $css           = file_exists( $candidate_css ) ? file_get_contents( $candidate_css ) : '';
 $record(
-	'admin-notices-not-hidden',
+	'admin-page-notice-policy',
 	is_string( $css )
+		&& false !== strpos( $css, 'body[class*=page_wpcf7_tg]' )
+		&& false !== strpos( $css, '#wpcontent' )
+		&& false !== strpos( $css, '#wpbody-content>.notice:not(.cf7t-notice)' )
 		&& false !== strpos( $css, '#cf7-telegram-container' )
-		&& false === strpos( $css, ':has(> #cf7-telegram-container)' )
-		&& false === strpos( $css, '.notice:not(.cf7t-notice)' )
-		&& false === strpos( $css, 'display:none!important' ),
-	'Candidate CSS is scoped to the plugin container and does not hide server-rendered admin notices.',
+		&& false !== strpos( $css, 'background-color:#0e1621' )
+		&& false !== strpos( $css, 'display:none!important' ),
+	'Candidate CSS fills the plugin page, hides system notices, and preserves plugin-owned notices.',
 	[
 		'css_file'   => $candidate_css,
 		'css_exists' => file_exists( $candidate_css ),
