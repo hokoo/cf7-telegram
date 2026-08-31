@@ -120,7 +120,7 @@ jq -e \
 		and .candidate.sha256 == $candidate_sha256
 		and .candidate.version == $candidate_version
 		and (
-			["authenticated-admin-render", "no-page-errors", "no-console-errors", "admin-notice-visible", "pagination-beyond-ten", "post-mutation-observed"] as $required
+			["authenticated-admin-render", "no-page-errors", "no-console-errors", "full-page-background", "system-notices-hidden", "pagination-beyond-ten", "post-mutation-observed"] as $required
 			| [.checks[] | select(.status == "pass") | .id] as $passed
 			| all($required[]; . as $check | $passed | index($check) != null)
 		)

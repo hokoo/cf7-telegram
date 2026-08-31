@@ -17,7 +17,8 @@ const requiredCheckIds = [
 	'authenticated-admin-render',
 	'no-page-errors',
 	'no-console-errors',
-	'admin-notice-visible',
+	'full-page-background',
+	'system-notices-hidden',
 	'pagination-beyond-ten',
 	'post-mutation-observed',
 ];
@@ -302,9 +303,10 @@ test('candidate admin browser lifecycle smoke', async ({baseURL, page}) => {
 		};
 	});
 
-	await expectCheck('admin-notice-visible', 'Server-rendered WordPress admin notice remains visible on the plugin screen.', async () => {
+	await expectCheck('system-notices-hidden', 'System WordPress notices are hidden on the plugin screen.', async () => {
 		const notice = page.locator('#cf7tg-e5-server-notice');
-		await expect(notice).toBeVisible();
+		await expect(notice).toHaveCount(1);
+		await expect(notice).toBeHidden();
 		return await notice.evaluate((element) => {
 			const style = window.getComputedStyle(element);
 			const rect = element.getBoundingClientRect();
@@ -316,6 +318,27 @@ test('candidate admin browser lifecycle smoke', async ({baseURL, page}) => {
 				height: rect.height,
 			};
 		});
+	});
+
+	await expectCheck('full-page-background', 'The plugin background fills the complete WordPress content area.', async () => {
+		const backgrounds = await page.evaluate(() => {
+			const elements = [
+				document.body,
+				document.querySelector('#wpwrap'),
+				document.querySelector('#wpcontent'),
+				document.querySelector('#wpbody'),
+				document.querySelector('#wpbody-content'),
+				document.querySelector('#cf7-telegram-container'),
+			];
+
+			return elements.map((element) => ({
+				element: element.id || element.tagName.toLowerCase(),
+				background_color: window.getComputedStyle(element).backgroundColor,
+			}));
+		});
+
+		expect(backgrounds.every((entry) => 'rgb(14, 22, 33)' === entry.background_color)).toBe(true);
+		return {backgrounds};
 	});
 
 	await expectCheck('pagination-beyond-ten', 'Bots, chats, and channels beyond the first ten records are loaded in browser REST data.', async () => {

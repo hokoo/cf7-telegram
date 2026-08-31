@@ -36,7 +36,7 @@ SUMMARY_WRITTEN=0
 CURRENT_PROJECT=""
 WP_WEB_IMAGE=""
 
-REQUIRED_CHECKS='["authenticated-admin-render","no-page-errors","no-console-errors","admin-notice-visible","pagination-beyond-ten","post-mutation-observed"]'
+REQUIRED_CHECKS='["authenticated-admin-render","no-page-errors","no-console-errors","full-page-background","system-notices-hidden","pagination-beyond-ten","post-mutation-observed"]'
 
 usage() {
 	cat <<'USAGE'

@@ -52,7 +52,7 @@ This plugin uses [API Telegram](https://core.telegram.org/api "Telegram docs") a
 
 = 1.0.13 =
 - Make Telegram bot actions POST-first and harden the administration interface against partial loading, pagination, and retry failures.
-- Preserve WordPress administration notices and improve diagnostics without exposing bot tokens or contact details.
+- Restore the full-page administration background, hide unrelated WordPress notices on the plugin screen, and improve diagnostics without exposing bot tokens or contact details.
 - Add automatic 30-day and 10,000-row log retention with configurable limits.
 - Verify the release ZIP across supported WordPress, PHP, and Contact Form 7 versions, including install, upgrade, uninstall, and rollback workflows.
 - Add reproducible build, Plugin Check, dependency audit, artifact hygiene, browser canary, and manually approved WordPress.org promotion gates.

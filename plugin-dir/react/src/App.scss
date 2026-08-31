@@ -1,3 +1,25 @@
+body[class*="page_wpcf7_tg"],
+body[class*="page_wpcf7_tg"] #wpwrap,
+body[class*="page_wpcf7_tg"] #wpcontent,
+body[class*="page_wpcf7_tg"] #wpbody,
+body[class*="page_wpcf7_tg"] #wpbody-content {
+  background-color: #0e1621;
+}
+
+body[class*="page_wpcf7_tg"] #wpbody-content {
+  > .notice:not(.cf7t-notice),
+  > .updated:not(.cf7t-notice),
+  > .error:not(.cf7t-notice),
+  > .update-nag:not(.cf7t-notice) {
+    display: none !important;
+  }
+}
+
+body[class*="page_wpcf7_tg"] ul#adminmenu a.wp-has-current-submenu:after,
+body[class*="page_wpcf7_tg"] ul#adminmenu > li.current > a.current:after {
+  border-right-color: #0e1621;
+}
+
 #cf7-telegram-container {
   background-color: #0e1621;
   box-sizing: border-box;

@@ -65,7 +65,8 @@ jq -n --arg candidate_sha256 "${EXPECTED_SHA256}" '
 			"authenticated-admin-render",
 			"no-page-errors",
 			"no-console-errors",
-			"admin-notice-visible",
+			"full-page-background",
+			"system-notices-hidden",
 			"pagination-beyond-ten",
 			"post-mutation-observed"
 		] | map({id: ., status: "pass"})

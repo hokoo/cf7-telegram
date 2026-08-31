@@ -40,7 +40,7 @@ add_action(
 			return;
 		}
 
-		echo '<div id="cf7tg-e5-server-notice" class="notice notice-warning"><p>E5 browser smoke server notice is visible.</p></div>';
+		echo '<div id="cf7tg-e5-server-notice" class="notice notice-warning"><p>E5 browser smoke system notice should be hidden.</p></div>';
 	}
 );
 
