@@ -6,6 +6,13 @@ Linux, Docker Compose
 ## Notice
 Call all commands from root project directory.
 
+## Stability Roadmap
+
+Stabilization epics, completed evidence, planned fake Telegram E2E coverage, and
+the deferred test-suite refactor are tracked in
+`docs/stability/roadmap.md`. Detailed epic documents live in the same
+`docs/stability/` directory.
+
 ## Installation & Use
 
 To setup the development environment, run
