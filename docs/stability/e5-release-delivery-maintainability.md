@@ -6,7 +6,7 @@ Release line: `1.0.13`
 
 ## Outcome
 
-Release ZIP creation and WordPress.org promotion are reproducible, fail-closed,
+Release ZIP creation and WordPress.org publishing are reproducible, fail-closed,
 and backed by executable lifecycle, browser, rollback, Plugin Check, dependency
 audit, and artifact hygiene evidence.
 
@@ -22,8 +22,8 @@ audit, and artifact hygiene evidence.
   cached official support images.
 - Browser lifecycle smoke uses Playwright against an isolated WordPress install.
 - Central logging redacts secrets and PII-like values and bounds retention.
-- WordPress.org promotion requires canary evidence, exact artifact hash matching,
-  manual approval, and factual rollback state.
+- Final GitHub releases publish automatically to WordPress.org after release ZIP
+  validation; prereleases remain GitHub-only canaries.
 - SVN deployment was made race-free and idempotent, closing the `1.0.12`
   publication failure mode.
 
@@ -39,7 +39,7 @@ audit, and artifact hygiene evidence.
 | E5.6 Plugin Check release gate | completed | `tests/stability/e5-plugin-check-gate.sh` |
 | E5.7 Dependency audit and artifact hygiene gates | completed | `scripts/run-release-audits.sh`, `scripts/validate-release-zip.sh` |
 | E5.8 Central log redaction and retention | completed | `plugin-dir/lib/LogRedactor.php`, logger tests |
-| E5.9 Canary promotion and rollback gate | completed | `scripts/verify-promotion-evidence.sh`, `scripts/deploy-wordpress-svn.sh` |
+| E5.9 Release publishing and rollback gate | completed | `.github/workflows/build-zip.yml`, `scripts/deploy-wordpress-svn.sh` |
 | E5.10 Verify and prepare `1.0.13` release candidate | completed | GitHub CI, local release artifact evidence |
 | QA E5 Independent delivery and release verification | completed | Project QA record |
 
@@ -56,8 +56,8 @@ The E5 closure evidence is the combination of:
 - `tests/stability/e5-support-matrix.sh`;
 - `tests/stability/e5-browser-smoke.sh`;
 - `tests/stability/e5-plugin-check-gate.sh`;
-- `tests/stability/e5-promotion-evidence-test.sh`;
-- GitHub `build-zip` and `promote-wordpress-org` workflow evidence.
+- `tests/stability/e5-svn-deploy-test.sh`;
+- GitHub `build-zip` release workflow evidence.
 
 Final `1.0.13` candidate ZIP SHA recorded in Project E5:
 `afe8e32809a3ee44d450fa552f9620c246a2b4a72269bbfbb473a7cc9d00b98b`.
@@ -75,6 +75,7 @@ as the local pinned-toolchain artifact.
 - Four non-blocking Plugin Check warnings remain recorded as accepted residual
   release noise.
 - Development-tool npm advisories remain outside the shipped PHP runtime ZIP.
-- WordPress.org publication still requires explicit owner action.
+- WordPress.org publication requires a non-prerelease GitHub release and valid
+  `WPORG_USERNAME` / `WPORG_PASSWORD` secrets.
 - Full fake Telegram submit delivery coverage belongs to E6.
 - Test-suite taxonomy cleanup belongs to E7.

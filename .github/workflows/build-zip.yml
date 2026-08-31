@@ -187,7 +187,7 @@ jobs:
           if-no-files-found: error
 
   publish:
-    name: Publish verified GitHub release artifact
+    name: Publish verified release
     runs-on: ubuntu-latest
     needs: verify
     if: ${{ github.event_name == 'release' }}
@@ -219,6 +219,44 @@ jobs:
         run: gh release upload "${{ github.event.release.tag_name }}" "${ZIP_PATH}" --clobber
         env:
           GH_TOKEN: ${{ github.token }}
+
+      - name: Deploy final release to WordPress.org SVN
+        if: ${{ github.event.release.prerelease == false }}
+        env:
+          SVN_USERNAME: ${{ secrets.WPORG_USERNAME }}
+          SVN_PASSWORD: ${{ secrets.WPORG_PASSWORD }}
+          BUILD_DIR: ${{ github.workspace }}/release-work/cf7-telegram
+          SLUG: cf7-telegram
+          VERSION: ${{ needs.verify.outputs.release_version }}
+        run: scripts/deploy-wordpress-svn.sh
+
+      - name: Update stable mirror after WordPress.org succeeds
+        if: ${{ github.event.release.prerelease == false }}
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git fetch origin stable
+          git worktree add --force stable-worktree origin/stable
+
+          find stable-worktree -mindepth 1 -maxdepth 1 -not -name '.git' -exec rm -rf {} +
+          rsync -a --delete --exclude '.git' release-work/cf7-telegram/ stable-worktree/
+
+          cd stable-worktree
+          git add -A
+          git add -f vendor react/build
+
+          if git diff --cached --quiet; then
+            echo "Stable mirror already matches $RELEASE_TAG"
+          else
+            git commit -m "Update plugin build from release $RELEASE_TAG"
+            git push origin HEAD:stable
+          fi
 
       - name: Push prerelease canary to plugin-dist
         if: ${{ github.event.release.prerelease == true }}
