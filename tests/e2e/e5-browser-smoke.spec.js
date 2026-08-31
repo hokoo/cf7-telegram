@@ -130,10 +130,18 @@ const waitForRestState = async (page, predicate, message) => {
 
 const login = async (page, baseURL) => {
 	await page.goto(`${baseURL}/wp-login.php`, {waitUntil: 'domcontentloaded'});
-	await page.locator('#user_login').fill(adminUser);
-	await page.locator('#user_pass').fill(adminPassword);
+	const username = page.locator('#user_login');
+	const password = page.locator('#user_pass');
+	await expect(username).toBeVisible();
+	await expect(password).toBeVisible();
+	await username.fill('');
+	await password.fill('');
+	await username.fill(adminUser);
+	await password.fill(adminPassword);
+	await expect(username).toHaveValue(adminUser);
+	await expect(password).toHaveValue(adminPassword);
 	await Promise.all([
-		page.waitForURL(/wp-admin/, {timeout: 30000}),
+		page.waitForURL(/\/wp-admin(?:\/|$)/, {timeout: 30000, waitUntil: 'domcontentloaded'}),
 		page.locator('#wp-submit').click(),
 	]);
 };
