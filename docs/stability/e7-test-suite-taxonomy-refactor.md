@@ -1,6 +1,6 @@
 # Epic 7 Test Suite Taxonomy Refactor
 
-Status: deferred, planning PR only
+Status: draft, seeded with planning scope; implementation not started
 
 ## Outcome
 
@@ -594,8 +594,10 @@ Notes/Risks:
 
 ## Readiness Verdict
 
-E7 is documented but not execution-ready. It should remain deferred until the
-owner approves the post-rollout timing and taxonomy contract in E7.1.
+E7 is documented but not execution-ready. The draft PR is intended to become the
+implementation PR for the taxonomy migration, but it should not start moving
+test files until the owner approves the post-rollout timing and taxonomy
+contract in E7.1.
 
-The first executable PR after this planning PR should be E7.1 only. File moves,
-wrappers, and CI migration should wait until E7.1 and E7.2 are complete.
+The first executable commits in this PR should close E7.1 and E7.2. File moves,
+wrappers, and CI migration should wait until those tasks are complete.

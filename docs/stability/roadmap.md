@@ -195,8 +195,9 @@ Rationale:
   stabilization work stops being the main axis of change.
 - Deferring the rewrite avoids large test-path churn while `1.0.13` is still
   settling with users.
-- The current E7 branch is a draft planning branch only; it documents goals,
-  decision gates, task boundaries, and no-coverage-loss QA before any path moves.
+- The current E7 branch is a draft implementation branch seeded with the plan;
+  it documents goals, decision gates, task boundaries, and no-coverage-loss QA
+  before any path moves.
 
 Candidate taxonomy:
 
