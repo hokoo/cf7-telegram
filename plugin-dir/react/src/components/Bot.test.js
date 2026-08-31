@@ -1,6 +1,6 @@
 import React from 'react';
-import {act, render} from '@testing-library/react';
-import {apiPingBot, apiUpdateBotToken} from '../utils/api';
+import {act, render, waitFor} from '@testing-library/react';
+import {apiFetchUpdates, apiPingBot, apiUpdateBotToken, fetchBot} from '../utils/api';
 import {connectChat2Channel, setBot2ChatConnectionStatus} from '../utils/main';
 import Bot, {getUpdateDiagnostic, saveBotTokenTransactionally, updateBotChatStatus} from './Bot';
 
@@ -24,6 +24,26 @@ jest.mock('../utils/main', () => ({
     disconnectConnectionBot2Chat: jest.fn(),
     setBot2ChatConnectionStatus: jest.fn(),
 }));
+
+const renderBot = () => render(
+    <Bot
+        bot={{
+            id: 1,
+            title: {rendered: 'test_bot'},
+            token: '1234',
+            isTokenEmpty: false,
+            isTokenDefinedByConst: false,
+        }}
+        chats={[]}
+        bot2ChatConnections={[]}
+        setBots={jest.fn()}
+        setBot2ChatConnections={jest.fn()}
+        bot2ChannelConnections={[]}
+        setBot2ChannelConnections={jest.fn()}
+        setChat2ChannelConnections={jest.fn()}
+        loadChatData={jest.fn()}
+    />
+);
 
 describe('saveBotTokenTransactionally', () => {
     beforeEach(() => {
@@ -108,10 +128,81 @@ describe('saveBotTokenTransactionally', () => {
 });
 
 describe('getUpdateDiagnostic', () => {
-    it('distinguishes webhook conflicts and update errors', () => {
+    it('distinguishes webhook conflicts, transient transport failures, and update errors', () => {
         expect(getUpdateDiagnostic({hasWebhookConflict: true, errors: []})).toBe('webhook_conflict');
-        expect(getUpdateDiagnostic({hasWebhookConflict: false, errors: [{errorType: 'transport'}]})).toBe('update_error');
+        expect(getUpdateDiagnostic({hasWebhookConflict: false, errors: [{errorType: 'transport'}]})).toBe('transient_update_error');
+        expect(getUpdateDiagnostic({hasWebhookConflict: false, errors: [{errorType: 'http'}]})).toBe('update_error');
+        expect(getUpdateDiagnostic({
+            hasWebhookConflict: false,
+            errors: [{errorType: 'transport'}, {errorType: 'telegram'}],
+        })).toBe('update_error');
         expect(getUpdateDiagnostic({hasWebhookConflict: false, errors: []})).toBeNull();
+    });
+});
+
+describe('Bot update polling diagnostics', () => {
+    const successfulUpdate = {
+        hasWebhookConflict: false,
+        hasNewConnections: false,
+        hasNewChats: false,
+        errors: [],
+    };
+    let originalFetchInterval;
+
+    beforeEach(() => {
+        jest.clearAllMocks();
+        mockBotViewProps = null;
+        originalFetchInterval = cf7TelegramData.intervals.bot_fetch;
+        apiPingBot.mockResolvedValue({online: true, botName: 'test_bot'});
+        fetchBot.mockResolvedValue({title: {rendered: 'test_bot'}});
+    });
+
+    afterEach(() => {
+        cf7TelegramData.intervals.bot_fetch = originalFetchInterval;
+    });
+
+    it('does not show a persistent error for a transient Telegram transport timeout', async () => {
+        apiFetchUpdates.mockResolvedValue({
+            ...successfulUpdate,
+            errors: [{errorType: 'transport'}],
+        });
+
+        const view = renderBot();
+
+        await waitFor(() => expect(apiFetchUpdates).toHaveBeenCalledTimes(1));
+        expect(mockBotViewProps.error).toBeNull();
+
+        view.unmount();
+    });
+
+    it('shows an error while Telegram transport failures remain sustained', async () => {
+        cf7TelegramData.intervals.bot_fetch = 50;
+        apiFetchUpdates.mockResolvedValue({
+            ...successfulUpdate,
+            errors: [{errorType: 'transport'}],
+        });
+
+        const view = renderBot();
+
+        await waitFor(() => expect(apiFetchUpdates).toHaveBeenCalledTimes(3));
+        await waitFor(() => expect(mockBotViewProps.error).toBe('Telegram updates could not be checked.'));
+
+        view.unmount();
+    });
+
+    it('clears an actionable update error after the next successful poll', async () => {
+        cf7TelegramData.intervals.bot_fetch = 100;
+        apiFetchUpdates
+            .mockResolvedValueOnce({...successfulUpdate, errors: [{errorType: 'telegram'}]})
+            .mockResolvedValue(successfulUpdate);
+
+        const view = renderBot();
+
+        await waitFor(() => expect(mockBotViewProps.error).toBe('Telegram updates could not be checked.'));
+        await waitFor(() => expect(apiFetchUpdates).toHaveBeenCalledTimes(2));
+        await waitFor(() => expect(mockBotViewProps.error).toBeNull());
+
+        view.unmount();
     });
 });
 

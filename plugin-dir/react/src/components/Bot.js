@@ -9,6 +9,8 @@ import {
     apiDeleteBot, apiFetchUpdates, apiPingBot, apiUpdateBotToken, fetchBot
 } from "../utils/api";
 
+const UPDATE_TRANSPORT_ERROR_THRESHOLD = 3;
+
 export const saveBotTokenTransactionally = async ({
     botId,
     token,
@@ -35,7 +37,12 @@ export const getUpdateDiagnostic = (updates) => {
         return 'webhook_conflict';
     }
 
-    if (updates?.errors?.length) {
+    const errors = Array.isArray(updates?.errors) ? updates.errors : [];
+    if (errors.length && errors.every(error => 'transport' === error?.errorType)) {
+        return 'transient_update_error';
+    }
+
+    if (errors.length) {
         return 'update_error';
     }
 
@@ -96,6 +103,7 @@ const Bot = ({
     const updatesTimeoutRef = useRef(null);
     const isUnmountedRef = useRef(false);
     const isFetchingRef = useRef(false);
+    const consecutiveTransportErrorsRef = useRef(0);
 
     useEffect(() => {
         return () => {
@@ -162,6 +170,13 @@ const Bot = ({
         }, cf7TelegramData.intervals.bot_fetch);
     }
 
+    const recordTransientUpdateError = () => {
+        consecutiveTransportErrorsRef.current += 1;
+        if (consecutiveTransportErrorsRef.current >= UPDATE_TRANSPORT_ERROR_THRESHOLD) {
+            setError(wp.i18n.__( 'Telegram updates could not be checked.', 'cf7-telegram' ));
+        }
+    };
+
     const handleFetchUpdates = async () => {
         if (isFetchingRef.current) return;
 
@@ -170,21 +185,35 @@ const Bot = ({
             let updates = await apiFetchUpdates(bot.id);
             const diagnostic = getUpdateDiagnostic(updates);
             if ('webhook_conflict' === diagnostic) {
+                consecutiveTransportErrorsRef.current = 0;
                 setError(wp.i18n.__( 'Telegram webhook is active. Disable it before checking for new chats.', 'cf7-telegram' ));
                 return;
             }
 
+            if ('transient_update_error' === diagnostic) {
+                recordTransientUpdateError();
+                return;
+            }
+
             if ('update_error' === diagnostic) {
+                consecutiveTransportErrorsRef.current = 0;
                 setError(wp.i18n.__( 'Telegram updates could not be checked.', 'cf7-telegram' ));
                 return;
             }
 
+            consecutiveTransportErrorsRef.current = 0;
+            setError(null);
             if (updates.hasNewConnections || updates.hasNewChats) {
                 await loadChatData();
             }
         } catch (err) {
             console.error('Fetch updates failed', err);
-            setError(wp.i18n.__( 'Telegram updates could not be checked.', 'cf7-telegram' ));
+            if ('rest_transport' === err?.category) {
+                recordTransientUpdateError();
+            } else {
+                consecutiveTransportErrorsRef.current = 0;
+                setError(wp.i18n.__( 'Telegram updates could not be checked.', 'cf7-telegram' ));
+            }
         } finally {
             isFetchingRef.current = false;
         }

@@ -9,7 +9,7 @@ global.wp = {
 global.cf7TelegramData = {
     intervals: {
         ping: 5000,
-        bot_fetch: 30000,
+        bot_fetch: 12000,
     },
     migration: {
         show_action_button: false,

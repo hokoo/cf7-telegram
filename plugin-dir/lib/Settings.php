@@ -9,6 +9,8 @@ use iTRON\cf7Telegram\Controllers\Migration;
 
 class Settings {
 	const OPTION_PREFIX = 'cf7t_';
+	public const DEFAULT_PING_INTERVAL = 5000;
+	public const DEFAULT_UPDATES_INTERVAL = 12000;
 
 	static function init(): void {
 		add_action( 'admin_menu', function () {
@@ -96,8 +98,8 @@ class Settings {
 			],
 
 			'intervals' => [
-				'ping'      => defined( 'WPCF7TG_PING_INTERVAL' ) ? WPCF7TG_PING_INTERVAL : 5000,
-				'bot_fetch' => defined( 'WPCF7TG_UPDATES_INTERVAL' ) ? WPCF7TG_UPDATES_INTERVAL : 30000,
+				'ping'      => defined( 'WPCF7TG_PING_INTERVAL' ) ? WPCF7TG_PING_INTERVAL : self::DEFAULT_PING_INTERVAL,
+				'bot_fetch' => defined( 'WPCF7TG_UPDATES_INTERVAL' ) ? WPCF7TG_UPDATES_INTERVAL : self::DEFAULT_UPDATES_INTERVAL,
 			],
 		) );
 	}
