@@ -450,6 +450,8 @@ Expected local outputs:
   compose file, and fake Telegram evidence under the E6 results directory.
 - Fake Telegram evidence includes sanitized Bot API calls and token hashes, not
   raw bot tokens, private chat labels, or private chat usernames.
+- The E6 Playwright report disables and strips CI git diff metadata so source
+  diffs cannot reintroduce redaction canaries into uploaded evidence.
 
 GitHub CI:
 

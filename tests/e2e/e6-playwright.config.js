@@ -14,6 +14,10 @@ module.exports = defineConfig({
 	expect: {
 		timeout: 15000,
 	},
+	captureGitInfo: {
+		commit: false,
+		diff: false,
+	},
 	reporter: [
 		['list'],
 		['json', {outputFile: reportPath}],

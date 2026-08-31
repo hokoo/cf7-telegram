@@ -555,12 +555,24 @@ run_browser_smoke() {
 	set -e
 
 	if [ "${exit_code}" -eq 0 ]; then
+		sanitize_playwright_report
 		emit "step" "playwright" "pass" "Playwright E6 form delivery smoke passed." "$(jq -nc --arg log "${log_file}" --arg result "${BROWSER_RESULT_JSON}" '{log:$log,result:$result}')"
 		return 0
 	fi
 
+	sanitize_playwright_report
 	fail_step "playwright" "Playwright E6 form delivery smoke failed." "$(jq -nc --arg log "${log_file}" --arg result "${BROWSER_RESULT_JSON}" --argjson exit_code "${exit_code}" '{log:$log,result:$result,exit_code:$exit_code}')"
 	return "${exit_code}"
+}
+
+sanitize_playwright_report() {
+	if [ ! -f "${PLAYWRIGHT_REPORT_JSON}" ]; then
+		return 0
+	fi
+
+	local sanitized_report="${PLAYWRIGHT_REPORT_JSON}.sanitized"
+	jq 'if .config.metadata then .config.metadata |= del(.gitDiff) else . end' "${PLAYWRIGHT_REPORT_JSON}" > "${sanitized_report}"
+	mv "${sanitized_report}" "${PLAYWRIGHT_REPORT_JSON}"
 }
 
 require_tools
