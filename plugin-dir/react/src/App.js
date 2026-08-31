@@ -201,6 +201,17 @@ const SettingsApp = () => {
                 <div className="list-container bots-container">
                     <div className="title-container">
                         <h3 className="title">{wp.i18n.__( 'Bots', 'cf7-telegram' )}</h3>
+                        <p className="title-description">
+                            {wp.i18n.__( 'A Telegram bot is required to run the integration. Create at least one bot, then connect it here.', 'cf7-telegram' )}
+                            {' '}
+                            <a
+                                href="https://core.telegram.org/bots#3-how-do-i-create-a-bot"
+                                target="_blank"
+                                rel="noreferrer"
+                            >
+                                {wp.i18n.__( 'How to create a bot', 'cf7-telegram' )}
+                            </a>
+                        </p>
                         <NewBot setBots={setBots} disabled={'success' !== resourceStatus('bots')}/>
                     </div>
 

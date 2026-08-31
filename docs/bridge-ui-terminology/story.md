@@ -30,6 +30,9 @@ a `Bridge`, while preserving the current internal implementation contract.
 - The UI explains that at least one bridge is required to run the integration.
 - The UI explains that multiple bridges can be created to route different forms
   to different sets of Telegram recipients.
+- The Bots section explains that at least one Telegram bot is required and links
+  to Telegram's bot creation guide.
+- Bots and Bridges helper text containers have matching visual height.
 - Buttons, empty states, confirmations, and user-visible errors use `bridge`
   instead of `channel` when referring to this plugin entity.
 - The usage guide explains bridge creation and bridge configuration.
@@ -40,7 +43,8 @@ a `Bridge`, while preserving the current internal implementation contract.
 ## Scope
 
 - React administration screen copy.
-- Small React administration screen layout addition under the `Bridges` heading.
+- Small React administration screen layout additions under the `Bots` and
+  `Bridges` headings.
 - User-facing setup instructions in `plugin-dir/readme.txt`.
 - Focused verification for visible copy and existing React behavior.
 

@@ -9,6 +9,9 @@ Scope:
 - Add concise helper text below the `Bridges` heading explaining that at least
   one bridge is required and additional bridges can separate forms by
   recipients.
+- Add concise helper text below the `Bots` heading explaining that at least one
+  Telegram bot is required and linking to Telegram's bot creation guide.
+- Make the `Bots` and `Bridges` helper text containers visually equal in height.
 - Update `plugin-dir/readme.txt` setup guidance to use bridge terminology.
 - Verify that no internal API, database, selector, or class rename is included.
 
@@ -23,6 +26,9 @@ Success Criteria:
 - Users see `Bridges` as the entity heading in the admin UI.
 - Users see a short explanation under the heading that integration requires at
   least one bridge and multiple bridges can split forms across recipients.
+- Users see a short explanation under `Bots` that integration requires at least
+  one Telegram bot, with a link to Telegram's bot creation guide.
+- Bots and Bridges helper text containers have matching visual height.
 - Creating a new item uses `Create Bridge` and `Bridge Name`.
 - User-visible empty states, confirmations, and errors refer to `bridge`.
 - The public usage guide uses bridge terminology for setup and configuration.
@@ -209,3 +215,64 @@ Verification:
 - `git diff -- plugin-dir/react/src plugin-dir/readme.txt docs/bridge-ui-terminology`
 - `rg -n "\\b[Cc]hannels?\\b|\\bchannel\\b" plugin-dir/react/src plugin-dir/readme.txt --glob "!*.test.js"`
 - `cd plugin-dir/react && npm test -- --watchAll=false`
+
+### T4. Add Bots Helper Text Spike
+Status: completed
+
+Goal: Add setup guidance to the `Bots` section and keep the helper text areas
+visually aligned with the `Bridges` section.
+
+Scope:
+- Add helper text below the `Bots` heading in `plugin-dir/react/src/App.js`.
+- State that at least one Telegram bot is required for the integration to work.
+- Link to Telegram's bot creation guide using the legacy UI URL:
+  `https://core.telegram.org/bots#3-how-do-i-create-a-bot`.
+- Use the same helper text styling as the `Bridges` section.
+- Adjust styling so the `Bots` and `Bridges` helper text containers have the
+  same visual height even if the text wraps differently.
+- Update focused tests that assert the helper copy and link.
+
+Out of Scope:
+- Changing bot creation behavior, token validation, REST routes, selectors, or
+  database entities.
+- Renaming internal `Bot` or `Channel` implementation identifiers.
+- Full design refresh or browser e2e campaign.
+
+DoR:
+- The spike is approved as a small extension to the current UI terminology work.
+- The legacy Telegram bot creation URL has been confirmed from git history.
+
+DoD:
+- `Bots` helper text and link are implemented in React UI source.
+- `Bots` and `Bridges` helper text containers share a fixed visual height rule.
+- Focused tests cover the bot helper text and Telegram guide link.
+- React unit tests and build pass, or any inability to run them is documented.
+
+AC:
+- Given the admin UI renders, when the `Bots` section is shown, then helper text
+  says that at least one Telegram bot is required for the integration.
+- Given the `Bots` helper text is shown, when the user needs bot creation help,
+  then a visible link points to
+  `https://core.telegram.org/bots#3-how-do-i-create-a-bot`.
+- Given the `Bots` and `Bridges` helper text strings wrap to different natural
+  heights, when the title containers render, then their helper text containers
+  reserve the same visual height.
+- Given the spike diff is inspected, when internal implementation identifiers
+  are reviewed, then no bot/channel API, selector, or database contracts are
+  renamed.
+
+Dependencies:
+- E1 Bridge UI copy baseline.
+
+Notes/Risks:
+- CSS-level equal height is verified through shared source styling, build, and a
+  lightweight Playwright rendered measurement.
+- Full WordPress-admin browser e2e remains out of scope for this spike unless
+  requested.
+
+Verification:
+- `rg -n "core.telegram.org/bots#3-how-do-i-create-a-bot|A Telegram bot is required|title-description" plugin-dir/react/src`
+- `cd plugin-dir/react && npm test -- --watchAll=false`
+- `cd plugin-dir/react && npm run build`
+- Playwright rendered measurement confirms both helper descriptions render at
+  `72px` height and the action buttons start at the same vertical position.
