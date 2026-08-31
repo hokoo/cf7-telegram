@@ -139,8 +139,8 @@ fail_step() {
 }
 
 write_summary() {
-	local row_summaries='[]'
 	local promotion_rollback='null'
+	local row_summaries_file="${RESULTS_DIR}/row-summaries.json"
 	local summary_files=()
 
 	while IFS= read -r -d '' summary_file; do
@@ -148,7 +148,9 @@ write_summary() {
 	done < <(find "${ROW_RESULTS_DIR}" -mindepth 2 -maxdepth 2 -name summary.json -print0 2>/dev/null)
 
 	if [ "${#summary_files[@]}" -gt 0 ]; then
-		row_summaries="$(jq -s '.' "${summary_files[@]}")"
+		jq -s '.' "${summary_files[@]}" > "${row_summaries_file}"
+	else
+		printf '[]\n' > "${row_summaries_file}"
 	fi
 
 	if [ -s "${RESULTS_DIR}/rollback.sql" ]; then
@@ -171,7 +173,7 @@ write_summary() {
 		--argjson promotion_rollback "${promotion_rollback}" \
 		--argjson support_contract "$(jq -c '.support_contract // {}' "${SOURCE_MANIFEST}")" \
 		--argjson support_matrix "$(jq -c '.support_matrix // []' "${SOURCE_MANIFEST}")" \
-		--argjson row_summaries "${row_summaries}" \
+		--slurpfile row_summaries "${row_summaries_file}" \
 		'{
 			run_id: $run_id,
 			workdir: $workdir,
@@ -186,7 +188,7 @@ write_summary() {
 			promotion_rollback: $promotion_rollback,
 			support_contract: $support_contract,
 			support_matrix: $support_matrix,
-			row_summaries: $row_summaries,
+			row_summaries: $row_summaries[0],
 			total_steps: length,
 			passed_steps: ([.[] | select(.status == "pass")] | length),
 			skipped_steps: ([.[] | select(.status == "skipped")] | length),
