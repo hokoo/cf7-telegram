@@ -27,13 +27,18 @@
     "ext-json": "*",
     "php": ">=8.0"
   },
+  "require-dev": {
+    "phpunit/phpunit": "^9.6"
+  },
   "autoload": {
     "psr-4": {
       "iTRON\\cf7Telegram\\": "lib"
     }
   },
   "scripts": {
-    "test": "php tests/run.php"
+    "test": "php tests/run.php",
+    "test:phpunit": "vendor/bin/phpunit",
+    "test:compat": "php tests/run.php --compat"
   },
   "config": {
     "autoloader-suffix": "Cf7Telegram"

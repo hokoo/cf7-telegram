@@ -10,8 +10,8 @@ $current = 'dev';
 const WPCF7TG_GITHUB_TOKEN = 'ghp_xxx';
 const WPFC7TG_BOT_TOKEN    = '0123456789:ABCDEF';
 
-const WPCF7TG_PING_INTERVAL = 5000;
-const WPCF7TG_UPDATES_INTERVAL = 50000;
+const WPCF7TG_PING_INTERVAL    = 5000;
+const WPCF7TG_UPDATES_INTERVAL = 12000;
 
 include __DIR__ . $configs[$current];
 

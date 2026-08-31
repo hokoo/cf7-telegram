@@ -1,6 +1,6 @@
 import React from 'react';
-import {act, render, screen, waitFor} from '@testing-library/react';
-import App from './App';
+import {act, fireEvent, render, screen, waitFor} from '@testing-library/react';
+import App, {SettingsErrorBoundary} from './App';
 import {
     apiDeleteChat,
     fetchBots,
@@ -14,8 +14,18 @@ import {
     fetchFormsForChannels,
 } from './utils/api';
 
-jest.mock('./components/Channel', () => () => <div>Channel</div>);
-jest.mock('./components/Bot', () => () => <div>Bot</div>);
+jest.mock('./components/Channel', () => ({channel, dataAvailability}) => (
+    <div>
+        Channel {channel.id}
+        <span data-testid={`channel-${channel.id}-forms-state`}>{dataAvailability.forms}</span>
+    </div>
+));
+jest.mock('./components/Bot', () => ({bot, chatDataStatus}) => (
+    <div>
+        Bot {bot.id}
+        <span data-testid={`bot-${bot.id}-chats-state`}>{chatDataStatus}</span>
+    </div>
+));
 jest.mock('./components/NewBot', () => () => <div>NewBot</div>);
 jest.mock('./components/NewChannel', () => () => <div>NewChannel</div>);
 
@@ -111,7 +121,7 @@ describe('App migration recovery', () => {
         global.cf7TelegramData = {
             intervals: {
                 ping: 5000,
-                bot_fetch: 30000,
+                bot_fetch: 12000,
             },
             migration: {
                 show_action_button: false,
@@ -139,7 +149,8 @@ describe('App migration recovery', () => {
                 is_failed: true,
                 can_retry: true,
                 last_error: {
-                    message: 'Synthetic migration failure.',
+                    category: 'migration_failed',
+                    message: 'A migration step could not be completed.',
                 },
             },
         };
@@ -149,7 +160,27 @@ describe('App migration recovery', () => {
         render(<App />);
 
         expect(await screen.findByText('Retry migration')).toBeEnabled();
-        expect(screen.getByText('Synthetic migration failure.')).toBeInTheDocument();
+        expect(screen.getByText('A migration step could not be completed.')).toBeInTheDocument();
+    });
+
+    it('does not render an unclassified raw migration error', async () => {
+        global.cf7TelegramData.migration = {
+            show_action_button: true,
+            action_url: 'https://example.test/wp-admin/admin-post.php',
+            nonce: 'nonce',
+            status: {
+                is_failed: true,
+                can_retry: true,
+                last_error: {
+                    message: 'SQL failed with token 123456789:SECRET_TOKEN',
+                },
+            },
+        };
+
+        render(<App />);
+
+        expect(await screen.findByText('Retry migration')).toBeEnabled();
+        expect(screen.queryByText(/SECRET_TOKEN/)).not.toBeInTheDocument();
     });
 
     it('disables migration submission while retry is already scheduled', async () => {
@@ -167,5 +198,72 @@ describe('App migration recovery', () => {
         render(<App />);
 
         expect(await screen.findByText('Run migration')).toBeDisabled();
+    });
+});
+
+describe('App resource loading', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+
+        fetchClient.mockResolvedValue([]);
+        fetchForms.mockResolvedValue([]);
+        fetchBots.mockResolvedValue([{id: 10, title: {rendered: 'Bot'}}]);
+        fetchChats.mockResolvedValue([]);
+        fetchChannels.mockResolvedValue([{id: 20, title: {rendered: 'Channel'}}]);
+        fetchFormsForChannels.mockResolvedValue([]);
+        fetchBotsForChannels.mockResolvedValue([]);
+        fetchBotsForChats.mockResolvedValue([]);
+        fetchChatsForChannels.mockResolvedValue([]);
+    });
+
+    it('keeps successful resources visible and retries only failed requests', async () => {
+        fetchForms.mockRejectedValueOnce(new Error('forms endpoint failed'));
+
+        render(<App />);
+
+        expect(await screen.findByText('Bot 10')).toBeInTheDocument();
+        expect(screen.getByText('Channel 20')).toBeInTheDocument();
+        expect(screen.getByText('Some settings data could not be loaded.')).toBeInTheDocument();
+        expect(screen.getByTestId('channel-20-forms-state')).toHaveTextContent('error');
+
+        fireEvent.click(screen.getByText('Retry failed requests'));
+
+        await waitFor(() => {
+            expect(fetchForms).toHaveBeenCalledTimes(2);
+            expect(screen.queryByText('Some settings data could not be loaded.')).not.toBeInTheDocument();
+            expect(screen.getByTestId('channel-20-forms-state')).toHaveTextContent('ready');
+        });
+
+        expect(fetchBots).toHaveBeenCalledTimes(1);
+        expect(fetchChannels).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not interpret failed relation data as an empty successful list', async () => {
+        fetchFormsForChannels.mockRejectedValueOnce(new Error('relation endpoint failed'));
+
+        render(<App />);
+
+        expect(await screen.findByText('Channel 20')).toBeInTheDocument();
+        expect(screen.getByTestId('channel-20-forms-state')).toHaveTextContent('error');
+        expect(screen.getByText('Some settings data could not be loaded.')).toBeInTheDocument();
+    });
+});
+
+describe('SettingsErrorBoundary', () => {
+    it('contains render failures and exposes a retry action', () => {
+        const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
+        const Broken = () => {
+            throw new Error('render failed');
+        };
+
+        render(
+            <SettingsErrorBoundary>
+                <Broken />
+            </SettingsErrorBoundary>
+        );
+
+        expect(screen.getByText('The settings screen could not be displayed.')).toBeInTheDocument();
+        expect(screen.getByText('Try again')).toBeInTheDocument();
+        consoleError.mockRestore();
     });
 });

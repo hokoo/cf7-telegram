@@ -25,7 +25,8 @@ const Channel = ({
     chats,
     chat2ChannelConnections,
     setChat2ChannelConnections,
-    bot2ChatConnections
+    bot2ChatConnections,
+    dataAvailability = {forms: 'ready', bots: 'ready', chats: 'ready'}
 }) => {
     const [botForChannel, setBotForChannel] = useState(null);
     const [chatsForChannel, setChatsForChannel] = useState([]);
@@ -37,9 +38,12 @@ const Channel = ({
     const [isEditingTitle, setIsEditingTitle] = useState(false);
     const [titleValue, setTitleValue] = useState(channel.title.rendered);
     const [saving, setSaving] = useState(false);
+    const [mutatingRelations, setMutatingRelations] = useState(false);
     const [error, setError] = useState(null);
 
     useEffect(() => {
+        if ('ready' !== dataAvailability.bots || 'ready' !== dataAvailability.chats) return;
+
         const botConnection = bot2ChannelConnections.find(c => c.data.to === channel.id);
         if (!botConnection) return setBotForChannel(null);
         const bot = bots.find(b => b.id === botConnection.data.from);
@@ -63,28 +67,34 @@ const Channel = ({
 
         setBotForChannel({...bot, chats: botChats});
         setChatsForChannel(botChats.filter(chat => chat.status === 'active'));
-    }, [channel.id, bots, bot2ChannelConnections, bot2ChatConnections, chats, chat2ChannelConnections]);
+    }, [channel.id, bots, bot2ChannelConnections, bot2ChatConnections, chats, chat2ChannelConnections, dataAvailability.bots, dataAvailability.chats]);
 
     useEffect(() => {
+        if ('ready' !== dataAvailability.forms) return;
+
         const relatedIds = form2ChannelConnections.filter(c => c.data?.to === channel.id).map(r => r.data.from);
         const linked = forms.filter(f => relatedIds.includes(f.id));
         const unlinked = forms.filter(f => !relatedIds.includes(f.id));
         setFormsForChannel(linked);
         setAvailableForms(unlinked);
-    }, [forms, form2ChannelConnections, channel.id]);
+    }, [forms, form2ChannelConnections, channel.id, dataAvailability.forms]);
 
     useEffect(() => {
+        if ('ready' !== dataAvailability.bots) return;
+
         const currentBotConnection = bot2ChannelConnections.find(c => c.data.to === channel.id);
         const usedBotId = currentBotConnection?.data.from;
         const unlinkedBots = bots.filter(bot => bot.id !== usedBotId);
         setAvailableBots(unlinkedBots);
-    }, [bots, bot2ChannelConnections, channel.id]);
+    }, [bots, bot2ChannelConnections, channel.id, dataAvailability.bots]);
 
     const handleAddForm = () => setShowFormSelector(prev => !prev);
 
     const handleFormSelect = async (event) => {
         const formId = parseInt(event.target.value, 10);
+        if (!Number.isInteger(formId) || mutatingRelations) return;
 
+        setMutatingRelations(true);
         try {
             await connectForm2Channel(formId, channel.id, setForm2ChannelConnections)
         } catch (err) {
@@ -92,6 +102,7 @@ const Channel = ({
             alert( wp.i18n.__( 'Something went wrong while assigning the form', 'cf7-telegram' ) );
         } finally {
             setShowFormSelector(false);
+            setMutatingRelations(false);
         }
     };
 
@@ -99,54 +110,73 @@ const Channel = ({
         const connection = form2ChannelConnections.find(c => c.data.from === formId && c.data.to === channel.id);
 
         if (
+            mutatingRelations ||
             !connection ||
             !window.confirm( wp.i18n.__( 'Are you sure you want to remove this form from the channel?', 'cf7-telegram' ) )
         )
             return;
 
+        setMutatingRelations(true);
         try {
             await disconnectConnectionForm2Channel(connection.data.id, setForm2ChannelConnections)
         } catch (err) {
             console.error(err);
             alert( wp.i18n.__( 'Failed to remove form', 'cf7-telegram' ) );
+        } finally {
+            setMutatingRelations(false);
         }
     };
 
     const handleToggleChat = async (chatId, status) => {
-        if (status.toLowerCase() === 'muted') {
+        if (mutatingRelations || status.toLowerCase() === 'muted') {
             return;
         }
 
         let connection = chat2ChannelConnections.find(c => c.data.from === chatId && c.data.to === channel.id);
 
-        if (!connection) {
-            await connectChat2Channel(chatId, channel.id, setChat2ChannelConnections);
-        } else {
-            await disconnectConnectionChat2Channel(connection.data.id, setChat2ChannelConnections);
+        setMutatingRelations(true);
+        try {
+            if (!connection) {
+                await connectChat2Channel(chatId, channel.id, setChat2ChannelConnections);
+            } else {
+                await disconnectConnectionChat2Channel(connection.data.id, setChat2ChannelConnections);
+            }
+        } catch (err) {
+            console.error('Failed to update channel chat', err);
+            setError( wp.i18n.__( 'Failed to update chat', 'cf7-telegram' ) );
+        } finally {
+            setMutatingRelations(false);
         }
     };
 
     const handleBotSelect = async (event) => {
         const botId = parseInt(event.target.value, 10);
+        if (!Number.isInteger(botId) || mutatingRelations) return;
 
+        setMutatingRelations(true);
         try {
             await connectBot2Channel(botId, channel.id, setBot2ChannelConnections);
         } catch (err) {
             console.error(err);
             alert( wp.i18n.__( 'Failed to assign bot', 'cf7-telegram' ) );
+        } finally {
+            setMutatingRelations(false);
         }
     };
 
     const handleRemoveBot = async () => {
         const connection = bot2ChannelConnections.find(c => c.data.to === channel.id);
 
-        if (!connection) return;
+        if (!connection || mutatingRelations) return;
 
+        setMutatingRelations(true);
         try {
             await disconnectConnectionBot2Channel(connection.data.id, setBot2ChannelConnections);
         } catch (err) {
             console.error(err);
             alert( wp.i18n.__( 'Failed to remove bot', 'cf7-telegram' ) );
+        } finally {
+            setMutatingRelations(false);
         }
     };
 
@@ -189,6 +219,8 @@ const Channel = ({
     };
 
     const handleDeleteChannel = async () => {
+        if (saving || mutatingRelations) return;
+
         if (!window.confirm( wp.i18n.__( 'Are you sure you want to delete this channel?', 'cf7-telegram' ) )) return;
 
         setSaving(true);
@@ -242,6 +274,8 @@ const Channel = ({
             handleToggleChat={handleToggleChat}
             deleteChannel={handleDeleteChannel}
             getToggleButtonLabel={getToggleButtonLabel}
+            dataAvailability={dataAvailability}
+            mutatingRelations={mutatingRelations}
         />
     );
 };

@@ -11,12 +11,14 @@ CACHE_DIR="${CF7TG_E1_CACHE_DIR:-${XDG_CACHE_HOME:-${HOME}/.cache}/cf7-telegram/
 RESULTS_DIR="${CF7TG_E1_RESULTS_DIR:-${WORKDIR}/results}"
 LOG_DIR="${RESULTS_DIR}/logs"
 STATE_DIR="${RESULTS_DIR}/state"
+ROLLBACK_DIR="${RESULTS_DIR}/rollback"
 ARTIFACT_DIR="${WORKDIR}/artifacts"
 CANDIDATE_STAGE="${WORKDIR}/candidate-stage"
 RUNTIME_DIR="${WORKDIR}/runtime"
 COMPOSE_FILE="${WORKDIR}/docker-compose.e1.yml"
 EVIDENCE_JSONL="${RESULTS_DIR}/evidence.jsonl"
 SUMMARY_JSON="${RESULTS_DIR}/summary.json"
+DEFAULT_CANDIDATE_VERSION="$(jq -r '.candidate.expected_version // empty' "${SOURCE_MANIFEST}")"
 WP_VERSION="${CF7TG_E1_WP_VERSION:-$(jq -r '.wordpress.default_core_version' "${SOURCE_MANIFEST}")}"
 WP_CLI_IMAGE="${CF7TG_E1_WP_CLI_IMAGE:-$(jq -r '.wordpress.default_cli_image' "${SOURCE_MANIFEST}")}"
 CF7_VERSION="${CF7TG_E1_CF7_VERSION:-$(jq -r '.dependencies.contact_form_7.default_version' "${SOURCE_MANIFEST}")}"
@@ -36,7 +38,8 @@ Usage: tests/stability/e1-smoke-matrix.sh [options]
 Options:
   --case <name>       Run one case. Repeatable. Known names:
                       fresh, upgrade-0.10, upgrade-0.11,
-                      upgrade-1.0.9, upgrade-1.0.10
+                      upgrade-1.0.9, upgrade-1.0.10,
+                      upgrade-1.0.11, upgrade-1.0.12
   --artifact-only     Verify/download source artifacts and build candidate zip only.
   --workdir <path>    Use an explicit temporary work directory.
   --keep-workdir      Keep Docker containers/volumes for debugging.
@@ -45,10 +48,10 @@ Options:
 Environment:
   CF7TG_CANDIDATE_ZIP                 Candidate zip. Defaults to dist/cf7-telegram-wp-plugin.zip
                                       when present, then a complete local plugin-dir fallback.
-  CF7TG_EXPECTED_CANDIDATE_VERSION    Expected candidate header version.
-  CF7TG_E1_WP_VERSION                 WordPress core version, default 7.0.4.
-  CF7TG_E1_WP_CLI_IMAGE               WP-CLI Docker image, default wordpress:cli-php8.2.
-  CF7TG_E1_CF7_VERSION                Contact Form 7 version, default 6.0.6.
+  CF7TG_EXPECTED_CANDIDATE_VERSION    Expected candidate header version, default 1.0.13.
+  CF7TG_E1_WP_VERSION                 WordPress core version, default 7.1.
+  CF7TG_E1_WP_CLI_IMAGE               WP-CLI Docker image, default wordpress:cli-php8.3.
+  CF7TG_E1_CF7_VERSION                Contact Form 7 version, default 6.1.7.
   CF7TG_E1_FIXTURE                    legacy-heavy, legacy-basic, damaged-legacy,
                                       partial-modern, or none. Default legacy-heavy.
   CF7TG_E2_CHARACTERIZATION           When set to 1, emit E2 semantic migration evidence.
@@ -74,6 +77,7 @@ while [ "$#" -gt 0 ]; do
 			RESULTS_DIR="${CF7TG_E1_RESULTS_DIR:-${WORKDIR}/results}"
 			LOG_DIR="${RESULTS_DIR}/logs"
 			STATE_DIR="${RESULTS_DIR}/state"
+			ROLLBACK_DIR="${RESULTS_DIR}/rollback"
 			ARTIFACT_DIR="${WORKDIR}/artifacts"
 			CANDIDATE_STAGE="${WORKDIR}/candidate-stage"
 			RUNTIME_DIR="${WORKDIR}/runtime"
@@ -98,10 +102,10 @@ while [ "$#" -gt 0 ]; do
 done
 
 if [ "${#CASES[@]}" -eq 0 ]; then
-	CASES=(fresh upgrade-0.10 upgrade-0.11 upgrade-1.0.9 upgrade-1.0.10)
+	CASES=(fresh upgrade-0.10 upgrade-0.11 upgrade-1.0.9 upgrade-1.0.10 upgrade-1.0.11 upgrade-1.0.12)
 fi
 
-mkdir -p "${CACHE_DIR}" "${RESULTS_DIR}" "${LOG_DIR}" "${STATE_DIR}" "${ARTIFACT_DIR}" "${CANDIDATE_STAGE}" "${RUNTIME_DIR}"
+mkdir -p "${CACHE_DIR}" "${RESULTS_DIR}" "${LOG_DIR}" "${STATE_DIR}" "${ROLLBACK_DIR}" "${ARTIFACT_DIR}" "${CANDIDATE_STAGE}" "${RUNTIME_DIR}"
 chmod 0777 "${RUNTIME_DIR}"
 : > "${EVIDENCE_JSONL}"
 
@@ -313,7 +317,7 @@ prepare_candidate_from_local_plugin_dir() {
 
 prepare_candidate() {
 	local candidate_zip="${ARTIFACT_DIR}/cf7-telegram-candidate.zip"
-	local expected="${CF7TG_EXPECTED_CANDIDATE_VERSION:-}"
+	local expected="${CF7TG_EXPECTED_CANDIDATE_VERSION:-${DEFAULT_CANDIDATE_VERSION}}"
 	local dist_zip="${REPO_ROOT}/dist/cf7-telegram-wp-plugin.zip"
 
 	if [ -n "${CF7TG_CANDIDATE_ZIP:-}" ]; then
@@ -332,10 +336,6 @@ prepare_candidate() {
 	else
 		prepare_candidate_from_local_plugin_dir "${candidate_zip}"
 		emit "candidate" "source" "pass" "Built candidate zip from local plugin-dir." "$(jq -nc --arg file "${candidate_zip}" '{file:$file}')"
-	fi
-
-	if [ -z "${expected}" ]; then
-		expected="$(candidate_header_version "${candidate_zip}")"
 	fi
 
 	verify_zip_version "candidate" "version" "${candidate_zip}" "${expected}"
@@ -596,7 +596,7 @@ run_fresh_case() {
 run_upgrade_case() {
 	local matrix_id="$1"
 	local case_id="upgrade-${matrix_id}"
-	local legacy_version candidate_version rollback_sql
+	local legacy_version candidate_version rollback_sql rollback_artifact
 	local rc=0
 
 	legacy_version="$(legacy_version_for_case "${matrix_id}")"
@@ -607,6 +607,7 @@ run_upgrade_case() {
 
 	candidate_version="$(candidate_header_version "${ARTIFACT_DIR}/cf7-telegram-candidate.zip")"
 	rollback_sql="/runtime/${case_id}-rollback.sql"
+	rollback_artifact="${ROLLBACK_DIR}/${case_id}-rollback.sql"
 
 	CURRENT_PROJECT="$(project_name_for_case "${case_id}")"
 	cleanup_project
@@ -623,6 +624,18 @@ run_upgrade_case() {
 		seed_fixture "${case_id}" || rc=1
 		write_state "${case_id}" "legacy-seeded" || rc=1
 		run_logged "${case_id}" "rollback_export" wp_run db export "${rollback_sql}" --path=/var/www/html || rc=1
+		if [ "${rc}" -eq 0 ]; then
+			cp "${RUNTIME_DIR}/${case_id}-rollback.sql" "${rollback_artifact}"
+			emit "${case_id}" "rollback_evidence" "pass" "Captured rollback DB snapshot and baseline artifact identity." "$(jq -nc \
+				--arg baseline_zip "${ARTIFACT_DIR}/cf7-telegram.${legacy_version}.zip" \
+				--arg baseline_zip_container "/artifacts/cf7-telegram.${legacy_version}.zip" \
+				--arg baseline_version "${legacy_version}" \
+				--arg baseline_sha256 "$(sha256sum "${ARTIFACT_DIR}/cf7-telegram.${legacy_version}.zip" | awk '{print $1}')" \
+				--arg db_snapshot "${rollback_artifact}" \
+				--arg db_snapshot_container "${rollback_sql}" \
+				--arg db_snapshot_sha256 "$(sha256sum "${rollback_artifact}" | awk '{print $1}')" \
+				'{baseline_zip:$baseline_zip,baseline_zip_container:$baseline_zip_container,baseline_version:$baseline_version,baseline_sha256:$baseline_sha256,db_snapshot:$db_snapshot,db_snapshot_container:$db_snapshot_container,db_snapshot_sha256:$db_snapshot_sha256}')"
+		fi
 	fi
 
 	if [ "${rc}" -eq 0 ]; then
@@ -681,11 +694,26 @@ run_upgrade_case() {
 }
 
 write_summary() {
+	local candidate_zip="${ARTIFACT_DIR}/cf7-telegram-candidate.zip"
+	local candidate_version=""
+	local candidate_sha256=""
+
+	if [ -f "${candidate_zip}" ]; then
+		candidate_version="$(candidate_header_version "${candidate_zip}" 2>/dev/null || true)"
+		candidate_sha256="$(sha256sum "${candidate_zip}" 2>/dev/null | awk '{print $1}')"
+	fi
+
 	jq -s \
 		--arg run_id "${RUN_ID}" \
 		--arg workdir "${WORKDIR}" \
 		--arg results_dir "${RESULTS_DIR}" \
+		--arg rollback_dir "${ROLLBACK_DIR}" \
 		--arg source_manifest "${SOURCE_MANIFEST}" \
+		--argjson support_contract "$(jq -c '.support_contract // {}' "${SOURCE_MANIFEST}")" \
+		--argjson support_matrix "$(jq -c '.support_matrix // []' "${SOURCE_MANIFEST}")" \
+		--arg candidate_version "${candidate_version}" \
+		--arg candidate_sha256 "${candidate_sha256}" \
+		--arg expected_candidate_version "${CF7TG_EXPECTED_CANDIDATE_VERSION:-${DEFAULT_CANDIDATE_VERSION}}" \
 		--arg wp_version "${WP_VERSION}" \
 		--arg wp_cli_image "${WP_CLI_IMAGE}" \
 		--arg cf7_version "${CF7_VERSION}" \
@@ -694,12 +722,26 @@ write_summary() {
 			run_id: $run_id,
 			workdir: $workdir,
 			results_dir: $results_dir,
+			rollback_dir: $rollback_dir,
 			source_manifest: $source_manifest,
+			support_contract: $support_contract,
+			support_matrix: $support_matrix,
 			environment: {
 				wp_version: $wp_version,
 				wp_cli_image: $wp_cli_image,
 				contact_form_7_version: $cf7_version,
 				fixture: $fixture,
+				support_row: {
+					matrix_id: env.CF7TG_E1_SUPPORT_ROW_ID,
+					label: env.CF7TG_E1_SUPPORT_ROW_LABEL,
+					required: env.CF7TG_E1_SUPPORT_ROW_REQUIRED,
+					php_version: env.CF7TG_E1_SUPPORT_ROW_PHP
+				},
+				candidate: {
+					expected_version: $expected_candidate_version,
+					actual_version: $candidate_version,
+					sha256: $candidate_sha256
+				},
 				e2_characterization: env.CF7TG_E2_CHARACTERIZATION,
 				uses_repo_docker_compose: false,
 				dev_database_guard: "Harness creates a temporary Compose file and project; it does not use docker-compose.yml or its persistent MySQL volume."

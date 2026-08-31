@@ -9,6 +9,8 @@ import {
     apiDeleteBot, apiFetchUpdates, apiPingBot, apiUpdateBotToken, fetchBot
 } from "../utils/api";
 
+const UPDATE_TRANSPORT_ERROR_THRESHOLD = 3;
+
 export const saveBotTokenTransactionally = async ({
     botId,
     token,
@@ -35,11 +37,38 @@ export const getUpdateDiagnostic = (updates) => {
         return 'webhook_conflict';
     }
 
-    if (updates?.errors?.length) {
+    const errors = Array.isArray(updates?.errors) ? updates.errors : [];
+    if (errors.length && errors.every(error => 'transport' === error?.errorType)) {
+        return 'transient_update_error';
+    }
+
+    if (errors.length) {
         return 'update_error';
     }
 
     return null;
+};
+
+export const updateBotChatStatus = async ({
+    connectionId,
+    newStatus,
+    currentStatus,
+    chatId,
+    botId,
+    bot2ChannelConnections,
+    setBot2ChatConnections,
+    setChat2ChannelConnections,
+}) => {
+    await setBot2ChatConnectionStatus(connectionId, newStatus, setBot2ChatConnections);
+
+    if ('pending' !== currentStatus) {
+        return;
+    }
+
+    const channels = bot2ChannelConnections.filter(connection => connection.data.from === botId);
+    for (const channel of channels) {
+        await connectChat2Channel(chatId, channel.data.to, setChat2ChannelConnections);
+    }
 };
 
 const Bot = ({
@@ -51,7 +80,8 @@ const Bot = ({
     bot2ChannelConnections,
     setBot2ChannelConnections,
     setChat2ChannelConnections,
-    loadChatData
+    loadChatData,
+    chatDataStatus = 'ready'
 }) => {
     const [isEditingToken, setIsEditingToken] = useState(false);
     const [nameValue, setNameValue] = useState(bot.title.rendered);
@@ -60,7 +90,6 @@ const Bot = ({
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState(null);
     const [updatingStatusIds, setUpdatingStatusIds] = useState([]);
-    const renderEditTokenCount = useRef(0);
 
     const relatedChatIds = bot2ChatConnections
         .filter(connection => connection.data.from === bot.id)
@@ -74,6 +103,7 @@ const Bot = ({
     const updatesTimeoutRef = useRef(null);
     const isUnmountedRef = useRef(false);
     const isFetchingRef = useRef(false);
+    const consecutiveTransportErrorsRef = useRef(0);
 
     useEffect(() => {
         return () => {
@@ -140,6 +170,13 @@ const Bot = ({
         }, cf7TelegramData.intervals.bot_fetch);
     }
 
+    const recordTransientUpdateError = () => {
+        consecutiveTransportErrorsRef.current += 1;
+        if (consecutiveTransportErrorsRef.current >= UPDATE_TRANSPORT_ERROR_THRESHOLD) {
+            setError(wp.i18n.__( 'Telegram updates could not be checked.', 'cf7-telegram' ));
+        }
+    };
+
     const handleFetchUpdates = async () => {
         if (isFetchingRef.current) return;
 
@@ -148,21 +185,35 @@ const Bot = ({
             let updates = await apiFetchUpdates(bot.id);
             const diagnostic = getUpdateDiagnostic(updates);
             if ('webhook_conflict' === diagnostic) {
+                consecutiveTransportErrorsRef.current = 0;
                 setError(wp.i18n.__( 'Telegram webhook is active. Disable it before checking for new chats.', 'cf7-telegram' ));
                 return;
             }
 
+            if ('transient_update_error' === diagnostic) {
+                recordTransientUpdateError();
+                return;
+            }
+
             if ('update_error' === diagnostic) {
+                consecutiveTransportErrorsRef.current = 0;
                 setError(wp.i18n.__( 'Telegram updates could not be checked.', 'cf7-telegram' ));
                 return;
             }
 
+            consecutiveTransportErrorsRef.current = 0;
+            setError(null);
             if (updates.hasNewConnections || updates.hasNewChats) {
                 await loadChatData();
             }
         } catch (err) {
             console.error('Fetch updates failed', err);
-            setError(wp.i18n.__( 'Telegram updates could not be checked.', 'cf7-telegram' ));
+            if ('rest_transport' === err?.category) {
+                recordTransientUpdateError();
+            } else {
+                consecutiveTransportErrorsRef.current = 0;
+                setError(wp.i18n.__( 'Telegram updates could not be checked.', 'cf7-telegram' ));
+            }
         } finally {
             isFetchingRef.current = false;
         }
@@ -231,8 +282,8 @@ const Bot = ({
         }
 
         setError(null);
+        setTokenValue('');
         setIsEditingToken(true);
-        renderEditTokenCount.current = 0;
     };
 
     const cancelEdit = () => {
@@ -308,6 +359,8 @@ const Bot = ({
     };
 
     const handleToggleChatStatus = async (chatId, currentStatus) => {
+        if (updatingStatusIds.includes(chatId)) return;
+
         const connectionIndex = bot2ChatConnections.findIndex(c => c.data.from === bot.id && c.data.to === chatId);
         if (connectionIndex === -1) return;
 
@@ -325,15 +378,16 @@ const Bot = ({
         setUpdatingStatusIds(prev => [...prev, chatId]);
 
         try {
-            let res = setBot2ChatConnectionStatus(connection.data.id, newStatus, setBot2ChatConnections);
-
-            // If the status was 'pending', we need to connect the chat to the all channels this bot is connected to.
-            if (currentStatus === 'pending') {
-                const channels = bot2ChannelConnections.filter(c => c.data.from === bot.id);
-                for (const channel of channels) {
-                    await connectChat2Channel(chatId, channel.data.to, setChat2ChannelConnections)
-                }
-            }
+            await updateBotChatStatus({
+                connectionId: connection.data.id,
+                newStatus,
+                currentStatus,
+                chatId,
+                botId: bot.id,
+                bot2ChannelConnections,
+                setBot2ChatConnections,
+                setChat2ChannelConnections,
+            });
 
         } catch (err) {
             console.error('Failed to update chat status', err);
@@ -343,6 +397,8 @@ const Bot = ({
     };
 
     const handleDisconnectChat = async (chatId, botID) => {
+        if (updatingStatusIds.includes(chatId)) return;
+
         const connectionIndex = bot2ChatConnections.findIndex(c => c.data.from === botID && c.data.to === chatId);
         if (connectionIndex === -1 || !window.confirm( wp.i18n.__( 'Are you sure you want to delete this chat?', 'cf7-telegram' )) ) return;
 
@@ -377,7 +433,7 @@ const Bot = ({
         handleToggleChatStatus={handleToggleChatStatus}
         handleDisconnectChat={handleDisconnectChat}
         online={online}
-        renderEditTokenCount={renderEditTokenCount}
+        chatDataStatus={chatDataStatus}
     />);
 };
 

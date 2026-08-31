@@ -1,0 +1,18 @@
+# One injected file path per line. Each entry must make scripts/validate-release-zip.sh fail.
+cf7-telegram/package.json
+cf7-telegram/composer.json
+cf7-telegram/composer.lock
+cf7-telegram/react/src/injected.js
+cf7-telegram/react/public/injected.html
+cf7-telegram/react/scripts/injected.js
+cf7-telegram/react/webpack.config.js
+cf7-telegram/react/jest-unit.config.js
+cf7-telegram/react/package-lock.json
+cf7-telegram/react/build/static/js/main.js.map
+cf7-telegram/vendor/hokoo/wpconnections/makefile
+cf7-telegram/vendor/hokoo/wpconnections/php-wp-unit.xml
+cf7-telegram/vendor/ramsey/collection/build/cache/report.xml
+cf7-telegram/tests/InjectedTest.php
+cf7-telegram/.env
+cf7-telegram/private.key
+cf7-telegram/token.txt

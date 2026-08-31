@@ -22,15 +22,12 @@ const BotView = ({
     handleToggleChatStatus,
     handleDisconnectChat,
     online,
-    renderEditTokenCount
+    chatDataStatus = 'ready'
 }) => {
 
     let status = online === true ? 'online' : online === false ? 'offline' : 'unknown';
     let truncatedName = nameValue.slice(0, 18);
     const fullBotName = `@${nameValue}`;
-
-    isEditingToken && renderEditTokenCount.current < 1 && setTokenValue('');
-    isEditingToken && renderEditTokenCount.current++;
 
     // Trimmed token for display (only last 4 characters)
     const trimmedToken = isTokenEmpty ? tokenValue : `***${tokenValue.slice(-4)}`;
@@ -100,7 +97,11 @@ const BotView = ({
                 {error && <p style={{color: 'red'}}>{error}</p>}
 
                 <div className="frame chats-for-bot">
-                    {chatsForBot.length > 0 ? (
+                    {'error' === chatDataStatus ? (
+                        <span className="offline-bot-sad-message">{ wp.i18n.__( 'Chat data is unavailable.', 'cf7-telegram' ) }</span>
+                    ) : 'ready' !== chatDataStatus ? (
+                        <span className="unknown-bot-status-message">{ wp.i18n.__( 'Loading chat data...', 'cf7-telegram' ) }</span>
+                    ) : chatsForBot.length > 0 ? (
                         <ul>
                             {chatsForBot.map(chat => {
                                 const status = getChatStatus(bot.id, chat.id, bot2ChatConnections);
@@ -108,7 +109,7 @@ const BotView = ({
                                 return (
                                     <li key={chat.id} className={`chat-item ${status.toLowerCase()}`}>
                                         <span className="chat-name"
-                                              title={status.toWellFormed()}
+                                              title={String(status)}
                                         >{chat.title.rendered}</span>
 
                                         <span

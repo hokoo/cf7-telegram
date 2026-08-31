@@ -7,6 +7,11 @@ use iTRON\cf7Telegram\Controllers\Migration;
 use iTRON\cf7Telegram\Settings;
 
 final class SettingsTest extends Cf7tg_TestCase {
+	public function testDefaultPollingIntervalsAreExplicitAndUseMilliseconds(): void {
+		$this->assertSame( 5000, Settings::DEFAULT_PING_INTERVAL );
+		$this->assertSame( 12000, Settings::DEFAULT_UPDATES_INTERVAL );
+	}
+
 	public function testFailedMigrationStateExposesRetryAndLastError(): void {
 		$this->seedFailedMigrationState();
 
@@ -15,7 +20,9 @@ final class SettingsTest extends Cf7tg_TestCase {
 		$this->assertSame( 'failed', $data['status'] );
 		$this->assertSame( true, $data['can_retry'] );
 		$this->assertSame( true, $data['is_failed'] );
-		$this->assertSame( 'Synthetic failure.', $data['last_error']['message'] );
+		$this->assertSame( 'migration_failed', $data['last_error']['category'] );
+		$this->assertSame( '1.0-alpha', $data['last_error']['step'] );
+		$this->assertSame( 'A migration step could not be completed.', $data['last_error']['message'] );
 		$this->assertSame( true, Settings::shouldShowMigrationActionButton() );
 	}
 

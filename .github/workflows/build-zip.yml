@@ -34,14 +34,15 @@ jobs:
         with:
           php-version: '8.2'
           coverage: none
+          tools: composer:2.10.3
 
       - name: Configure Composer GitHub token
         run: composer config --global --auth github-oauth.github.com "${{ github.token }}"
 
-      - name: Set up Node.js 18
+      - name: Set up Node.js 20
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           cache: npm
           cache-dependency-path: plugin-dir/react/package-lock.json
 
@@ -63,6 +64,17 @@ jobs:
       - name: Run React tests
         working-directory: ./plugin-dir/react
         run: CI=true npm test -- --watchAll=false
+
+      - name: Run release dependency audit gates
+        run: scripts/run-release-audits.sh
+
+      - name: Upload release audit reports
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: cf7-telegram-release-audit-reports
+          path: dist/audit-reports
+          if-no-files-found: warn
 
       - name: Prepare release version gate
         id: release_version
@@ -90,11 +102,66 @@ jobs:
             exit 1
           fi
 
-      - name: Run isolated stability matrix
+      - name: Run Plugin Check release gate
+        env:
+          CF7TG_CANDIDATE_ZIP: ${{ github.workspace }}/${{ env.ZIP_PATH }}
+          CF7TG_EXPECTED_CANDIDATE_VERSION: ${{ steps.release_version.outputs.value }}
+        run: tests/stability/e5-plugin-check-gate.sh
+
+      - name: Run isolated current lifecycle smoke
+        if: ${{ github.event_name != 'release' }}
         env:
           CF7TG_CANDIDATE_ZIP: ${{ github.workspace }}/${{ env.ZIP_PATH }}
           CF7TG_EXPECTED_CANDIDATE_VERSION: ${{ steps.release_version.outputs.value }}
         run: tests/stability/e1-smoke-matrix.sh
+
+      - name: Run supported release lifecycle matrix
+        if: ${{ github.event_name == 'release' }}
+        env:
+          CF7TG_CANDIDATE_ZIP: ${{ github.workspace }}/${{ env.ZIP_PATH }}
+          CF7TG_EXPECTED_CANDIDATE_VERSION: ${{ steps.release_version.outputs.value }}
+          CF7TG_E5_SUPPORT_MATRIX_RESULTS_DIR: ${{ github.workspace }}/test-evidence/support-matrix
+        run: tests/stability/e5-support-matrix.sh
+
+      - name: Upload support matrix evidence
+        if: ${{ always() && github.event_name == 'release' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: cf7-telegram-support-matrix-evidence
+          path: test-evidence/support-matrix
+          if-no-files-found: error
+
+      - name: Run real WordPress REST integration smoke
+        if: ${{ github.event_name == 'pull_request' || github.event_name == 'release' }}
+        env:
+          CF7TG_CANDIDATE_ZIP: ${{ github.workspace }}/${{ env.ZIP_PATH }}
+          CF7TG_EXPECTED_CANDIDATE_VERSION: ${{ steps.release_version.outputs.value }}
+          CF7TG_E4_SMOKE_RESULTS_DIR: ${{ github.workspace }}/test-evidence/rest-integration
+        run: tests/stability/e4-rest-ui-smoke.sh
+
+      - name: Run authenticated browser canary
+        if: ${{ github.event_name == 'pull_request' || github.event_name == 'release' }}
+        env:
+          CF7TG_CANDIDATE_ZIP: ${{ github.workspace }}/${{ env.ZIP_PATH }}
+          CF7TG_EXPECTED_CANDIDATE_VERSION: ${{ steps.release_version.outputs.value }}
+          CF7TG_E5_BROWSER_RESULTS_DIR: ${{ github.workspace }}/test-evidence/browser
+        run: tests/stability/e5-browser-smoke.sh
+
+      - name: Upload browser canary evidence
+        if: ${{ always() && (github.event_name == 'pull_request' || github.event_name == 'release') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: cf7-telegram-browser-evidence
+          path: test-evidence/browser
+          if-no-files-found: error
+
+      - name: Upload REST integration evidence
+        if: ${{ always() && (github.event_name == 'pull_request' || github.event_name == 'release') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: cf7-telegram-rest-integration-evidence
+          path: test-evidence/rest-integration
+          if-no-files-found: error
 
       - name: Upload verified zip artifact
         uses: actions/upload-artifact@v4
@@ -104,7 +171,7 @@ jobs:
           if-no-files-found: error
 
   publish:
-    name: Publish verified release
+    name: Publish verified GitHub release artifact
     runs-on: ubuntu-latest
     needs: verify
     if: ${{ github.event_name == 'release' }}
@@ -137,17 +204,14 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
 
-      - name: Set target branch
-        id: branch
-        run: echo "branch_name=$([ '${{ github.event.release.prerelease }}' = 'true' ] && echo 'plugin-dist' || echo 'stable')" >> "$GITHUB_OUTPUT"
-
-      - name: Push to release branch
+      - name: Push prerelease canary to plugin-dist
+        if: ${{ github.event.release.prerelease == true }}
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git fetch origin "${{ steps.branch.outputs.branch_name }}"
-          git worktree add --force dist-worktree "origin/${{ steps.branch.outputs.branch_name }}"
+          git fetch origin plugin-dist
+          git worktree add --force dist-worktree origin/plugin-dist
 
           find dist-worktree -mindepth 1 -maxdepth 1 -not -name '.git' -exec rm -rf {} +
           rsync -a --delete --exclude '.git' release-work/cf7-telegram/ dist-worktree/
@@ -160,17 +224,7 @@ jobs:
             echo "No changes to commit"
           else
             git commit -m "Update plugin build from release ${{ github.event.release.tag_name }}"
-            git push origin HEAD:${{ steps.branch.outputs.branch_name }}
+            git push origin HEAD:plugin-dist
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Deploy to WordPress.org (production only)
-        if: ${{ github.event.release.prerelease == false }}
-        uses: 10up/action-wordpress-plugin-deploy@stable
-        env:
-          SVN_USERNAME: ${{ secrets.WPORG_USERNAME }}
-          SVN_PASSWORD: ${{ secrets.WPORG_PASSWORD }}
-          BUILD_DIR: ./release-work/cf7-telegram
-          SLUG: cf7-telegram
-          VERSION: ${{ needs.verify.outputs.release_version }}

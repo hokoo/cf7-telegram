@@ -105,17 +105,25 @@ export const disconnectConnectionChat2Channel = async (connectionId, setChat2Cha
 export const setBot2ChatConnectionStatus = async (connectionId, status, setBot2ChatConnections) => {
     const result = await apiSetBot2ChatConnectionStatus(connectionId, status);
     if (result) {
-        setBot2ChatConnections(prev => {
-            const updatedConnections = [...prev];
-            const index = updatedConnections.findIndex(c => c.data.id === connectionId);
-            if (index !== -1) {
-                updatedConnections[index].data.meta.status[0] = status;
+        setBot2ChatConnections(prev => prev.map(connection => {
+            if (connection.data.id !== connectionId) {
+                return connection;
             }
-            return updatedConnections;
-        });
+
+            return {
+                ...connection,
+                data: {
+                    ...connection.data,
+                    meta: {
+                        ...connection.data.meta,
+                        status: [status],
+                    },
+                },
+            };
+        }));
     }
 
-    return null;
+    return result;
 }
 
 export const disconnectConnectionBot2Chat = async (connectionId, setBot2ChatConnections) => {

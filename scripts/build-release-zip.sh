@@ -66,7 +66,10 @@ printf 'Building React production assets...\n'
 CI=false npm --prefix "$PLUGIN_DIR/react" run build
 
 [ -d "$PLUGIN_DIR/react/build" ] || fail "React build was not generated"
-[ -f "$PLUGIN_DIR/react/build/index.html" ] || fail "React build index was not generated"
+[ -f "$PLUGIN_DIR/react/build/settings-content.html" ] || fail "React settings content was not generated"
+[ -f "$PLUGIN_DIR/react/build/static/js/main.js" ] || fail "React admin script was not generated"
+[ -f "$PLUGIN_DIR/react/build/static/js/main.asset.php" ] || fail "React admin asset metadata was not generated"
+[ -f "$PLUGIN_DIR/react/build/static/css/main.css" ] || fail "React admin stylesheet was not generated"
 
 STAGE_DIR="$(mktemp -d)"
 cleanup() {
@@ -91,6 +94,8 @@ rsync -a --delete \
 	--exclude '/react/package-lock.json' \
 	--exclude '/react/README.md' \
 	--exclude '/react/config-overrides.js' \
+	--exclude '/react/webpack.config.js' \
+	--exclude '/react/jest-unit.config.js' \
 	--exclude '/phpunit.xml' \
 	--exclude '/.git' \
 	--exclude '/.gitignore' \
@@ -107,6 +112,9 @@ composer --working-dir="$PLUGIN_STAGE" install --no-dev --no-interaction --prefe
 
 [ -f "$PLUGIN_STAGE/vendor/autoload.php" ] || fail "Composer autoload was not generated"
 
+rm -f "$PLUGIN_STAGE/composer.json" "$PLUGIN_STAGE/composer.lock"
+rm -rf "$PLUGIN_STAGE/vendor/ramsey/collection/build"
+
 find "$PLUGIN_STAGE/vendor" -depth -type d \( \
 	-name 'local-dev' -o \
 	-iname 'test' -o \
@@ -115,6 +123,9 @@ find "$PLUGIN_STAGE/vendor" -depth -type d \( \
 	-iname 'docs' -o \
 	-iname 'example' -o \
 	-iname 'examples' -o \
+	-iname '.github' -o \
+	-iname '.circleci' -o \
+	-iname '.gitlab' -o \
 	-iname 'vendor-bin' -o \
 	-iname 'phpstan' -o \
 	-iname 'psalm' -o \
@@ -125,10 +136,18 @@ find "$PLUGIN_STAGE/vendor" -type f \( \
 	-iname 'phpstan*' -o \
 	-iname 'psalm*' -o \
 	-iname 'phpcs*' -o \
+	-iname 'php-wp-unit.xml' -o \
+	-iname 'makefile' -o \
+	-iname 'postman.json' -o \
+	-iname 'captainhook.json' -o \
+	-iname 'codecov.yml' -o \
+	-iname 'conventional-commits.json' -o \
+	-iname 'composer.json' -o \
+	-iname 'composer.lock' -o \
 	-iname '.php_cs*' -o \
 	-iname 'dockerfile*' \
 \) -delete
-find "$PLUGIN_STAGE" -type f \( -name '*.key' -o -name '*.pem' -o -name '*.sql' -o -name '*.zip' -o -name '*.tgz' -o -name '*.tar' -o -name '*.tar.gz' \) -delete
+find "$PLUGIN_STAGE" -type f \( -name '*.key' -o -name '*.pem' -o -name '*.sql' -o -name '*.zip' -o -name '*.tgz' -o -name '*.tar' -o -name '*.tar.gz' -o -name '*.map' \) -delete
 find "$PLUGIN_STAGE" -depth -name '.*' -exec rm -rf {} +
 
 printf 'Normalizing archive timestamps...\n'

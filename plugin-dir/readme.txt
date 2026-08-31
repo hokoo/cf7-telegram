@@ -3,9 +3,9 @@ Contributors: hokku, igortron
 Donate link: https://www.paypal.me/igortron
 Tags: contact form telegram,contact form 7,telegram
 Requires at least: 5.6
-Tested up to: 7.0
+Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.0.12
+Stable tag: 1.0.13
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -40,9 +40,26 @@ Runs after each Telegram delivery attempt. A Telegram failure does not abort the
 Action <code>wpcf7tg_messages_sent( $list, $output, $mode, $submission )</code>
 Runs after all configured recipients have been attempted.
 
+Constant <code>WPCF7TG_LOG_RETENTION_DAYS</code> and filter <code>cf7tg/logRetentionDays</code>
+Set the log retention period in days. The default is 30; set it to 0 to disable age-based pruning.
+
+Constant <code>WPCF7TG_LOG_MAX_ROWS</code> and filter <code>cf7tg/logMaxRows</code>
+Set the maximum number of newest log rows to retain. The default is 10000.
+
+Constants <code>WPCF7TG_PING_INTERVAL</code> and <code>WPCF7TG_UPDATES_INTERVAL</code>
+Set the offline bot status retry interval and the online Telegram update polling interval in milliseconds. The defaults are 5000 and 12000 respectively.
+
 This plugin uses [API Telegram](https://core.telegram.org/api "Telegram docs") and sends remote HTTP requests to Telegram servers to deliver notifications.
 
 == Changelog ==
+
+= 1.0.13 =
+- Make Telegram bot actions POST-first and harden the administration interface against partial loading, pagination, and retry failures.
+- Restore the full-page administration background, hide unrelated WordPress notices on the plugin screen, and improve diagnostics without exposing bot tokens or contact details.
+- Ignore transient Telegram polling timeouts in the interface and use a 12-second default update polling interval.
+- Add automatic 30-day and 10,000-row log retention with configurable limits.
+- Verify the release ZIP across supported WordPress, PHP, and Contact Form 7 versions, including install, upgrade, uninstall, and rollback workflows.
+- Add reproducible build, Plugin Check, dependency audit, artifact hygiene, browser canary, and manually approved WordPress.org promotion gates.
 
 = 1.0.12 =
 - Replace the Telegram SDK with a smaller WordPress HTTP integration and safer error handling.

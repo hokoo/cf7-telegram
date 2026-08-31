@@ -2,8 +2,11 @@
   "schema": 1,
   "plugin_slug": "cf7-telegram",
   "release_assumptions": {
-    "published_1_0_10": true,
-    "note": "Epic 1 treats 1.0.10 as already released; the local corrective candidate is version 1.0.11."
+    "published_1_0_11": true,
+    "github_canary_1_0_12": true,
+    "wordpress_org_production_baseline": "1.0.11",
+    "github_canary_baseline": "1.0.12",
+    "note": "WordPress.org actual production baseline is 1.0.11; 1.0.12 is a GitHub-only canary/upgrade baseline because SVN publish failed. Epic 5.3/E5.4 validates the local candidate as version 1.0.13."
   },
   "candidate": {
     "source_priority": [
@@ -13,8 +16,85 @@
     ],
     "override_env": "CF7TG_CANDIDATE_ZIP",
     "expected_version_env": "CF7TG_EXPECTED_CANDIDATE_VERSION",
+    "expected_version": "1.0.13",
     "header_path_in_zip": "cf7-telegram/cf7-telegram.php"
   },
+  "support_contract": {
+    "requires_wordpress": "5.6",
+    "requires_php": ">=8.0",
+    "candidate_expected_version": "1.0.13",
+    "lifecycle_cases": [
+      "fresh",
+      "upgrade-0.10",
+      "upgrade-0.11",
+      "upgrade-1.0.9",
+      "upgrade-1.0.10",
+      "upgrade-1.0.11",
+      "upgrade-1.0.12"
+    ],
+    "notes": [
+      "Required support rows must run with the exact WordPress, PHP, and Contact Form 7 versions listed in support_matrix.",
+      "The newest PHP row is optional and must be skipped with evidence when the official Docker image is unavailable; do not substitute another PHP image."
+    ]
+  },
+  "support_matrix": [
+    {
+      "matrix_id": "legacy-wp56-php80-cf7-542",
+      "label": "legacy",
+      "required": true,
+      "wordpress_version": "5.6.19",
+      "php_version": "8.0",
+      "wp_cli_image": "wordpress:cli-php8.0",
+      "contact_form_7_version": "5.4.2",
+      "cases": [
+        "fresh",
+        "upgrade-0.10",
+        "upgrade-0.11",
+        "upgrade-1.0.9",
+        "upgrade-1.0.10",
+        "upgrade-1.0.11",
+        "upgrade-1.0.12"
+      ]
+    },
+    {
+      "matrix_id": "current-wp71-php83-cf7-617",
+      "label": "current",
+      "required": true,
+      "wordpress_version": "7.1",
+      "php_version": "8.3",
+      "wp_cli_image": "wordpress:cli-php8.3",
+      "contact_form_7_version": "6.1.7",
+      "cases": [
+        "fresh",
+        "upgrade-0.10",
+        "upgrade-0.11",
+        "upgrade-1.0.9",
+        "upgrade-1.0.10",
+        "upgrade-1.0.11",
+        "upgrade-1.0.12"
+      ]
+    },
+    {
+      "matrix_id": "newest-php-wp71-php85-cf7-617",
+      "label": "newest-php",
+      "required": false,
+      "wordpress_version": "7.1",
+      "php_version": "8.5",
+      "wp_cli_image": "wordpress:cli-php8.5",
+      "contact_form_7_version": "6.1.7",
+      "availability_probe": "docker manifest inspect",
+      "cases": [
+        "fresh",
+        "upgrade-0.10",
+        "upgrade-0.11",
+        "upgrade-1.0.9",
+        "upgrade-1.0.10",
+        "upgrade-1.0.11",
+        "upgrade-1.0.12"
+      ],
+      "skip_when_unavailable": true
+    }
+  ],
   "legacy_versions": [
     {
       "matrix_id": "0.10",
@@ -40,20 +120,34 @@
       "version": "1.0.10",
       "url": "https://downloads.wordpress.org/plugin/cf7-telegram.1.0.10.zip",
       "sha256": "1a55d7a8b427c105f8863926bb2395a92c25d64ffd98378d157c3486efb83ea3",
-      "note": "Published baseline for corrective release validation."
+      "note": "Published baseline retained for downgrade/upgrade continuity."
+    },
+    {
+      "matrix_id": "1.0.11",
+      "version": "1.0.11",
+      "url": "https://downloads.wordpress.org/plugin/cf7-telegram.1.0.11.zip",
+      "sha256": "ed96d727024691a1612060e97bc59de8b113ff66450b109c208899775e118994",
+      "note": "WordPress.org actual production baseline before the 1.0.13 candidate."
+    },
+    {
+      "matrix_id": "1.0.12",
+      "version": "1.0.12",
+      "url": "https://github.com/hokoo/cf7-telegram/releases/download/v-1.0.12/cf7-telegram-wp-plugin.zip",
+      "sha256": "7c4ecbecab438644aa84363cdf17fa5f047e8157fd57bfa07fcf7cc4a9652d77",
+      "note": "GitHub-only canary/upgrade baseline because SVN publish failed."
     }
   ],
   "wordpress": {
     "core_version_env": "CF7TG_E1_WP_VERSION",
-    "default_core_version": "7.0.4",
+    "default_core_version": "7.1",
     "cli_image_env": "CF7TG_E1_WP_CLI_IMAGE",
-    "default_cli_image": "wordpress:cli-php8.2"
+    "default_cli_image": "wordpress:cli-php8.3"
   },
   "dependencies": {
     "contact_form_7": {
       "wp_org_slug": "contact-form-7",
       "version_env": "CF7TG_E1_CF7_VERSION",
-      "default_version": "6.0.6"
+      "default_version": "6.1.7"
     }
   }
 }

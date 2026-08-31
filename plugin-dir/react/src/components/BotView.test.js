@@ -55,7 +55,6 @@ describe('BotView copyable bot name', () => {
                 handleToggleChatStatus={jest.fn()}
                 handleDisconnectChat={jest.fn()}
                 online={true}
-                renderEditTokenCount={{current: 0}}
             />
         );
 
@@ -68,5 +67,43 @@ describe('BotView copyable bot name', () => {
         await waitFor(() => {
             expect(navigator.clipboard.writeText).toHaveBeenCalledWith(`@${longName}`);
         });
+    });
+
+    it('does not mutate token state while rendering edit mode', () => {
+        const setTokenValue = jest.fn();
+        const originalToWellFormed = String.prototype.toWellFormed;
+
+        try {
+            delete String.prototype.toWellFormed;
+
+            render(
+                <BotView
+                    bot={{id: 1, isTokenDefinedByConst: false, phpConst: 'CF7TG_TOKEN'}}
+                    chatsForBot={[{id: 10, title: {rendered: 'Test chat'}}]}
+                    bot2ChatConnections={[{data: {from: 1, to: 10, muted: false}}]}
+                    updatingStatusIds={[]}
+                    isEditingToken={true}
+                    nameValue="test_bot"
+                    isTokenEmpty={false}
+                    tokenValue=""
+                    saving={false}
+                    error=""
+                    handleEditToken={jest.fn()}
+                    deleteBot={jest.fn()}
+                    handleKeyDown={jest.fn()}
+                    setTokenValue={setTokenValue}
+                    handleToggleChatStatus={jest.fn()}
+                    handleDisconnectChat={jest.fn()}
+                    online={true}
+                />
+            );
+
+            expect(setTokenValue).not.toHaveBeenCalled();
+            expect(screen.getByTitle('Active')).toHaveTextContent('Test chat');
+        } finally {
+            if (originalToWellFormed) {
+                String.prototype.toWellFormed = originalToWellFormed;
+            }
+        }
     });
 });
