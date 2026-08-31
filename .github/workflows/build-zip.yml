@@ -38,10 +38,10 @@ jobs:
       - name: Configure Composer GitHub token
         run: composer config --global --auth github-oauth.github.com "${{ github.token }}"
 
-      - name: Set up Node.js 18
+      - name: Set up Node.js 20
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           cache: npm
           cache-dependency-path: plugin-dir/react/package-lock.json
 
