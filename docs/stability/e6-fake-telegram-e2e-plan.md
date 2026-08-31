@@ -1,6 +1,6 @@
 # Epic 6 Fake Telegram Form Delivery And Admin Setup E2E
 
-Status: in progress, E6.2-E6.6 implemented and locally verified
+Status: completed
 
 ## Outcome
 
@@ -16,6 +16,8 @@ Telegram transport only, keeps E6 in the current epic/evidence style, and starts
 with E6.2 plus E6.3 as the first execution batch. E6.2, E6.3, E6.4, and E6.5 are
 implemented and locally verified by `tests/stability/e6-form-delivery-smoke.sh`.
 E6.6 wires that smoke into pull request and release CI with uploaded evidence.
+Independent QA passed on 2026-08-31 after redaction, CI metadata, and Telegram
+egress hardening were verified.
 
 Approved decision:
 
@@ -466,7 +468,7 @@ GitHub CI:
 
 ### QA E6 Independent Fake Telegram Verification
 
-Status: waiting_dependency
+Status: completed
 
 Goal: independently verify E6 against its acceptance criteria before closure.
 
@@ -490,8 +492,7 @@ DoR:
 
 DoD:
 
-- QA verdict is `pass`, `pass_with_notes`, or `fail` with evidence and file/line
-  findings.
+- QA verdict is `pass` with evidence and file/line findings.
 - No blocker/high findings remain unresolved before epic closure.
 
 Acceptance criteria:
@@ -511,8 +512,8 @@ Dependencies:
 
 Notes/Risks:
 
-- If independent agent tooling is not used, delivery owner must disclose self-QA
-  explicitly.
+- Independent QA initially found evidence redaction and live-egress guard gaps.
+  Both were fixed and re-verified before closure.
 
 ## Dependencies
 
@@ -530,4 +531,4 @@ Notes/Risks:
 
 ## Readiness Verdict
 
-E6.1-E6.6 are closed locally. QA remains behind committed CI evidence.
+E6.1-E6.6 and independent QA are closed. E6 is ready for PR review and merge.
