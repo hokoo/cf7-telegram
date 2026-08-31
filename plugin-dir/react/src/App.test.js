@@ -216,6 +216,13 @@ describe('App resource loading', () => {
         fetchChatsForChannels.mockResolvedValue([]);
     });
 
+    it('uses bridge terminology for the routing entity section', async () => {
+        render(<App />);
+
+        expect(await screen.findByText('Bridges')).toBeInTheDocument();
+        expect(screen.getByText('A bridge is required to run the integration. Create at least one bridge, and add more when different forms should send messages to different sets of Telegram recipients.')).toBeInTheDocument();
+    });
+
     it('keeps successful resources visible and retries only failed requests', async () => {
         fetchForms.mockRejectedValueOnce(new Error('forms endpoint failed'));
 

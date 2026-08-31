@@ -277,7 +277,7 @@ const Bot = ({
             return;
         }
 
-        if ( online && ! window.confirm( wp.i18n.__( 'Changing the token to another Telegram bot will disconnect this bot from its chats and channels. Continue?', 'cf7-telegram' ) ) ) {
+        if ( online && ! window.confirm( wp.i18n.__( 'Changing the token to another Telegram bot will disconnect this bot from its chats and bridges. Continue?', 'cf7-telegram' ) ) ) {
             return;
         }
 
@@ -307,7 +307,7 @@ const Bot = ({
 
     /**
      * Saves the bot with the new token and name.
-     * ATTENTION! This will disconnect all chats and channels connected to the bot.
+     * ATTENTION! This will disconnect all chats and bridges connected to the bot.
      *
      * @returns {Promise<void>}
      */

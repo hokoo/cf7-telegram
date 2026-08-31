@@ -6,10 +6,10 @@ import {createChannel} from "../utils/main";
 const NewChannel = ({setChannels, disabled = false}) => {
     const handleCreateChannel = async () => {
         try {
-            await createChannel(wp.i18n.__( 'Channel Name', 'cf7-telegram' ), setChannels);
+            await createChannel(wp.i18n.__( 'Bridge Name', 'cf7-telegram' ), setChannels);
         } catch (error) {
-            console.error('Error creating channel:', error);
-            alert( wp.i18n.__( 'Failed to create channel', 'cf7-telegram' ) );
+            console.error('Error creating bridge:', error);
+            alert( wp.i18n.__( 'Failed to create bridge', 'cf7-telegram' ) );
         }
     };
 
@@ -20,7 +20,7 @@ const NewChannel = ({setChannels, disabled = false}) => {
             onClick={handleCreateChannel}
             disabled={disabled}
         >
-            {wp.i18n.__( 'Create Channel', 'cf7-telegram' )}
+            {wp.i18n.__( 'Create Bridge', 'cf7-telegram' )}
         </button>
     );
 };
