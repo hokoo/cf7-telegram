@@ -23,7 +23,10 @@ class Logger {
 	}
 
 	public function write( $data, $title = '', $level = self::LEVEL_INFO ){
+		$data = LogRedactor::redact( $data );
 		$data = is_string( $data ) ? $data : json_encode( $data, JSON_UNESCAPED_UNICODE );
+		$data = LogRedactor::redactString( (string) $data );
+		$title = LogRedactor::redactString( (string) $title );
 		$source = substr( strrchr( __NAMESPACE__, '\\' ), 1 );
 		$data = [
 			'source'    	=> $source,

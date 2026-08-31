@@ -7,14 +7,6 @@ if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 use WP_REST_Posts_Controller;
 
 abstract class Controller extends WP_REST_Posts_Controller{
-    public function get_item( $request ) {
-        $pre = parent::get_item( $request );
-        $data = $pre->get_data();
-        $data['foo'] = 'bar';
-        $pre->set_data( $data );
-
-        return $pre;
-    }
 
     /**
      * Posts can not be visible without having capabilities.

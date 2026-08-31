@@ -129,6 +129,7 @@ class ComposerStaticInitCf7Telegram
         'iTRON\\cf7Telegram\\Exceptions\\Exception' => __DIR__ . '/../..' . '/lib/Exceptions/Exception.php',
         'iTRON\\cf7Telegram\\Exceptions\\Telegram' => __DIR__ . '/../..' . '/lib/Exceptions/Telegram.php',
         'iTRON\\cf7Telegram\\Form' => __DIR__ . '/../..' . '/lib/Form.php',
+        'iTRON\\cf7Telegram\\LogRedactor' => __DIR__ . '/../..' . '/lib/LogRedactor.php',
         'iTRON\\cf7Telegram\\Logger' => __DIR__ . '/../..' . '/lib/Logger.php',
         'iTRON\\cf7Telegram\\Maintenance' => __DIR__ . '/../..' . '/lib/Maintenance.php',
         'iTRON\\cf7Telegram\\Migrations\\LegacyImporter' => __DIR__ . '/../..' . '/lib/Migrations/LegacyImporter.php',

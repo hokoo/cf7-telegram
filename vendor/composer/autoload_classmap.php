@@ -71,6 +71,7 @@ return array(
     'iTRON\\cf7Telegram\\Exceptions\\Exception' => $baseDir . '/lib/Exceptions/Exception.php',
     'iTRON\\cf7Telegram\\Exceptions\\Telegram' => $baseDir . '/lib/Exceptions/Telegram.php',
     'iTRON\\cf7Telegram\\Form' => $baseDir . '/lib/Form.php',
+    'iTRON\\cf7Telegram\\LogRedactor' => $baseDir . '/lib/LogRedactor.php',
     'iTRON\\cf7Telegram\\Logger' => $baseDir . '/lib/Logger.php',
     'iTRON\\cf7Telegram\\Maintenance' => $baseDir . '/lib/Maintenance.php',
     'iTRON\\cf7Telegram\\Migrations\\LegacyImporter' => $baseDir . '/lib/Migrations/LegacyImporter.php',

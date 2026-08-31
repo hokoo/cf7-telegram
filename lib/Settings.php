@@ -9,6 +9,8 @@ use iTRON\cf7Telegram\Controllers\Migration;
 
 class Settings {
 	const OPTION_PREFIX = 'cf7t_';
+	public const DEFAULT_PING_INTERVAL = 5000;
+	public const DEFAULT_UPDATES_INTERVAL = 12000;
 
 	static function init(): void {
 		add_action( 'admin_menu', function () {
@@ -33,10 +35,9 @@ class Settings {
                                 esc_html__( 'Data migration to the new plugin version is in progress. Please reload the page after a few seconds.', 'cf7-telegram' ),
                         );
                 } elseif ( $migration['is_failed'] ) {
-                        $message = $migration['last_error']['message'] ?? '';
                         $migration_notice = sprintf(
                                 '<div class="notice cf7t-notice notice-error"><p>%s</p></div>',
-                                esc_html( trim( __( 'Data migration failed. You can retry it below.', 'cf7-telegram' ) . ' ' . $message ) ),
+                                esc_html__( 'Data migration failed. You can retry it below.', 'cf7-telegram' ),
                         );
                 }
 
@@ -60,9 +61,11 @@ class Settings {
 	public static function admin_enqueue_scripts(){
 		if ( ! did_action( 'wpcf7_telegram_settings' ) ) return;
 
-		wp_enqueue_style( 'cf7-telegram-admin-styles', self::pluginUrl() . '/react/build/static/css/main.css', null, WPCF7TG_VERSION );
+		$asset = self::getReactBuildAsset();
+
+		wp_enqueue_style( 'cf7-telegram-admin-styles', self::pluginUrl() . '/react/build/static/css/main.css', [], $asset['version'] );
 		wp_enqueue_style( 'gf-styles', 'https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap', null, WPCF7TG_VERSION );
-		wp_enqueue_script( 'cf7-telegram-admin', self::pluginUrl() . '/react/build/static/js/main.js', ['wp-i18n'], WPCF7TG_VERSION, true );
+		wp_enqueue_script( 'cf7-telegram-admin', self::pluginUrl() . '/react/build/static/js/main.js', $asset['dependencies'], $asset['version'], true );
 		wp_set_script_translations( 'cf7-telegram-admin', 'cf7-telegram' );
 
 		wp_localize_script( 'cf7-telegram-admin', 'cf7TelegramData', array(
@@ -95,8 +98,8 @@ class Settings {
 			],
 
 			'intervals' => [
-				'ping'      => defined( 'WPCF7TG_PING_INTERVAL' ) ? WPCF7TG_PING_INTERVAL : 5000,
-				'bot_fetch' => defined( 'WPCF7TG_UPDATES_INTERVAL' ) ? WPCF7TG_UPDATES_INTERVAL : 30000,
+				'ping'      => defined( 'WPCF7TG_PING_INTERVAL' ) ? WPCF7TG_PING_INTERVAL : self::DEFAULT_PING_INTERVAL,
+				'bot_fetch' => defined( 'WPCF7TG_UPDATES_INTERVAL' ) ? WPCF7TG_UPDATES_INTERVAL : self::DEFAULT_UPDATES_INTERVAL,
 			],
 		) );
 	}
@@ -115,6 +118,9 @@ class Settings {
 
 	public static function getMigrationUiData(): array {
 		$state = Migration::getAdminRecoveryState();
+		$last_error = isset( $state['last_error'] ) && is_array( $state['last_error'] )
+			? self::getSafeMigrationError( $state['last_error'] )
+			: [];
 
 		return [
 			'status'       => $state['status'],
@@ -124,9 +130,27 @@ class Settings {
 			'is_failed'    => $state['is_failed'],
 			'is_completed' => $state['is_completed'],
 			'attempts'     => $state['attempts'],
-			'current_step' => $state['current_step'],
-			'last_error'   => $state['last_error'],
+			'current_step' => self::sanitizeDiagnosticIdentifier( (string) $state['current_step'] ),
+			'last_error'   => $last_error,
 		];
+	}
+
+	private static function getSafeMigrationError( array $error ): array {
+		if ( empty( $error ) ) {
+			return [];
+		}
+
+		return [
+			'category' => 'migration_failed',
+			'step'     => self::sanitizeDiagnosticIdentifier( (string) ( $error['step'] ?? '' ) ),
+			'code'     => self::sanitizeDiagnosticIdentifier( (string) ( $error['code'] ?? '' ) ),
+			'message'  => __( 'A migration step could not be completed.', 'cf7-telegram' ),
+			'time'     => (int) ( $error['time'] ?? 0 ),
+		];
+	}
+
+	private static function sanitizeDiagnosticIdentifier( string $value ): string {
+		return preg_replace( '/[^a-zA-Z0-9._-]/', '', $value ) ?? '';
 	}
 
 	public static function handle_migration_action(): void {
@@ -150,5 +174,27 @@ class Settings {
 
 	private static function get_settings_content() : string {
 		return file_get_contents( self::pluginDir() . '/react/build/settings-content.html' ) ?: '';
+	}
+
+	private static function getReactBuildAsset(): array {
+		$asset_path = self::pluginDir() . '/react/build/static/js/main.asset.php';
+		$asset      = file_exists( $asset_path ) ? include $asset_path : [];
+
+		if ( ! is_array( $asset ) ) {
+			$asset = [];
+		}
+
+		$dependencies = $asset['dependencies'] ?? [];
+
+		if ( ! is_array( $dependencies ) ) {
+			$dependencies = [];
+		}
+
+		$dependencies[] = 'wp-i18n';
+
+		return [
+			'dependencies' => array_values( array_unique( $dependencies ) ),
+			'version'      => isset( $asset['version'] ) && is_string( $asset['version'] ) ? $asset['version'] : WPCF7TG_VERSION,
+		];
 	}
 }
