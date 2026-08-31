@@ -1,6 +1,6 @@
 # Epic 6 Fake Telegram Form Delivery And Admin Setup E2E
 
-Status: in progress, E6.2-E6.4 implemented and locally verified
+Status: in progress, E6.2-E6.5 implemented and locally verified
 
 ## Outcome
 
@@ -13,7 +13,7 @@ behind that delivery graph are covered by browser E2E.
 
 E6.1 was approved by the owner on 2026-08-31. The approved contract uses fake
 Telegram transport only, keeps E6 in the current epic/evidence style, and starts
-with E6.2 plus E6.3 as the first execution batch. E6.2, E6.3, and E6.4 are
+with E6.2 plus E6.3 as the first execution batch. E6.2, E6.3, E6.4, and E6.5 are
 implemented and locally verified by `tests/stability/e6-form-delivery-smoke.sh`.
 
 Approved decision:
@@ -326,7 +326,7 @@ Notes/Risks:
 
 ### E6.5 Delivery Failure And Evidence Cases
 
-Status: waiting_dependency
+Status: completed
 
 Goal: prove that Telegram failures are visible in evidence without breaking the
 CF7 submission or skipping later recipients.
@@ -357,6 +357,9 @@ DoD:
 
 - E6 summary records pass/fail per recipient and the overall CF7 submit result.
 - Failure artifacts are actionable and redacted.
+- Local verification passed with CF7 `mail_sent`, a scripted first-recipient
+  `sendMessage` failure, a successful later-recipient `sendMessage`, redacted
+  evidence, and no page/console errors.
 
 Acceptance criteria:
 
@@ -376,6 +379,8 @@ Dependencies:
 Notes/Risks:
 
 - Keep this focused; detailed formatter behavior already has PHP unit coverage.
+- The fixture stores scripted Bot API failures by exact Telegram method name so
+  method-case mismatches fail the test instead of silently becoming successes.
 
 ### E6.6 CI Gate And Evidence Artifacts
 
@@ -490,6 +495,5 @@ Notes/Risks:
 
 ## Readiness Verdict
 
-E6.1, E6.2, E6.3, and E6.4 are closed locally. E6.5 is the next runnable batch
-for partial Telegram failure evidence. E6.6/QA remain behind the final E6
-implementation shape and CI runtime check.
+E6.1, E6.2, E6.3, E6.4, and E6.5 are closed locally. E6.6 is the next runnable
+batch for CI wiring and artifact upload. QA remains behind E6.6.

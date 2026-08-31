@@ -25,6 +25,11 @@ const requiredCheckIds = [
 	'no-page-errors',
 	'no-console-errors',
 	'admin-empty-state',
+	'partial-failure-cf7-success',
+	'partial-failure-recipient-continuity',
+	'partial-failure-evidence-redacted',
+	'partial-failure-no-page-errors',
+	'partial-failure-no-console-errors',
 	'admin-bot-created',
 	'admin-bot-token-validated',
 	'admin-channel-created',
@@ -425,6 +430,111 @@ test('public CF7 submit records fake Telegram sendMessage attempts', async ({bas
 	});
 
 	await expectCheck('no-console-errors', 'No unexpected console errors occurred during the E6 public submit flow.', async () => {
+		expect(unexpectedConsoleErrors).toEqual([]);
+		return {console_errors: unexpectedConsoleErrors};
+	});
+});
+
+test('partial Telegram failure still attempts later recipients', async ({baseURL, page}) => {
+	const unexpectedConsoleErrors = [];
+	const pageErrors = [];
+	const marker = `cf7tg-e6-failure-${Date.now()}`;
+
+	page.on('console', (message) => {
+		if (message.type() !== 'error') {
+			return;
+		}
+
+		const entry = {
+			text: message.text(),
+			location: message.location(),
+		};
+		unexpectedConsoleErrors.push(entry);
+		evidence.console_errors.push(entry);
+	});
+
+	page.on('pageerror', (error) => {
+		const entry = {
+			message: error.message,
+			stack: error.stack || '',
+		};
+		pageErrors.push(entry);
+		evidence.page_errors.push(entry);
+	});
+
+	page.on('requestfailed', (request) => {
+		evidence.request_failures.push({
+			method: request.method(),
+			url: sanitizeUrl(request.url()),
+			failure: request.failure()?.errorText || '',
+		});
+	});
+
+	const reset = await control(page, baseURL, 'reset');
+	const fixture = reset.fixture;
+	const failingChatId = fixture.expected_chat_ids[0];
+	const succeedingChatId = fixture.expected_chat_ids[1];
+	await control(page, baseURL, 'script-failure', {method: 'sendMessage', chat_id: failingChatId, count: '1'});
+
+	await expectCheck('partial-failure-cf7-success', 'CF7 submit still succeeds when one Telegram recipient fails.', async () => {
+		const body = await submitPublicForm(page, fixture, marker);
+		expect(body.status).toBe('mail_sent');
+		return {
+			status: body.status,
+			marker,
+			failing_chat_id: failingChatId,
+		};
+	});
+
+	await expectCheck('partial-failure-recipient-continuity', 'Later Telegram recipients are still attempted after a failure.', async () => {
+		let data = null;
+		await expect(async () => {
+			data = await telegramEvidence(page, baseURL);
+			const calls = sendMessageCalls(data);
+			expect(calls).toHaveLength(2);
+			const failed = calls.find((call) => String(call.params.chat_id) === String(failingChatId));
+			const succeeded = calls.find((call) => String(call.params.chat_id) === String(succeedingChatId));
+			expect(failed, `Expected failed sendMessage for chat ${failingChatId}`).toBeTruthy();
+			expect(succeeded, `Expected later sendMessage for chat ${succeedingChatId}`).toBeTruthy();
+			expect(failed.params.text).toContain(marker);
+			expect(succeeded.params.text).toContain(marker);
+			expect(failed.response.ok).toBe(false);
+			expect(failed.response.failure_category).toBe('scripted_failure');
+			expect(succeeded.response.ok).toBe(true);
+			expect(calls.map((call) => String(call.params.chat_id))).toEqual([
+				String(failingChatId),
+				String(succeedingChatId),
+			]);
+		}).toPass({message: 'Expected failed first recipient and successful later recipient.', timeout: 30000, intervals: [250, 500, 1000]});
+
+		return {
+			recipients: sendMessageCalls(data || {}).map((call) => ({
+				chat_id: call.params.chat_id,
+				ok: call.response.ok,
+				category: call.response.failure_category,
+			})),
+		};
+	});
+
+	await expectCheck('partial-failure-evidence-redacted', 'Partial failure evidence remains token-redacted.', async () => {
+		const data = await telegramEvidence(page, baseURL);
+		const serialized = JSON.stringify(data);
+		expect(serialized).not.toContain('E6_FAKE_TOKEN');
+		expect(serialized).not.toContain(fullTokenCanary);
+		expect(serialized).not.toContain(adminFullTokenCanary);
+		expect(serialized).toContain(fixture.bot_token_hash);
+		return {
+			token_hash: fixture.bot_token_hash,
+			call_count: data.telegram?.calls?.length || 0,
+		};
+	});
+
+	await expectCheck('partial-failure-no-page-errors', 'No page errors occurred during the E6 partial-failure flow.', async () => {
+		expect(pageErrors).toEqual([]);
+		return {page_errors: pageErrors};
+	});
+
+	await expectCheck('partial-failure-no-console-errors', 'No unexpected console errors occurred during the E6 partial-failure flow.', async () => {
 		expect(unexpectedConsoleErrors).toEqual([]);
 		return {console_errors: unexpectedConsoleErrors};
 	});

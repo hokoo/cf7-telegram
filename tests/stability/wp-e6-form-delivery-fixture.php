@@ -422,7 +422,7 @@ function cf7tg_e6_fake_telegram_control(): void {
 	}
 
 	if ( 'script-failure' === $action ) {
-		$method = sanitize_key( wp_unslash( $_POST['method'] ?? 'sendMessage' ) );
+		$method = sanitize_text_field( wp_unslash( $_POST['method'] ?? 'sendMessage' ) );
 		$chat_id = sanitize_text_field( wp_unslash( $_POST['chat_id'] ?? '' ) );
 		$count = max( 1, (int) ( $_POST['count'] ?? 1 ) );
 		$key = $chat_id ? $method . ':' . $chat_id : $method;
