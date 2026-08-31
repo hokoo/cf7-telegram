@@ -220,6 +220,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
 
+      - name: Install WordPress.org SVN deploy tools
+        if: ${{ github.event.release.prerelease == false }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y subversion rsync
+
       - name: Deploy final release to WordPress.org SVN
         if: ${{ github.event.release.prerelease == false }}
         env:
