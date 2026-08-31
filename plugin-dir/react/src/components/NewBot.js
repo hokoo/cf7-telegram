@@ -15,7 +15,12 @@ const NewBot = ({setBots, disabled = false}) => {
     };
 
     return (
-        <button className="add-button add-bot-button" onClick={handleCreateBot} disabled={disabled}>
+        <button
+            className="add-button add-bot-button"
+            data-testid="cf7tg-create-bot"
+            onClick={handleCreateBot}
+            disabled={disabled}
+        >
             {wp.i18n.__( 'Create Bot', 'cf7-telegram' )}
         </button>
     );

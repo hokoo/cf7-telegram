@@ -1,5 +1,8 @@
 import {
     apiCreateBot,
+    apiDeleteBot,
+    apiDeleteChannel,
+    apiDeleteChat,
     apiFetchUpdates,
     apiPingBot,
     ApiError,
@@ -296,5 +299,23 @@ describe('API collections', () => {
         expect(global.fetch.mock.calls[0][1].method).toBe('POST');
         expect(global.fetch.mock.calls[1][0]).toBe('https://example.test/wp-json/wp/v2/cf7tg_bot/10/fetch_updates');
         expect(global.fetch.mock.calls[1][1].method).toBe('POST');
+    });
+
+    it('adds force delete params outside rest_route endpoint values', async () => {
+        global.cf7TelegramData.routes.chats = 'https://example.test/index.php?rest_route=/wp/v2/cf7tg_chat/';
+        global.cf7TelegramData.routes.bots = 'https://example.test/index.php?rest_route=/wp/v2/cf7tg_bot/';
+        global.cf7TelegramData.routes.channels = 'https://example.test/index.php?rest_route=/wp/v2/cf7tg_channel/';
+        global.fetch.mockResolvedValue(response({deleted: true}, 1));
+
+        await expect(apiDeleteChat(8)).resolves.toEqual({deleted: true});
+        await expect(apiDeleteBot(10)).resolves.toEqual({deleted: true});
+        await expect(apiDeleteChannel(12)).resolves.toEqual({deleted: true});
+
+        expect(global.fetch.mock.calls[0][0]).toBe('https://example.test/index.php?rest_route=/wp/v2/cf7tg_chat/8&force=true');
+        expect(global.fetch.mock.calls[0][1].method).toBe('DELETE');
+        expect(global.fetch.mock.calls[1][0]).toBe('https://example.test/index.php?rest_route=/wp/v2/cf7tg_bot/10&force=true');
+        expect(global.fetch.mock.calls[1][1].method).toBe('DELETE');
+        expect(global.fetch.mock.calls[2][0]).toBe('https://example.test/index.php?rest_route=/wp/v2/cf7tg_channel/12&force=true');
+        expect(global.fetch.mock.calls[2][1].method).toBe('DELETE');
     });
 });

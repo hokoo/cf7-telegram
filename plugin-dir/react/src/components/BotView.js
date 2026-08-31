@@ -33,7 +33,12 @@ const BotView = ({
     const trimmedToken = isTokenEmpty ? tokenValue : `***${tokenValue.slice(-4)}`;
 
     return (
-        <div className={`entity-container bot ${status}`} key={bot.id} id={`bot-${bot.id}`}>
+        <div
+            className={`entity-container bot ${status}`}
+            data-testid={`cf7tg-bot-${bot.id}`}
+            key={bot.id}
+            id={`bot-${bot.id}`}
+        >
             <div className={`entity-wrapper bot-wrapper ${saving ? 'saving' : ''}`}>
                 <div className="frame bot-summary">
                     <div className="bot-title">
@@ -57,6 +62,7 @@ const BotView = ({
                     <div className="bot-token">
                         <div
                             className={`show-token` + (bot.isTokenDefinedByConst ? ' const' : '')}
+                            data-testid={`cf7tg-bot-token-display-${bot.id}`}
                             onClick={handleEditToken}
                             title={(bot.isTokenDefinedByConst ?
                                 wp.i18n.__( 'Defined by PHP constant', 'cf7-telegram' ) :
@@ -79,6 +85,7 @@ const BotView = ({
                             <>
                             <input
                                 className="edit-token"
+                                data-testid={`cf7tg-bot-token-input-${bot.id}`}
                                 type="text"
                                 value={tokenValue}
                                 onChange={e => setTokenValue(e.target.value)}
@@ -107,7 +114,11 @@ const BotView = ({
                                 const status = getChatStatus(bot.id, chat.id, bot2ChatConnections);
                                 const isUpdating = updatingStatusIds.includes(chat.id);
                                 return (
-                                    <li key={chat.id} className={`chat-item ${status.toLowerCase()}`}>
+                                    <li
+                                        key={chat.id}
+                                        className={`chat-item ${status.toLowerCase()}`}
+                                        data-testid={`cf7tg-bot-${bot.id}-chat-${chat.id}`}
+                                    >
                                         <span className="chat-name"
                                               title={String(status)}
                                         >{chat.title.rendered}</span>
@@ -138,6 +149,7 @@ const BotView = ({
                 <div className="frame status-bar">
                     <button
                         className="remove-bot-button"
+                        data-testid={`cf7tg-remove-bot-${bot.id}`}
                         onClick={deleteBot}
                         disabled={saving}>
                         {wp.i18n.__( 'Remove bot', 'cf7-telegram' )}

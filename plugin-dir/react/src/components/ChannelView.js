@@ -74,13 +74,19 @@ const ChannelView = ({
     }
 
     return (
-        <div className={`entity-container channel` + renderChannelClasses()} key={channel.id} id={`channel-${channel.id}`}>
+        <div
+            className={`entity-container channel` + renderChannelClasses()}
+            data-testid={`cf7tg-channel-${channel.id}`}
+            key={channel.id}
+            id={`channel-${channel.id}`}
+        >
             <div className="entity-wrapper channel-wrapper">
                 <div className={`frame channel-title-wrapper`}>
                     <div className="columns">
                         <div className="column title-column">
                             <input
                                 className="edit-title"
+                                data-testid={`cf7tg-channel-title-input-${channel.id}`}
                                 type="text"
                                 value={titleValue}
                                 onChange={handleTitleChange}
@@ -97,7 +103,11 @@ const ChannelView = ({
                             ) : 'ready' !== dataAvailability.bots ? (
                                 <span className="resource-loading">{wp.i18n.__( 'Loading bots...', 'cf7-telegram' )}</span>
                             ) : botForChannel ? (
-                                <div data-Bot-Id={botForChannel.id} className={`bot-for-channel ` + (botForChannel?.online ? 'online' : 'offline')}>
+                                <div
+                                    data-Bot-Id={botForChannel.id}
+                                    data-testid={`cf7tg-channel-${channel.id}-bot-${botForChannel.id}`}
+                                    className={`bot-for-channel ` + (botForChannel?.online ? 'online' : 'offline')}
+                                >
                                     <span>{botForChannel.title.rendered}</span>
                                     <button
                                         className="detach-button detach-bot-button crux"
@@ -111,6 +121,9 @@ const ChannelView = ({
                                         <Select
                                             className="select-picker bot-picker"
                                             classNamePrefix="select-picker"
+                                            inputId={`cf7tg-channel-bot-picker-${channel.id}`}
+                                            instanceId={`cf7tg-channel-bot-picker-${channel.id}`}
+                                            data-testid={`cf7tg-channel-${channel.id}-bot-picker`}
                                             options={availableBots.map(bot => ({
                                                 value: bot.id,
                                                 label: bot.title.rendered
@@ -139,6 +152,7 @@ const ChannelView = ({
                                 <div
                                     key={chat.id}
                                     className={`chat chat-${chat.id} ${chat.status.toLowerCase()}`}
+                                    data-testid={`cf7tg-channel-${channel.id}-chat-${chat.id}`}
                                     onClick={() => !mutatingRelations && handleToggleChat(chat.id, chat.status)}
                                     aria-disabled={mutatingRelations}
                                     title={getToggleButtonLabel(chat.status)}
@@ -155,6 +169,7 @@ const ChannelView = ({
                 <div className="frame forms">
                     <button
                         className="add-button add-form-button"
+                        data-testid={`cf7tg-channel-${channel.id}-add-form`}
                         onClick={handleAddForm}
                         disabled={'ready' !== dataAvailability.forms || mutatingRelations}
                     >
@@ -170,6 +185,9 @@ const ChannelView = ({
                         <Select
                             className="select-picker form-picker"
                             classNamePrefix="select-picker"
+                            inputId={`cf7tg-channel-form-picker-${channel.id}`}
+                            instanceId={`cf7tg-channel-form-picker-${channel.id}`}
+                            data-testid={`cf7tg-channel-${channel.id}-form-picker`}
                             options={availableForms.map(form => ({
                                 value: form.id,
                                 label: form.title
@@ -185,7 +203,7 @@ const ChannelView = ({
                     {'ready' === dataAvailability.forms && (formsForChannel.length > 0 ? (
                         <ul className={`form-list ` + (showFormSelector ? 'show-selector' : '')}>
                             {formsForChannel.map(form => (
-                                <li key={form.id}>
+                                <li key={form.id} data-testid={`cf7tg-channel-${channel.id}-form-${form.id}`}>
                                     {form.title}
                                     <button
                                         className="detach-button crux detach-form-button"
@@ -204,6 +222,7 @@ const ChannelView = ({
                 <div className="frame status-bar">
                     <button
                         className="remove-channel-button"
+                        data-testid={`cf7tg-remove-channel-${channel.id}`}
                         onClick={deleteChannel}
                         disabled={saving || mutatingRelations}>
                         {wp.i18n.__( 'Remove channel', 'cf7-telegram' )}

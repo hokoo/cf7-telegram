@@ -114,11 +114,11 @@ Evidence:
 - `tests/stability/e5-*.sh`
 - release gate evidence for `1.0.13`
 
-## Planned Epic
+## Completed Current Epic
 
 ### E6. Fake Telegram Form Delivery And Admin Setup E2E
 
-Status: todo, pending execution approval
+Status: completed
 
 Plan document: `docs/stability/e6-fake-telegram-e2e-plan.md`
 
@@ -165,6 +165,15 @@ Tasking guidance:
 - Keep the current epic/evidence naming for E6 to preserve delivery traceability.
 - Re-run `$decompose-work` before implementation if the scope changes.
 - Do not restructure the full test tree inside E6; use E7 for that work.
+- E6.1 was approved on 2026-08-31.
+- E6.2/E6.3 local fake Telegram form-delivery smoke is implemented and passing.
+- E6.4 admin setup browser coverage is implemented and passing; it also fixed
+  non-pretty REST delete URL construction for bot/channel/chat removal.
+- E6.5 partial Telegram failure evidence is implemented and passing.
+- E6.6 CI gate and evidence artifact upload are implemented for pull request
+  and release runs.
+- Independent E6 QA passed after redaction, CI metadata, and Telegram egress
+  hardening fixes.
 
 ## Deferred Epic
 
