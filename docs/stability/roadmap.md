@@ -80,6 +80,7 @@ Scope delivered:
 
 Evidence:
 
+- `docs/stability/e4-rest-api-admin-diagnostics.md`
 - `tests/stability/e4-rest-ui-smoke.sh`
 - `tests/stability/wp-e4-rest-ui-smoke.php`
 - React API/admin component tests
@@ -106,6 +107,7 @@ Scope delivered:
 
 Evidence:
 
+- `docs/stability/e5-release-delivery-maintainability.md`
 - `.github/workflows/build-zip.yml`
 - `.github/workflows/promote-wordpress-org.yml`
 - `tests/e2e/e5-browser-smoke.spec.js`
@@ -117,6 +119,8 @@ Evidence:
 ### E6. Fake Telegram Form Delivery And Admin Setup E2E
 
 Status: todo, pending execution approval
+
+Plan document: `docs/stability/e6-fake-telegram-e2e-plan.md`
 
 Outcome: a candidate ZIP cannot pass PR/release verification unless a real
 Contact Form 7 public form submission produces expected Telegram delivery
@@ -167,6 +171,8 @@ Tasking guidance:
 ### E7. Test Suite Taxonomy Refactor
 
 Status: deferred
+
+Plan document: `docs/stability/e7-test-suite-taxonomy-refactor.md`
 
 Outcome: after the stabilized version has enough rollout feedback, reorganize
 the test suite by test type instead of delivery chronology while preserving
