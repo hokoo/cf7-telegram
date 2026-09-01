@@ -78,6 +78,25 @@ body[class*="page_wpcf7_tg"] ul#adminmenu > li.current > a.current:after {
       margin: 0;
     }
 
+    .title-description {
+      box-sizing: border-box;
+      color: #656565;
+      font-size: 12px;
+      height: 72px;
+      line-height: 1.45;
+      margin: 6px 0 10px;
+      max-width: 460px;
+      overflow-wrap: break-word;
+
+      a {
+        color: #0c87b3;
+
+        &:hover {
+          color: #0c88b4;
+        }
+      }
+    }
+
     .add-button {
       background: none;
       border: none;

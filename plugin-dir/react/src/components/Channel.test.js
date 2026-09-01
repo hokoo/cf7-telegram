@@ -1,6 +1,6 @@
 import React from 'react';
 import {act, render} from '@testing-library/react';
-import {connectBot2Channel, connectForm2Channel} from '../utils/main';
+import {connectBot2Channel, connectForm2Channel, deleteChannel, disconnectConnectionForm2Channel} from '../utils/main';
 import Channel from './Channel';
 
 let mockChannelViewProps;
@@ -59,5 +59,73 @@ describe('Channel relation selections', () => {
 
         expect(connectBot2Channel).not.toHaveBeenCalled();
         expect(connectForm2Channel).not.toHaveBeenCalled();
+    });
+
+    it('uses bridge wording when confirming form removal', async () => {
+        const confirm = jest.spyOn(window, 'confirm').mockReturnValue(false);
+
+        await act(async () => {
+            render(
+                <Channel
+                    channel={{id: 20, title: {rendered: 'Bridge'}}}
+                    forms={[{id: 10, title: 'Contact Form'}]}
+                    setChannels={jest.fn()}
+                    form2ChannelConnections={[{data: {id: 30, from: 10, to: 20}}]}
+                    setForm2ChannelConnections={jest.fn()}
+                    bots={[]}
+                    bot2ChannelConnections={[]}
+                    setBot2ChannelConnections={jest.fn()}
+                    chats={[]}
+                    chat2ChannelConnections={[]}
+                    setChat2ChannelConnections={jest.fn()}
+                    bot2ChatConnections={[]}
+                    dataAvailability={{forms: 'ready', bots: 'ready', chats: 'ready'}}
+                />
+            );
+            await Promise.resolve();
+        });
+
+        await act(async () => {
+            await mockChannelViewProps.handleRemoveForm(10);
+        });
+
+        expect(confirm).toHaveBeenCalledWith('Are you sure you want to remove this form from the bridge?');
+        expect(disconnectConnectionForm2Channel).not.toHaveBeenCalled();
+
+        confirm.mockRestore();
+    });
+
+    it('uses bridge wording when confirming deletion', async () => {
+        const confirm = jest.spyOn(window, 'confirm').mockReturnValue(false);
+
+        await act(async () => {
+            render(
+                <Channel
+                    channel={{id: 20, title: {rendered: 'Bridge'}}}
+                    forms={[]}
+                    setChannels={jest.fn()}
+                    form2ChannelConnections={[]}
+                    setForm2ChannelConnections={jest.fn()}
+                    bots={[]}
+                    bot2ChannelConnections={[]}
+                    setBot2ChannelConnections={jest.fn()}
+                    chats={[]}
+                    chat2ChannelConnections={[]}
+                    setChat2ChannelConnections={jest.fn()}
+                    bot2ChatConnections={[]}
+                    dataAvailability={{forms: 'ready', bots: 'ready', chats: 'ready'}}
+                />
+            );
+            await Promise.resolve();
+        });
+
+        await act(async () => {
+            await mockChannelViewProps.deleteChannel();
+        });
+
+        expect(confirm).toHaveBeenCalledWith('Are you sure you want to delete this bridge?');
+        expect(deleteChannel).not.toHaveBeenCalled();
+
+        confirm.mockRestore();
     });
 });

@@ -216,6 +216,21 @@ describe('App resource loading', () => {
         fetchChatsForChannels.mockResolvedValue([]);
     });
 
+    it('uses bridge terminology for the routing entity section', async () => {
+        render(<App />);
+
+        expect(await screen.findByText('Bridges')).toBeInTheDocument();
+        expect(screen.getByText('A bridge is required to run the integration. Create at least one bridge, and add more when different forms should send messages to different sets of Telegram recipients.')).toBeInTheDocument();
+    });
+
+    it('shows bot setup guidance with the Telegram creation guide link', async () => {
+        render(<App />);
+
+        expect(await screen.findByText('Bots')).toBeInTheDocument();
+        expect(screen.getByText('A Telegram bot is required to run the integration. Create at least one bot, then connect it here.')).toBeInTheDocument();
+        expect(screen.getByRole('link', {name: 'How to create a bot'})).toHaveAttribute('href', 'https://core.telegram.org/bots#3-how-do-i-create-a-bot');
+    });
+
     it('keeps successful resources visible and retries only failed requests', async () => {
         fetchForms.mockRejectedValueOnce(new Error('forms endpoint failed'));
 

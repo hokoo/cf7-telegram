@@ -710,19 +710,19 @@ test('admin setup builds and removes the delivery graph through the plugin UI', 
 		};
 	});
 
-	await expectCheck('admin-channel-created', 'Create Channel creates a real channel post through the admin UI.', async () => {
+	await expectCheck('admin-channel-created', 'Create Bridge creates a real bridge post through the admin UI.', async () => {
 		await page.getByTestId('cf7tg-create-channel').click();
 		const channels = await waitForValue(
 			() => restCollection(page, 'channels'),
 			async (items) => {
 				expect(items).toHaveLength(1);
-				expect(itemTitle(items[0])).toBe('Channel Name');
+				expect(itemTitle(items[0])).toBe('Bridge Name');
 			},
-			'Expected one created channel in REST state.'
+			'Expected one created bridge in REST state.'
 		);
 		channelId = Number(channels[0].id);
 		await expect(page.getByTestId(`cf7tg-channel-${channelId}`)).toBeVisible();
-		await expect(page.getByTestId(`cf7tg-channel-title-input-${channelId}`)).toHaveValue('Channel Name');
+		await expect(page.getByTestId(`cf7tg-channel-title-input-${channelId}`)).toHaveValue('Bridge Name');
 
 		return {
 			channel_id: channelId,

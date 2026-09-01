@@ -112,7 +112,7 @@ const Channel = ({
         if (
             mutatingRelations ||
             !connection ||
-            !window.confirm( wp.i18n.__( 'Are you sure you want to remove this form from the channel?', 'cf7-telegram' ) )
+            !window.confirm( wp.i18n.__( 'Are you sure you want to remove this form from the bridge?', 'cf7-telegram' ) )
         )
             return;
 
@@ -142,7 +142,7 @@ const Channel = ({
                 await disconnectConnectionChat2Channel(connection.data.id, setChat2ChannelConnections);
             }
         } catch (err) {
-            console.error('Failed to update channel chat', err);
+            console.error('Failed to update bridge chat', err);
             setError( wp.i18n.__( 'Failed to update chat', 'cf7-telegram' ) );
         } finally {
             setMutatingRelations(false);
@@ -221,7 +221,7 @@ const Channel = ({
     const handleDeleteChannel = async () => {
         if (saving || mutatingRelations) return;
 
-        if (!window.confirm( wp.i18n.__( 'Are you sure you want to delete this channel?', 'cf7-telegram' ) )) return;
+        if (!window.confirm( wp.i18n.__( 'Are you sure you want to delete this bridge?', 'cf7-telegram' ) )) return;
 
         setSaving(true);
         setError(null);
@@ -229,7 +229,7 @@ const Channel = ({
             await deleteChannel(channel.id, setChannels);
         } catch (err) {
             console.error(err);
-            setError( wp.i18n.__( 'Failed to delete channel', 'cf7-telegram' ) );
+            setError( wp.i18n.__( 'Failed to delete bridge', 'cf7-telegram' ) );
         } finally {
             setSaving(false);
         }
