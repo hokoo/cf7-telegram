@@ -3,12 +3,24 @@ name: Verify and release zip
 on:
   push:
     branches:
-      - '**'
+      - master
   pull_request:
+    branches:
+      - master
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+      - converted_to_draft
   release:
     types:
       - published
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   PLUGIN_SLUG: cf7-telegram
@@ -17,6 +29,7 @@ env:
 jobs:
   verify:
     name: Verify source and release zip
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
