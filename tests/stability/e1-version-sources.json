@@ -6,7 +6,7 @@
     "github_canary_1_0_12": true,
     "wordpress_org_production_baseline": "1.0.11",
     "github_canary_baseline": "1.0.12",
-    "note": "WordPress.org actual production baseline is 1.0.11; 1.0.12 is a GitHub-only canary/upgrade baseline because SVN publish failed. Release gates validate the local candidate as version 1.1."
+    "note": "WordPress.org actual production baseline is 1.0.11; 1.0.12 is a GitHub-only canary/upgrade baseline because SVN publish failed. Release gates validate the local candidate as version 1.1.0."
   },
   "candidate": {
     "source_priority": [
@@ -16,13 +16,13 @@
     ],
     "override_env": "CF7TG_CANDIDATE_ZIP",
     "expected_version_env": "CF7TG_EXPECTED_CANDIDATE_VERSION",
-    "expected_version": "1.1",
+    "expected_version": "1.1.0",
     "header_path_in_zip": "cf7-telegram/cf7-telegram.php"
   },
   "support_contract": {
     "requires_wordpress": "5.6",
     "requires_php": ">=8.0",
-    "candidate_expected_version": "1.1",
+    "candidate_expected_version": "1.1.0",
     "lifecycle_cases": [
       "fresh",
       "upgrade-0.10",
