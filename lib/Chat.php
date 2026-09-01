@@ -23,6 +23,8 @@ class Chat extends Entity implements WPPostAble{
 	public const STATUS_ACTIVE = 'active';
 	public const STATUS_PENDING = 'pending';
 	public const STATUS_MUTED = 'muted';
+	public const CUSTOM_NAME_PARAM = 'customName';
+	public const TELEGRAM_TITLE_PARAM = 'telegramTitle';
 
 	/**
 	 * @throws wppaLoadPostException
@@ -79,8 +81,77 @@ class Chat extends Entity implements WPPostAble{
 		return $this->getParam( 'lastName' );
 	}
 
+	public function setTelegramTitle( string $title ): Chat {
+		$this->setParam( self::TELEGRAM_TITLE_PARAM, Util::sanitizeTelegramText( $title ) );
+		return $this;
+	}
+
+	public function getTelegramTitle(): string {
+		return Util::sanitizeTelegramText( $this->getParam( self::TELEGRAM_TITLE_PARAM ) );
+	}
+
+	public function setCustomName( string $name ): Chat {
+		$name = Util::sanitizeTelegramText( $name );
+		$this->setParam( self::CUSTOM_NAME_PARAM, $name );
+		$this->setTitle( $name );
+		return $this;
+	}
+
+	public function getCustomName(): string {
+		return Util::sanitizeTelegramText( $this->getParam( self::CUSTOM_NAME_PARAM ) );
+	}
+
+	public function hasCustomName(): bool {
+		return '' !== $this->getCustomName();
+	}
+
+	public function getTelegramName(): string {
+		$title = $this->getTelegramTitle();
+		if ( '' !== $title ) {
+			return $title;
+		}
+
+		$name = trim( $this->getFirstName() . ' ' . $this->getLastName() );
+		if ( '' !== $name ) {
+			return $name;
+		}
+
+		$username = $this->getUsername();
+		if ( '' !== $username ) {
+			return '@' . ltrim( $username, '@' );
+		}
+
+		return $this->getChatID() ?: __( 'Telegram Chat', 'cf7-telegram' );
+	}
+
+	public function restoreTelegramName(): Chat {
+		$this->setParam( self::CUSTOM_NAME_PARAM, '' );
+		$this->setTitle( $this->getTelegramName() );
+		return $this;
+	}
+
+	public function setTelegramData( $tg_chat ): Chat {
+		$chatID = Util::sanitizeTelegramChatID( Util::telegramValue( $tg_chat, 'id' ) );
+		if ( '' !== $chatID ) {
+			$this->setChatID( $chatID );
+		}
+
+		$this
+			->setChatType( Util::telegramValue( $tg_chat, 'type', '' ) )
+			->setFirstName( Util::telegramValue( $tg_chat, 'first_name', '' ) )
+			->setLastName( Util::telegramValue( $tg_chat, 'last_name', '' ) )
+			->setUsername( Util::telegramValue( $tg_chat, 'username', '' ) )
+			->setTelegramTitle( Util::telegramValue( $tg_chat, 'title', '' ) );
+
+		if ( ! $this->hasCustomName() ) {
+			$this->restoreTelegramName();
+		}
+
+		return $this;
+	}
+
 	public function getName(): string {
-		return trim( $this->getTitle() ?: $this->getFirstName() . ' ' . $this->getLastName() );
+		return trim( $this->getTitle() ?: $this->getTelegramName() );
 	}
 
 	public function isPrivateChat(): bool {
@@ -183,7 +254,8 @@ class Chat extends Entity implements WPPostAble{
 	 */
 	public function getConnectionStatus( Channel $channel ): string {
 		$connection = $this->getChannelConnection( $channel );
-		$meta = $connection->meta->where( 'key', self::STATUS_KEY )->first();
+		$statusMeta = $connection->meta->where( 'key', self::STATUS_KEY );
+		$meta = $statusMeta->isEmpty() ? null : $statusMeta->first();
 		return $meta ? $meta->value : self::STATUS_PENDING;
 	}
 
@@ -195,7 +267,8 @@ class Chat extends Entity implements WPPostAble{
 	 */
 	public function getBotConnectionStatus( Bot $bot ): string {
 		$connection = $this->getBotConnection( $bot );
-		$meta = $connection->meta->where( 'key', self::STATUS_KEY )->first();
+		$statusMeta = $connection->meta->where( 'key', self::STATUS_KEY );
+		$meta = $statusMeta->isEmpty() ? null : $statusMeta->first();
 		return $meta ? (string) $meta->value : '';
 	}
 
