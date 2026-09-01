@@ -224,6 +224,7 @@ const SettingsApp = () => {
                                 key={bot.id}
                                 bot={bot}
                                 chats={chats}
+                                setChats={setChats}
                                 bot2ChatConnections={bot2ChatConnections}
                                 setBots={setBots}
                                 setBot2ChatConnections={setBot2ChatConnections}

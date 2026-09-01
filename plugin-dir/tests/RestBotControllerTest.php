@@ -235,6 +235,10 @@ final class Cf7tg_RestBotControllerGateway implements TelegramGateway {
 		return $this->call( 'getMe' );
 	}
 
+	public function getChat( string $chatID ): TelegramDeliveryResult {
+		return $this->call( 'getChat', [ 'chat_id' => $chatID ] );
+	}
+
 	public function getUpdates( array $params = [] ): TelegramDeliveryResult {
 		return $this->call( 'getUpdates', $params );
 	}
