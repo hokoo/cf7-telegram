@@ -630,14 +630,16 @@ class Bot extends Entity implements wpPostAble{
 		if ( ! $chat ) {
 			$chat = Util::createChatFromArray( is_array( $message['chat'] ?? null ) ? $message['chat'] : [] );
 			$result->hasNewChats = true;
+		} else {
+			$chat->setTelegramData( is_array( $message['chat'] ?? null ) ? $message['chat'] : [] );
 		}
 
 		if ( $this->getChats()->contains( $chat ) ) {
 			if ( '' === $chat->getBotConnectionStatus( $this ) ) {
 				$chat->setPending( $this );
 				$chat->setDate( (string) ( $message['date'] ?? time() ) );
-				$chat->savePost();
 			}
+			$chat->savePost();
 			return;
 		}
 

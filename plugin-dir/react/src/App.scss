@@ -313,12 +313,27 @@ body[class*="page_wpcf7_tg"] ul#adminmenu > li.current > a.current:after {
           }
 
           .chat-item {
+            align-items: center;
             display: flex;
             justify-content: start;
 
             .chat-name {
+              box-sizing: border-box;
               width: 120px;
+              overflow-wrap: anywhere;
               text-align: right;
+            }
+
+            .edit-chat-name {
+              background: transparent;
+              border: 1px solid #0c88b447;
+              box-shadow: none;
+              color: inherit;
+              font-family: inherit;
+              font-size: inherit;
+              line-height: inherit;
+              min-height: 24px;
+              padding: 0 5px;
             }
 
             &.active {

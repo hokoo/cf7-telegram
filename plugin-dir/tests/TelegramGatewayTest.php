@@ -67,6 +67,29 @@ final class TelegramGatewayTest extends Cf7tg_TestCase {
 		$this->assertFalse( str_contains( $result->description, $token ) );
 	}
 
+	public function testWordPressGatewayLoadsChatByTelegramChatId(): void {
+		$GLOBALS['wp_remote_post_handler'] = static fn(): array => [
+			'response' => [ 'code' => 200 ],
+			'headers'  => [],
+			'body'     => wp_json_encode(
+				[
+					'ok'     => true,
+					'result' => [
+						'id'    => 700001,
+						'title' => 'Current chat',
+					],
+				]
+			),
+		];
+
+		$result = ( new WordPressTelegramGateway( '123456789:TEST_SECRET_TOKEN_VALUE' ) )->getChat( '700001' );
+
+		$this->assertTrue( $result->ok );
+		$this->assertSame( 'getChat', basename( $GLOBALS['wp_remote_post_requests'][0]['url'] ) );
+		$this->assertSame( '{"chat_id":"700001"}', $GLOBALS['wp_remote_post_requests'][0]['args']['body'] );
+		$this->assertSame( 'Current chat', $result->result['title'] );
+	}
+
 	public function testWordPressGatewayNormalizesMalformedJson(): void {
 		$GLOBALS['wp_remote_post_handler'] = static fn(): array => [
 			'response' => [ 'code' => 200 ],
@@ -167,6 +190,11 @@ final class Cf7tg_RecordingTelegramGateway implements TelegramGateway {
 	public function getMe(): TelegramDeliveryResult {
 		$this->calls[] = [ 'method' => 'getMe', 'args' => [] ];
 		return $this->next( 'getMe' );
+	}
+
+	public function getChat( string $chatID ): TelegramDeliveryResult {
+		$this->calls[] = [ 'method' => 'getChat', 'args' => [ 'chat_id' => $chatID ] ];
+		return $this->next( 'getChat' );
 	}
 
 	public function getUpdates( array $params = [] ): TelegramDeliveryResult {

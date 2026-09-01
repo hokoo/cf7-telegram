@@ -121,34 +121,8 @@ class Util {
 	 * @throws wppaSavePostException
 	 */
 	static function createChat( $tg_chat ): Chat {
-		$chatID    = self::sanitizeTelegramChatID( self::telegramValue( $tg_chat, 'id' ) );
-		$chatType  = self::sanitizeTelegramChatType( self::telegramValue( $tg_chat, 'type' ) );
-		$firstName = self::sanitizeTelegramText( self::telegramValue( $tg_chat, 'first_name' ) ?? '' );
-		$lastName  = self::sanitizeTelegramText( self::telegramValue( $tg_chat, 'last_name' ) ?? '' );
-		$username  = self::sanitizeTelegramText( self::telegramValue( $tg_chat, 'username' ) ?? '' );
-		$title     = self::sanitizeTelegramText( self::telegramValue( $tg_chat, 'title' ) ?? '' );
-
-		if ( '' === $title ) {
-			$title = trim( $firstName . ' ' . $lastName );
-		}
-
-		if ( '' === $title && '' !== $username ) {
-			$title = '@' . ltrim( $username, '@' );
-		}
-
-		if ( '' === $title ) {
-			$title = $chatID ?: __( 'Telegram Chat', 'cf7-telegram' );
-		}
-
 		$chat = new Chat();
-		$chat
-			->setChatID( $chatID )
-			->setChatType( $chatType )
-			->setFirstName( $firstName )
-			->setLastName( $lastName )
-			->setUsername( $username )
-			->setTitle( $title )
-			->publish();
+		$chat->setTelegramData( $tg_chat )->publish();
 
 		return $chat;
 	}

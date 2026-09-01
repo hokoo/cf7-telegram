@@ -5,6 +5,8 @@ import {
     apiDeleteChat,
     apiFetchUpdates,
     apiPingBot,
+    apiRenameChat,
+    apiRestoreChatName,
     ApiError,
     fetchBots,
     fetchBotsForChannels,
@@ -317,5 +319,21 @@ describe('API collections', () => {
         expect(global.fetch.mock.calls[1][1].method).toBe('DELETE');
         expect(global.fetch.mock.calls[2][0]).toBe('https://example.test/index.php?rest_route=/wp/v2/cf7tg_channel/12&force=true');
         expect(global.fetch.mock.calls[2][1].method).toBe('DELETE');
+    });
+
+    it('uses POST for chat rename and restore-name endpoints', async () => {
+        global.fetch
+            .mockResolvedValueOnce(response({id: 8, title: {rendered: 'Custom'}}, 1))
+            .mockResolvedValueOnce(response({id: 8, title: {rendered: 'Telegram'}}, 1));
+
+        await expect(apiRenameChat(8, 10, 'Custom')).resolves.toEqual({id: 8, title: {rendered: 'Custom'}});
+        await expect(apiRestoreChatName(8, 10)).resolves.toEqual({id: 8, title: {rendered: 'Telegram'}});
+
+        expect(global.fetch.mock.calls[0][0]).toBe('https://example.test/wp-json/wp/v2/cf7tg_chat/8/name');
+        expect(global.fetch.mock.calls[0][1].method).toBe('POST');
+        expect(JSON.parse(global.fetch.mock.calls[0][1].body)).toEqual({bot_id: 10, name: 'Custom'});
+        expect(global.fetch.mock.calls[1][0]).toBe('https://example.test/wp-json/wp/v2/cf7tg_chat/8/restore_name');
+        expect(global.fetch.mock.calls[1][1].method).toBe('POST');
+        expect(JSON.parse(global.fetch.mock.calls[1][1].body)).toEqual({bot_id: 10});
     });
 });
