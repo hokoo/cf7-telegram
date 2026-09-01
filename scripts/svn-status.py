@@ -18,15 +18,20 @@ UNSAFE_ITEMS = {
 }
 
 
-def relative_trunk_path(path: str, working_copy: str) -> str:
+def relative_managed_path(path: str, working_copy: str) -> str:
     normalized = os.path.normpath(path)
     if os.path.isabs(normalized):
         normalized = os.path.relpath(normalized, working_copy)
 
-    if normalized == "trunk" or normalized.startswith(f"trunk{os.sep}"):
+    if (
+        normalized == "trunk"
+        or normalized.startswith(f"trunk{os.sep}")
+        or normalized == "assets"
+        or normalized.startswith(f"assets{os.sep}")
+    ):
         return normalized
 
-    raise ValueError(f"status path is outside trunk: {path}")
+    raise ValueError(f"status path is outside managed deployment paths: {path}")
 
 
 def missing_roots(root: ET.Element, working_copy: str) -> list[str]:
@@ -35,7 +40,7 @@ def missing_roots(root: ET.Element, working_copy: str) -> list[str]:
         status = entry.find("wc-status")
         if status is None or status.get("item") != "missing":
             continue
-        missing.append(relative_trunk_path(entry.get("path", ""), working_copy))
+        missing.append(relative_managed_path(entry.get("path", ""), working_copy))
 
     selected: list[str] = []
     for path in sorted(set(missing), key=lambda value: (value.count(os.sep), value)):
