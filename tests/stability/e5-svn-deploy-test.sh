@@ -7,6 +7,7 @@ WORKDIR="$(mktemp -d "${TMPDIR:-/tmp}/cf7tg-e5-svn-deploy.XXXXXX")"
 REPOSITORY="${WORKDIR}/repository"
 IMPORT_DIR="${WORKDIR}/import"
 BUILD_DIR="${WORKDIR}/build"
+ASSETS_DIR="${WORKDIR}/wordpress-org-assets"
 WORKING_COPY="${WORKDIR}/working-copy"
 
 cleanup() {
@@ -26,14 +27,17 @@ mkdir -p \
 	"${IMPORT_DIR}/trunk/vendor/package with spaces/nested" \
 	"${IMPORT_DIR}/tags" \
 	"${IMPORT_DIR}/assets" \
+	"${ASSETS_DIR}" \
 	"${BUILD_DIR}/vendor/ramsey/collection/src"
 
 printf '%s\n' '<?php // old plugin' > "${IMPORT_DIR}/trunk/cf7-telegram.php"
 printf '%s\n' 'old sdk file' > "${IMPORT_DIR}/trunk/vendor/psr/http-message/src/MessageInterface.php"
 printf '%s\n' 'old spaced path' > "${IMPORT_DIR}/trunk/vendor/package with spaces/nested/file.php"
+printf '%s\n' 'old screenshot' > "${IMPORT_DIR}/assets/stale-screenshot.png"
 printf '%s\n' '<?php' '/**' ' * Plugin Name: CF7 Telegram' ' * Version: 1.0.13' ' */' > "${BUILD_DIR}/cf7-telegram.php"
 printf '%s\n' '=== CF7 Telegram ===' 'Stable tag: 1.0.13' > "${BUILD_DIR}/readme.txt"
 printf '%s\n' '<?php // retained runtime dependency' > "${BUILD_DIR}/vendor/ramsey/collection/src/Collection.php"
+printf '%s\n' 'new screenshot' > "${ASSETS_DIR}/screenshot-1.png"
 
 svnadmin create "${REPOSITORY}"
 svn import --quiet "${IMPORT_DIR}" "file://${REPOSITORY}" -m 'Seed old release tree'
@@ -42,6 +46,7 @@ svn import --quiet "${IMPORT_DIR}" "file://${REPOSITORY}" -m 'Seed old release t
 	--slug cf7-telegram \
 	--version 1.0.13 \
 	--build-dir "${BUILD_DIR}" \
+	--assets-dir "${ASSETS_DIR}" \
 	--svn-url "file://${REPOSITORY}" \
 	--working-copy "${WORKING_COPY}" \
 	--dry-run \
@@ -59,6 +64,18 @@ svn import --quiet "${IMPORT_DIR}" "file://${REPOSITORY}" -m 'Seed old release t
 	printf 'SVN deploy test failed: prepared tag does not contain candidate files.\n' >&2
 	exit 1
 }
+[ -f "${WORKING_COPY}/assets/screenshot-1.png" ] || {
+	printf 'SVN deploy test failed: WordPress.org screenshot asset was not added.\n' >&2
+	exit 1
+}
+[ ! -e "${WORKING_COPY}/assets/stale-screenshot.png" ] || {
+	printf 'SVN deploy test failed: stale WordPress.org asset remains.\n' >&2
+	exit 1
+}
+[ "$(svn propget svn:mime-type "${WORKING_COPY}/assets/screenshot-1.png")" = 'image/png' ] || {
+	printf 'SVN deploy test failed: screenshot asset MIME type was not set.\n' >&2
+	exit 1
+}
 
 svn status --xml "${WORKING_COPY}" | python3 "${REPO_ROOT}/scripts/svn-status.py" validate --working-copy "${WORKING_COPY}"
 [ "$(svnlook youngest "${REPOSITORY}")" = '1' ] || {
@@ -72,6 +89,7 @@ rerun_output="$(
 		--slug cf7-telegram \
 		--version 1.0.13 \
 		--build-dir "${BUILD_DIR}" \
+		--assets-dir "${ASSETS_DIR}" \
 		--svn-url "file://${REPOSITORY}" \
 		--working-copy "${WORKING_COPY}" \
 		--dry-run \
@@ -90,6 +108,7 @@ STATUS_FIXTURE="${WORKDIR}/status.xml"
 cat > "${STATUS_FIXTURE}" <<'XML'
 <?xml version="1.0" encoding="UTF-8"?>
 <status><target path=".">
+<entry path="assets/stale-screenshot.png"><wc-status item="missing" props="none" revision="1"/></entry>
 <entry path="trunk/vendor/parent"><wc-status item="missing" props="none" revision="1"/></entry>
 <entry path="trunk/vendor/parent/child.php"><wc-status item="missing" props="none" revision="1"/></entry>
 <entry path="trunk/vendor/path with spaces"><wc-status item="missing" props="none" revision="1"/></entry>
@@ -97,8 +116,9 @@ cat > "${STATUS_FIXTURE}" <<'XML'
 XML
 
 mapfile -d '' missing_roots < <(python3 "${REPO_ROOT}/scripts/svn-status.py" missing-roots --working-copy "${WORKING_COPY}" < "${STATUS_FIXTURE}")
-[ "${#missing_roots[@]}" -eq 2 ]
-[ "${missing_roots[0]}" = 'trunk/vendor/parent' ]
-[ "${missing_roots[1]}" = 'trunk/vendor/path with spaces' ]
+[ "${#missing_roots[@]}" -eq 3 ]
+[ "${missing_roots[0]}" = 'assets/stale-screenshot.png' ]
+[ "${missing_roots[1]}" = 'trunk/vendor/parent' ]
+[ "${missing_roots[2]}" = 'trunk/vendor/path with spaces' ]
 
 printf 'SVN deploy regression test passed: snapshot parsing removed nested legacy trees safely.\n'

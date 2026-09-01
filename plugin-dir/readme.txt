@@ -23,6 +23,8 @@ This plugin lets you send Contact Form 7 messages to Telegram chats via a bot. S
 6. Approve or decline subscription requests on the Contact Form 7 → CF7 Telegram settings page.
 7. Configure the bridge: choose which forms it handles and which Telegram recipients should receive those messages. Create at least one bridge to run the integration, and add more when different forms should send messages to different sets of Telegram recipients.
 
+The integration is configured correctly when the bot panel is highlighted in blue and the bridge panel is highlighted in green.
+
 = Hooks and constants =
 
 Filter <code>wpcf7tg_skip_tg</code>
@@ -50,6 +52,10 @@ Constants <code>WPCF7TG_PING_INTERVAL</code> and <code>WPCF7TG_UPDATES_INTERVAL<
 Set the offline bot status retry interval and the online Telegram update polling interval in milliseconds. The defaults are 5000 and 12000 respectively.
 
 This plugin uses [API Telegram](https://core.telegram.org/api "Telegram docs") and sends remote HTTP requests to Telegram servers to deliver notifications.
+
+== Screenshots ==
+
+1. Telegram notifier settings after a successful setup: the bot is highlighted in blue and the bridge is highlighted in green.
 
 == Changelog ==
 
