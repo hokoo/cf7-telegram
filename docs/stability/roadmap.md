@@ -90,7 +90,7 @@ Evidence:
 
 Status: completed
 
-Outcome: release ZIP creation and WordPress.org promotion are reproducible,
+Outcome: release ZIP creation and WordPress.org publishing are reproducible,
 fail-closed, and backed by executable lifecycle, browser, rollback, Plugin Check,
 dependency audit, and artifact hygiene evidence.
 
@@ -103,13 +103,13 @@ Scope delivered:
 - Browser lifecycle smoke added through Playwright.
 - Plugin Check, dependency audit, forbidden-entry ZIP gates, and log retention
   controls added.
-- Canary promotion and race-free SVN deployment gates added.
+- Release-triggered WordPress.org publishing and race-free SVN deployment gates
+  added.
 
 Evidence:
 
 - `docs/stability/e5-release-delivery-maintainability.md`
 - `.github/workflows/build-zip.yml`
-- `.github/workflows/promote-wordpress-org.yml`
 - `tests/e2e/e5-browser-smoke.spec.js`
 - `tests/stability/e5-*.sh`
 - release gate evidence for `1.0.13`

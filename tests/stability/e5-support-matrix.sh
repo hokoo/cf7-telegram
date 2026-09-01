@@ -210,7 +210,7 @@ stage_promotion_rollback() {
 	[ -s "${source_snapshot}" ] || return 0
 
 	cp "${source_snapshot}" "${RESULTS_DIR}/rollback.sql"
-	emit "promotion" "rollback_snapshot" "pass" "Staged the current support-row pre-upgrade database snapshot for manual promotion." "$(jq -nc \
+	emit "promotion" "rollback_snapshot" "pass" "Staged the current support-row pre-upgrade database snapshot for release rollback evidence." "$(jq -nc \
 		--arg source "${source_snapshot}" \
 		--arg file "${RESULTS_DIR}/rollback.sql" \
 		--arg version "${PROMOTION_ROLLBACK_VERSION}" \
