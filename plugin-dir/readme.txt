@@ -5,7 +5,7 @@ Tags: contact form telegram,contact form 7,telegram
 Requires at least: 5.6
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.0.13
+Stable tag: 1.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -18,10 +18,12 @@ This plugin lets you send Contact Form 7 messages to Telegram chats via a bot. S
 1. Create a Telegram bot ([how to](https://core.telegram.org/bots#3-how-do-i-create-a-bot "Telegram docs")).
 2. Create a bot in the plugin UI.
 3. Paste the bot token into the bot form (PHP constants also available).
-4. Create a channel in the plugin UI — it links your Contact Form 7 forms to Telegram chats.
+4. Create a bridge in the plugin UI. A bridge links Contact Form 7 forms, a Telegram bot, and one or more Telegram recipients.
 5. Add users to the subscriber list by sending the <code>/cf7tg_start</code> command to your bot. To add a group, first add the bot to the group, then send <code>/cf7tg_start</code> in that group.
 6. Approve or decline subscription requests on the Contact Form 7 → CF7 Telegram settings page.
-7. Configure the channel: choose which forms to send messages from.
+7. Configure the bridge: choose which forms it handles and which Telegram recipients should receive those messages. Create at least one bridge to run the integration, and add more when different forms should send messages to different sets of Telegram recipients.
+
+**The integration is configured correctly when the bot panel is highlighted in blue and the bridge panel is highlighted in green.**
 
 = Hooks and constants =
 
@@ -51,7 +53,17 @@ Set the offline bot status retry interval and the online Telegram update polling
 
 This plugin uses [API Telegram](https://core.telegram.org/api "Telegram docs") and sends remote HTTP requests to Telegram servers to deliver notifications.
 
+== Screenshots ==
+
+1. Telegram notifier settings after a successful setup: the bot is highlighted in blue and the bridge is highlighted in green.
+2. Multiple Telegram recipients and multiple bridges connected to different Contact Form 7 forms.
+
 == Changelog ==
+
+= 1.1 =
+- Add fake Telegram browser E2E coverage for form delivery, admin setup, partial delivery failures, and CI evidence collection.
+- Rename user-facing Channel terminology to Bridge across the admin UI and guide, with bridge and bot setup guidance.
+- Add chat display-name controls so administrators can set custom names and restore Telegram-provided names.
 
 = 1.0.13 =
 - Make Telegram bot actions POST-first and harden the administration interface against partial loading, pagination, and retry failures.

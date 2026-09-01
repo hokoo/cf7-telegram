@@ -9,6 +9,8 @@ interface TelegramGateway {
 
 	public function getMe(): TelegramDeliveryResult;
 
+	public function getChat( string $chatID ): TelegramDeliveryResult;
+
 	public function getUpdates( array $params = [] ): TelegramDeliveryResult;
 
 	public function getWebhookInfo(): TelegramDeliveryResult;

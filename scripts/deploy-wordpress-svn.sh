@@ -2,11 +2,13 @@
 set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 STATUS_PARSER="${SCRIPT_DIR}/svn-status.py"
 
 SLUG="${SLUG:-}"
 VERSION="${VERSION:-}"
 BUILD_DIR="${BUILD_DIR:-}"
+ASSETS_DIR="${ASSETS_DIR:-${REPO_ROOT}/.wordpress-org}"
 SVN_URL="${SVN_URL:-}"
 SVN_DIR="${SVN_DIR:-}"
 DRY_RUN="${INPUT_DRY_RUN:-${DRY_RUN:-false}}"
@@ -21,6 +23,7 @@ Options:
   --slug <slug>             WordPress.org plugin slug.
   --version <version>       Version/tag to publish.
   --build-dir <path>        Unpacked, verified plugin build.
+  --assets-dir <path>       WordPress.org assets source directory (defaults to .wordpress-org when present).
   --svn-url <url>           SVN repository URL (defaults to WordPress.org).
   --working-copy <path>     Explicit working-copy path.
   --dry-run                 Prepare and validate without committing.
@@ -52,6 +55,11 @@ while [ "$#" -gt 0 ]; do
 			shift
 			[ "$#" -gt 0 ] || fail 'missing value for --build-dir'
 			BUILD_DIR="$1"
+			;;
+		--assets-dir)
+			shift
+			[ "$#" -gt 0 ] || fail 'missing value for --assets-dir'
+			ASSETS_DIR="$1"
 			;;
 		--svn-url)
 			shift
@@ -85,13 +93,18 @@ done
 [ -d "${BUILD_DIR}" ] || fail "BUILD_DIR does not exist: ${BUILD_DIR}"
 [ -f "${STATUS_PARSER}" ] || fail "status parser is missing: ${STATUS_PARSER}"
 
-for tool in python3 rsync svn; do
+for tool in find python3 rsync svn; do
 	command -v "${tool}" >/dev/null 2>&1 || fail "required tool is missing: ${tool}"
 done
 
 SVN_URL="${SVN_URL:-https://plugins.svn.wordpress.org/${SLUG}/}"
 SVN_URL="${SVN_URL%/}/"
 BUILD_DIR="$(cd "${BUILD_DIR}" && pwd)"
+if [ -d "${ASSETS_DIR}" ]; then
+	ASSETS_DIR="$(cd "${ASSETS_DIR}" && pwd)"
+else
+	ASSETS_DIR=""
+fi
 
 if [ -z "${SVN_DIR}" ]; then
 	SVN_DIR="$(mktemp -d "${RUNNER_TEMP:-${TMPDIR:-/tmp}}/${SLUG}-svn.XXXXXX")"
@@ -122,6 +135,8 @@ svn update --set-depth infinity trunk
 svn update --set-depth immediates tags
 if [ -d assets ]; then
 	svn update --set-depth infinity assets
+elif [ -n "${ASSETS_DIR}" ]; then
+	mkdir -p assets
 fi
 
 plugin_version="$(sed -nE 's/^[[:space:]]*\*[[:space:]]*Version:[[:space:]]*([^[:space:]]+).*/\1/p' "${BUILD_DIR}/${SLUG}.php" | head -n 1)"
@@ -143,6 +158,10 @@ fi
 
 printf 'Syncing verified build into SVN trunk...\n'
 rsync -rc --delete --delete-excluded "${BUILD_DIR}/" trunk/
+if [ -n "${ASSETS_DIR}" ]; then
+	printf 'Syncing WordPress.org assets from %s...\n' "${ASSETS_DIR}"
+	rsync -rc --delete --delete-excluded "${ASSETS_DIR}/" assets/
+fi
 
 # Snapshot status before changing the working copy. Streaming `svn status` into
 # `svn rm` races on large removals and caused the 1.0.12 deployment failure.
@@ -156,6 +175,22 @@ done < "${MISSING_LIST}"
 rm -f -- "${STATUS_XML}" "${MISSING_LIST}"
 
 svn add trunk --force >/dev/null
+if [ -n "${ASSETS_DIR}" ]; then
+	svn add assets --force >/dev/null
+	while IFS= read -r -d '' asset_path; do
+		case "${asset_path,,}" in
+			*.png)
+				svn propset svn:mime-type image/png "${asset_path}" >/dev/null
+				;;
+			*.jpg|*.jpeg)
+				svn propset svn:mime-type image/jpeg "${asset_path}" >/dev/null
+				;;
+			*.gif)
+				svn propset svn:mime-type image/gif "${asset_path}" >/dev/null
+				;;
+		esac
+	done < <(find assets -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.gif' \) -print0)
+fi
 svn cp trunk "tags/${VERSION}"
 
 FINAL_STATUS_XML="$(mktemp "${RUNNER_TEMP:-${TMPDIR:-/tmp}}/${SLUG}-svn-final-status.XXXXXX.xml")"

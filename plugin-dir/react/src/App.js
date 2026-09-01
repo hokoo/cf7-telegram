@@ -201,6 +201,17 @@ const SettingsApp = () => {
                 <div className="list-container bots-container">
                     <div className="title-container">
                         <h3 className="title">{wp.i18n.__( 'Bots', 'cf7-telegram' )}</h3>
+                        <p className="title-description">
+                            {wp.i18n.__( 'A Telegram bot is required to run the integration. Create at least one bot, then connect it here.', 'cf7-telegram' )}
+                            {' '}
+                            <a
+                                href="https://core.telegram.org/bots#3-how-do-i-create-a-bot"
+                                target="_blank"
+                                rel="noreferrer"
+                            >
+                                {wp.i18n.__( 'How to create a bot', 'cf7-telegram' )}
+                            </a>
+                        </p>
                         <NewBot setBots={setBots} disabled={'success' !== resourceStatus('bots')}/>
                     </div>
 
@@ -213,6 +224,7 @@ const SettingsApp = () => {
                                 key={bot.id}
                                 bot={bot}
                                 chats={chats}
+                                setChats={setChats}
                                 bot2ChatConnections={bot2ChatConnections}
                                 setBots={setBots}
                                 setBot2ChatConnections={setBot2ChatConnections}
@@ -228,12 +240,15 @@ const SettingsApp = () => {
 
                 <div className="list-container channels-container">
                     <div className="title-container">
-                        <h3 className="title">{wp.i18n.__( 'Channels', 'cf7-telegram' )}</h3>
+                        <h3 className="title">{wp.i18n.__( 'Bridges', 'cf7-telegram' )}</h3>
+                        <p className="title-description">
+                            {wp.i18n.__( 'A bridge is required to run the integration. Create at least one bridge, and add more when different forms should send messages to different sets of Telegram recipients.', 'cf7-telegram' )}
+                        </p>
                         <NewChannel setChannels={setChannels} disabled={'success' !== resourceStatus('channels')}/>
                     </div>
                     <div className="channel-list">
                         {'error' === resourceStatus('channels') && (
-                            <p className="resource-error">{wp.i18n.__( 'Channels could not be loaded.', 'cf7-telegram' )}</p>
+                            <p className="resource-error">{wp.i18n.__( 'Bridges could not be loaded.', 'cf7-telegram' )}</p>
                         )}
                         {channels.map(channel => (
                             <Channel

@@ -162,7 +162,7 @@ const ChannelView = ({
                             ))}
                         </>
                     ) : (
-                        <span className="no-chats-found">[{wp.i18n.__( 'No chats assigned to this channel', 'cf7-telegram' )}]</span>
+                        <span className="no-chats-found">[{wp.i18n.__( 'No chats assigned to this bridge', 'cf7-telegram' )}]</span>
                     )}
                 </div>
 
@@ -214,7 +214,7 @@ const ChannelView = ({
                             ))}
                         </ul>
                     ) : showFormSelector || (
-                        <span className="no-forms-found">[{wp.i18n.__( 'No forms assigned to this channel', 'cf7-telegram' )}]</span>
+                        <span className="no-forms-found">[{wp.i18n.__( 'No forms assigned to this bridge', 'cf7-telegram' )}]</span>
                     ))}
                 </div>
 
@@ -225,7 +225,7 @@ const ChannelView = ({
                         data-testid={`cf7tg-remove-channel-${channel.id}`}
                         onClick={deleteChannel}
                         disabled={saving || mutatingRelations}>
-                        {wp.i18n.__( 'Remove channel', 'cf7-telegram' )}
+                        {wp.i18n.__( 'Remove Bridge', 'cf7-telegram' )}
                     </button>
                 </div>
             </div>

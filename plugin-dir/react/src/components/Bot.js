@@ -6,7 +6,13 @@ import {
     connectChat2Channel, disconnectConnectionBot2Chat, setBot2ChatConnectionStatus
 } from "../utils/main";
 import {
-    apiDeleteBot, apiFetchUpdates, apiPingBot, apiUpdateBotToken, fetchBot
+    apiDeleteBot,
+    apiFetchUpdates,
+    apiPingBot,
+    apiRenameChat,
+    apiRestoreChatName,
+    apiUpdateBotToken,
+    fetchBot
 } from "../utils/api";
 
 const UPDATE_TRANSPORT_ERROR_THRESHOLD = 3;
@@ -74,6 +80,7 @@ export const updateBotChatStatus = async ({
 const Bot = ({
     bot,
     chats,
+    setChats = () => {},
     bot2ChatConnections,
     setBots,
     setBot2ChatConnections,
@@ -90,12 +97,20 @@ const Bot = ({
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState(null);
     const [updatingStatusIds, setUpdatingStatusIds] = useState([]);
+    const [renamingChatId, setRenamingChatId] = useState(null);
+    const [chatNameValue, setChatNameValue] = useState('');
+    const [updatingNameIds, setUpdatingNameIds] = useState([]);
 
     const relatedChatIds = bot2ChatConnections
         .filter(connection => connection.data.from === bot.id)
         .map(connection => connection.data.to);
 
     const chatsForBot = chats.filter(chat => relatedChatIds.includes(chat.id));
+
+    const canRenameChat = (chatId) => {
+        const connection = bot2ChatConnections.find(c => c.data.from === bot.id && c.data.to === chatId);
+        return !!connection && connection?.data?.meta?.status?.[0] !== 'pending';
+    };
 
     const [lastPing, setLastPing] = useState(null);
     const [online, setOnline] = useState(null);
@@ -277,7 +292,7 @@ const Bot = ({
             return;
         }
 
-        if ( online && ! window.confirm( wp.i18n.__( 'Changing the token to another Telegram bot will disconnect this bot from its chats and channels. Continue?', 'cf7-telegram' ) ) ) {
+        if ( online && ! window.confirm( wp.i18n.__( 'Changing the token to another Telegram bot will disconnect this bot from its chats and bridges. Continue?', 'cf7-telegram' ) ) ) {
             return;
         }
 
@@ -307,7 +322,7 @@ const Bot = ({
 
     /**
      * Saves the bot with the new token and name.
-     * ATTENTION! This will disconnect all chats and channels connected to the bot.
+     * ATTENTION! This will disconnect all chats and bridges connected to the bot.
      *
      * @returns {Promise<void>}
      */
@@ -415,11 +430,95 @@ const Bot = ({
         }
     }
 
+    const updateChatInState = (updatedChat) => {
+        setChats(prev => prev.map(chat => chat.id === updatedChat.id ? {
+            ...chat,
+            ...updatedChat,
+        } : chat));
+    };
+
+    const handleStartRenameChat = (chat) => {
+        if (!chat || updatingNameIds.includes(chat.id) || !canRenameChat(chat.id)) return;
+
+        setError(null);
+        setRenamingChatId(chat.id);
+        setChatNameValue(chat.title?.rendered ?? '');
+    };
+
+    const handleRenameChatChange = (event) => {
+        setChatNameValue(event.target.value);
+    };
+
+    const handleCancelRenameChat = () => {
+        setRenamingChatId(null);
+        setChatNameValue('');
+        setError(null);
+    };
+
+    const handleRenameChatKeyDown = (chatId, event) => {
+        if (event.key === 'Enter') {
+            saveChatName(chatId);
+        }
+
+        if (event.key === 'Escape') {
+            handleCancelRenameChat();
+        }
+    };
+
+    const saveChatName = async (chatId) => {
+        const chat = chats.find(item => item.id === chatId);
+        const nextName = chatNameValue.trim();
+
+        if (!chat || updatingNameIds.includes(chatId) || !canRenameChat(chatId)) return;
+
+        if (nextName === '' || nextName === (chat.title?.rendered ?? '')) {
+            handleCancelRenameChat();
+            return;
+        }
+
+        setUpdatingNameIds(prev => [...prev, chatId]);
+        setError(null);
+
+        try {
+            const updatedChat = await apiRenameChat(chatId, bot.id, nextName);
+            updateChatInState(updatedChat);
+            setRenamingChatId(null);
+            setChatNameValue('');
+        } catch (err) {
+            console.error('Failed to rename chat', err);
+            setError(wp.i18n.__( 'Failed to update chat name', 'cf7-telegram' ));
+        } finally {
+            setUpdatingNameIds(prev => prev.filter(id => id !== chatId));
+        }
+    };
+
+    const handleRestoreChatName = async (chatId) => {
+        if (updatingNameIds.includes(chatId) || !canRenameChat(chatId)) return;
+
+        setUpdatingNameIds(prev => [...prev, chatId]);
+        setError(null);
+
+        try {
+            const updatedChat = await apiRestoreChatName(chatId, bot.id);
+            updateChatInState(updatedChat);
+            setRenamingChatId(null);
+            setChatNameValue('');
+        } catch (err) {
+            console.error('Failed to restore chat name', err);
+            setError(wp.i18n.__( 'Failed to restore Telegram chat name', 'cf7-telegram' ));
+        } finally {
+            setUpdatingNameIds(prev => prev.filter(id => id !== chatId));
+        }
+    };
+
     return (<BotView
         bot={bot}
         chatsForBot={chatsForBot}
         bot2ChatConnections={bot2ChatConnections}
         updatingStatusIds={updatingStatusIds}
+        updatingNameIds={updatingNameIds}
+        renamingChatId={renamingChatId}
+        chatNameValue={chatNameValue}
         isEditingToken={isEditingToken}
         nameValue={nameValue}
         isTokenEmpty={isTokenEmpty}
@@ -432,6 +531,12 @@ const Bot = ({
         setTokenValue={setTokenValue}
         handleToggleChatStatus={handleToggleChatStatus}
         handleDisconnectChat={handleDisconnectChat}
+        handleStartRenameChat={handleStartRenameChat}
+        handleRenameChatChange={handleRenameChatChange}
+        handleRenameChatKeyDown={handleRenameChatKeyDown}
+        handleCancelRenameChat={handleCancelRenameChat}
+        handleSaveChatName={saveChatName}
+        handleRestoreChatName={handleRestoreChatName}
         online={online}
         chatDataStatus={chatDataStatus}
     />);

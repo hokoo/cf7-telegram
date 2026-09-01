@@ -354,6 +354,22 @@ export const apiDeleteChat = async (chatId) => {
     );
 }
 
+export const apiRenameChat = async (chatId, botId, name) => {
+    return await apiRequest(
+        `${cf7TelegramData.routes.chats}${chatId}/name`,
+        'POST',
+        {bot_id: botId, name}
+    );
+}
+
+export const apiRestoreChatName = async (chatId, botId) => {
+    return await apiRequest(
+        `${cf7TelegramData.routes.chats}${chatId}/restore_name`,
+        'POST',
+        {bot_id: botId}
+    );
+}
+
 export const apiCreateChannel = async (title) => {
     return await apiRequest(
         cf7TelegramData.routes.channels,

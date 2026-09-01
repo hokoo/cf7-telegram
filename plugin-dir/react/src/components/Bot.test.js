@@ -1,6 +1,13 @@
 import React from 'react';
 import {act, render, waitFor} from '@testing-library/react';
-import {apiFetchUpdates, apiPingBot, apiUpdateBotToken, fetchBot} from '../utils/api';
+import {
+    apiFetchUpdates,
+    apiPingBot,
+    apiRenameChat,
+    apiRestoreChatName,
+    apiUpdateBotToken,
+    fetchBot
+} from '../utils/api';
 import {connectChat2Channel, setBot2ChatConnectionStatus} from '../utils/main';
 import Bot, {getUpdateDiagnostic, saveBotTokenTransactionally, updateBotChatStatus} from './Bot';
 
@@ -15,6 +22,8 @@ jest.mock('../utils/api', () => ({
     apiDeleteBot: jest.fn(),
     apiFetchUpdates: jest.fn(),
     apiPingBot: jest.fn(),
+    apiRenameChat: jest.fn(),
+    apiRestoreChatName: jest.fn(),
     apiUpdateBotToken: jest.fn(),
     fetchBot: jest.fn(),
 }));
@@ -300,6 +309,94 @@ describe('Bot token editing', () => {
 
         expect(mockBotViewProps.isEditingToken).toBe(false);
         expect(mockBotViewProps.tokenValue).toBe('1234');
+
+        view.unmount();
+    });
+});
+
+describe('Bot chat rename controls', () => {
+    let timeoutSpy;
+
+    beforeEach(() => {
+        jest.clearAllMocks();
+        mockBotViewProps = null;
+        apiPingBot.mockResolvedValue({online: false, botName: 'test_bot'});
+        timeoutSpy = jest.spyOn(global, 'setTimeout').mockImplementation(() => 0);
+    });
+
+    afterEach(() => {
+        timeoutSpy.mockRestore();
+    });
+
+    const renderBotWithChat = (setChats = jest.fn()) => render(
+        <Bot
+            bot={{
+                id: 1,
+                title: {rendered: 'test_bot'},
+                token: '1234',
+                isTokenEmpty: false,
+                isTokenDefinedByConst: false,
+            }}
+            chats={[{id: 10, title: {rendered: 'Original chat'}}]}
+            setChats={setChats}
+            bot2ChatConnections={[{data: {id: 100, from: 1, to: 10, meta: {status: ['active']}}}]}
+            setBots={jest.fn()}
+            setBot2ChatConnections={jest.fn()}
+            bot2ChannelConnections={[]}
+            setBot2ChannelConnections={jest.fn()}
+            setChat2ChannelConnections={jest.fn()}
+            loadChatData={jest.fn()}
+        />
+    );
+
+    it('renames a chat and updates shared chat state', async () => {
+        const setChats = jest.fn();
+        apiRenameChat.mockResolvedValue({id: 10, title: {rendered: 'Support desk'}, customName: 'Support desk'});
+
+        const view = renderBotWithChat(setChats);
+        expect(mockBotViewProps.chatsForBot).toHaveLength(1);
+
+        act(() => mockBotViewProps.handleStartRenameChat(mockBotViewProps.chatsForBot[0]));
+        expect(mockBotViewProps.renamingChatId).toBe(10);
+        expect(mockBotViewProps.chatNameValue).toBe('Original chat');
+
+        act(() => mockBotViewProps.handleRenameChatChange({target: {value: 'Support desk'}}));
+        await act(async () => {
+            await mockBotViewProps.handleSaveChatName(10);
+        });
+
+        expect(apiRenameChat).toHaveBeenCalledWith(10, 1, 'Support desk');
+        const updater = setChats.mock.calls[0][0];
+        expect(updater([
+            {id: 10, title: {rendered: 'Original chat'}},
+            {id: 11, title: {rendered: 'Other chat'}},
+        ])).toEqual([
+            {id: 10, title: {rendered: 'Support desk'}, customName: 'Support desk'},
+            {id: 11, title: {rendered: 'Other chat'}},
+        ]);
+        expect(mockBotViewProps.renamingChatId).toBeNull();
+
+        view.unmount();
+    });
+
+    it('restores the current Telegram chat name through the bot', async () => {
+        const setChats = jest.fn();
+        apiRestoreChatName.mockResolvedValue({id: 10, title: {rendered: 'Alice Current'}, customName: ''});
+
+        const view = renderBotWithChat(setChats);
+        expect(mockBotViewProps.chatsForBot).toHaveLength(1);
+
+        act(() => mockBotViewProps.handleStartRenameChat(mockBotViewProps.chatsForBot[0]));
+        await act(async () => {
+            await mockBotViewProps.handleRestoreChatName(10);
+        });
+
+        expect(apiRestoreChatName).toHaveBeenCalledWith(10, 1);
+        const updater = setChats.mock.calls[0][0];
+        expect(updater([{id: 10, title: {rendered: 'Manual'}}])).toEqual([
+            {id: 10, title: {rendered: 'Alice Current'}, customName: ''},
+        ]);
+        expect(mockBotViewProps.renamingChatId).toBeNull();
 
         view.unmount();
     });

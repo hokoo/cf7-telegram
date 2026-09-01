@@ -21,6 +21,10 @@ class WordPressTelegramGateway implements TelegramGateway {
 		return $this->post( 'getMe' );
 	}
 
+	public function getChat( string $chatID ): TelegramDeliveryResult {
+		return $this->post( 'getChat', [ 'chat_id' => $chatID ] );
+	}
+
 	public function getUpdates( array $params = [] ): TelegramDeliveryResult {
 		return $this->post( 'getUpdates', $params );
 	}
