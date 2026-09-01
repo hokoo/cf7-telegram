@@ -56,6 +56,7 @@ This plugin uses [API Telegram](https://core.telegram.org/api "Telegram docs") a
 == Screenshots ==
 
 1. Telegram notifier settings after a successful setup: the bot is highlighted in blue and the bridge is highlighted in green.
+2. Multiple Telegram recipients and multiple bridges connected to different Contact Form 7 forms.
 
 == Changelog ==
 
