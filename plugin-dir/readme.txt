@@ -56,6 +56,7 @@ This plugin uses [API Telegram](https://core.telegram.org/api "Telegram docs") a
 = 1.1 =
 - Add fake Telegram browser E2E coverage for form delivery, admin setup, partial delivery failures, and CI evidence collection.
 - Rename user-facing Channel terminology to Bridge across the admin UI and guide, with bridge and bot setup guidance.
+- Add chat display-name controls so administrators can set custom names and restore Telegram-provided names.
 
 = 1.0.13 =
 - Make Telegram bot actions POST-first and harden the administration interface against partial loading, pagination, and retry failures.
