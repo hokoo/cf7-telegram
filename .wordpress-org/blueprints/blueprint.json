@@ -1,5 +1,6 @@
 {
-  "landingPage": "\/wp-admin\/plugins.php",
+  "$schema": "https://playground.wordpress.net/blueprint-schema.json",
+  "landingPage": "/wp-admin/admin.php?page=wpcf7_tg",
   "preferredVersions": {
     "php": "8.0",
     "wp": "latest"
@@ -13,8 +14,8 @@
   "steps": [
     {
       "step": "installPlugin",
-      "pluginZipFile": {
-        "resource": "wordpress.org\/plugins",
+      "pluginData": {
+        "resource": "wordpress.org/plugins",
         "slug": "contact-form-7"
       },
       "options": {
@@ -23,9 +24,9 @@
     },
     {
       "step": "installPlugin",
-      "pluginZipFile": {
-        "resource": "url",
-        "url": "https:\/\/downloads.wordpress.org\/plugin\/cf7-telegram.0.8.2.zip"
+      "pluginData": {
+        "resource": "wordpress.org/plugins",
+        "slug": "cf7-telegram"
       },
       "options": {
         "activate": true
@@ -33,8 +34,7 @@
     },
     {
       "step": "login",
-      "username": "admin",
-      "password": "password"
+      "username": "admin"
     }
   ]
 }
