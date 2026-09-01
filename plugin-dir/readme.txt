@@ -23,7 +23,7 @@ This plugin lets you send Contact Form 7 messages to Telegram chats via a bot. S
 6. Approve or decline subscription requests on the Contact Form 7 → CF7 Telegram settings page.
 7. Configure the bridge: choose which forms it handles and which Telegram recipients should receive those messages. Create at least one bridge to run the integration, and add more when different forms should send messages to different sets of Telegram recipients.
 
-The integration is configured correctly when the bot panel is highlighted in blue and the bridge panel is highlighted in green.
+**The integration is configured correctly when the bot panel is highlighted in blue and the bridge panel is highlighted in green.**
 
 = Hooks and constants =
 
