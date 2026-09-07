@@ -16,7 +16,7 @@ of context and sequencing.
   value is better end-to-end coverage, not a disruptive test tree rewrite.
 - E7 is deferred until the stabilized version has had a rollout window and
   feedback from users does not expose higher-priority regressions.
-- E8 is planned to prove the exact `0.8.1` to current upgrade contract with
+- E8 proves the exact `0.8.1` to current upgrade contract with
   ordinary CF7 forms only; it does not add a multilingual-plugin compatibility
   commitment.
 
@@ -179,11 +179,11 @@ Tasking guidance:
 - Independent E6 QA passed after redaction, CI metadata, and Telegram egress
   hardening fixes.
 
-## Planned Epic
+## Completed Epic
 
 ### E8. Legacy 0.8.1 Upgrade Regression Coverage
 
-Status: planned
+Status: completed on 2026-09-07 (independent QA: pass with notes)
 
 Plan document: `docs/stability/e8-legacy-081-upgrade-plan.md`
 
@@ -195,8 +195,9 @@ Scope boundary: WPML and every other multilingual plugin are out of scope. The
 fixture uses independent `wpcf7_contact_form` posts solely to validate the
 legacy shortcode-to-relation migration contract.
 
-Decision gate: approve the E8 execution batch before adding the exact artifact
-to the isolated lifecycle matrix and the focused PHP regression test.
+Evidence: the isolated legacy-row E1/E2 case passed `100` checks with `0`
+failures; the PHP compatibility suite passed `95` tests with `0` failures.
+The full execution and independent-QA record is in the E8 plan document.
 
 ## Deferred Epic
 

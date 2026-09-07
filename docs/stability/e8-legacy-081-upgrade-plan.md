@@ -209,7 +209,7 @@ Notes/Risks:
 
 ### T8.4. Independent E8 QA
 
-Status: waiting_dependency
+Status: completed
 
 Goal: independently verify the delivered matrix case and PHP regression test
 against this plan.
@@ -281,3 +281,22 @@ The isolated run wrote temporary evidence to
 `/tmp/cf7tg-e1-20260907T155242Z-12249.gFHfV0/results/summary.json`. This path
 is intentionally not a repository artifact; rerun the documented command to
 produce fresh evidence.
+
+## Independent QA Result
+
+Completed on 2026-09-07 against commit `08f2825` with verdict **pass with
+notes**. The independent reviewer confirmed the checksum-pinned artifact and
+header report version `0.8.1`; the case is assigned only to the legacy
+WordPress `5.6.19` / PHP `8.0` / Contact Form 7 `5.4.2` row; and the PHP test
+uses the registered migration runner to assert two marked ordinary forms are
+connected, an unmarked form is excluded, and a repeat produces no duplicates.
+
+The reviewer independently reran the PHP compatibility suite (`95` tests,
+`0` failures) and inspected the E1/E2 summary (`100` passed, `0` failed). A
+search of `tests` and `plugin-dir/tests` found no WPML package, hook, fixture,
+metadata, or download.
+
+Non-blocking note: an older general E1 help/documentation default still names
+an earlier candidate version. The E8 manifest and its documented command
+explicitly select the correct legacy environment and passed as recorded above;
+aligning that unrelated default remains follow-up documentation maintenance.
