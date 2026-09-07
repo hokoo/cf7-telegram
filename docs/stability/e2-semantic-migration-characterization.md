@@ -33,6 +33,18 @@ CF7TG_E2_CHARACTERIZATION=1 \
 tests/stability/e1-smoke-matrix.sh --case upgrade-1.0.10
 ```
 
+Characterize the exact `0.8.1` transition through its legacy support row:
+
+```bash
+CF7TG_E2_CHARACTERIZATION=1 \
+tests/stability/e5-support-matrix.sh \
+  --row legacy-wp56-php80-cf7-542
+```
+
+The `upgrade-0.8.1` case is assigned only to that row. It uses the ordinary
+anonymous CF7 fixture and does not change the coverage boundary of this
+characterization suite.
+
 Run all four published upgrade baselines:
 
 ```bash

@@ -48,6 +48,7 @@
       "contact_form_7_version": "5.4.2",
       "cases": [
         "fresh",
+        "upgrade-0.8.1",
         "upgrade-0.10",
         "upgrade-0.11",
         "upgrade-1.0.9",
@@ -96,6 +97,13 @@
     }
   ],
   "legacy_versions": [
+    {
+      "matrix_id": "0.8.1",
+      "version": "0.8.1",
+      "url": "https://downloads.wordpress.org/plugin/cf7-telegram.0.8.1.zip",
+      "sha256": "ae2be3a8df58683884f1013ab1dd619bb3c4f867267a9fdd3b16b7658759532d",
+      "note": "Exact published legacy migration baseline; scheduled only in legacy-wp56-php80-cf7-542."
+    },
     {
       "matrix_id": "0.10",
       "version": "0.10.2",

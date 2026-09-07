@@ -1,7 +1,8 @@
 # Stability Roadmap
 
 This roadmap records the stabilization work completed through `1.0.13`, the next
-fake-Telegram E2E epic, and the deliberately deferred test-suite refactor.
+fake-Telegram E2E epic, a planned exact `0.8.1` upgrade regression check, and
+the deliberately deferred test-suite refactor.
 
 GitHub Project tracking lives in https://github.com/users/hokoo/projects/2. The
 Project remains the delivery board; this document is the repository-level source
@@ -15,6 +16,9 @@ of context and sequencing.
   value is better end-to-end coverage, not a disruptive test tree rewrite.
 - E7 is deferred until the stabilized version has had a rollout window and
   feedback from users does not expose higher-priority regressions.
+- E8 is planned to prove the exact `0.8.1` to current upgrade contract with
+  ordinary CF7 forms only; it does not add a multilingual-plugin compatibility
+  commitment.
 
 ## Completed Epics
 
@@ -174,6 +178,25 @@ Tasking guidance:
   and release runs.
 - Independent E6 QA passed after redaction, CI metadata, and Telegram egress
   hardening fixes.
+
+## Planned Epic
+
+### E8. Legacy 0.8.1 Upgrade Regression Coverage
+
+Status: planned
+
+Plan document: `docs/stability/e8-legacy-081-upgrade-plan.md`
+
+Outcome: the release gate can prove that the exact published `0.8.1` artifact
+upgrades to the current candidate with all legacy-enabled ordinary CF7 forms
+connected to the migrated delivery channel.
+
+Scope boundary: WPML and every other multilingual plugin are out of scope. The
+fixture uses independent `wpcf7_contact_form` posts solely to validate the
+legacy shortcode-to-relation migration contract.
+
+Decision gate: approve the E8 execution batch before adding the exact artifact
+to the isolated lifecycle matrix and the focused PHP regression test.
 
 ## Deferred Epic
 

@@ -61,6 +61,34 @@ final class LegacyMigrationImporterTest extends Cf7tg_TestCase {
 		$this->assertSame( 'completed', $state['steps'][ LegacyImporter::MIGRATION_VERSION ]['legacy_import']['stage'] );
 	}
 
+	public function testRegisteredMigrationFrom081ConnectsEachMarkedFormAndExcludesUnmarkedForm(): void {
+		$this->initClient();
+		$this->seedLegacySource();
+		$firstMarkedForm = $this->createCf7Form( 'First legacy form', "[text* your-name]\n[telegram]\n[submit \"Send\"]" );
+		$secondMarkedForm = $this->createCf7Form( 'Second legacy form', "[email* your-email]\n[telegram]\n[submit \"Send\"]" );
+		$unmarkedForm = $this->createCf7Form( 'Regular form', "[text* your-message]\n[submit \"Send\"]" );
+
+		Migration::getInstance()->migrate( 'plugin_update', '0.8.1', WPCF7TG_VERSION );
+
+		$channelID = $this->firstPostID( Client::CPT_CHANNEL );
+		$state = Migration::getMigrationState();
+		$this->assertSame( 'completed', $state['status'] );
+		$this->assertSame( '0.8.1', $state['source_version'] );
+		$this->assertSame( 'completed', $state['steps'][ LegacyImporter::MIGRATION_VERSION ]['status'] );
+		$this->assertSame( 2, $this->relationCount( Client::FORM2CHANNEL ) );
+		$this->assertSame( 1, $this->formChannelRelationCount( $firstMarkedForm, $channelID ) );
+		$this->assertSame( 1, $this->formChannelRelationCount( $secondMarkedForm, $channelID ) );
+		$this->assertSame( 0, $this->formRelationCountFrom( $unmarkedForm ) );
+
+		Migration::getInstance()->migrate( 'plugin_update', '0.8.1', WPCF7TG_VERSION );
+
+		$this->assertSame( 2, $this->relationCount( Client::FORM2CHANNEL ) );
+		$this->assertSame( 1, $this->formChannelRelationCount( $firstMarkedForm, $channelID ) );
+		$this->assertSame( 1, $this->formChannelRelationCount( $secondMarkedForm, $channelID ) );
+		$this->assertSame( 0, $this->formRelationCountFrom( $unmarkedForm ) );
+		$this->assertSame( 0, $this->duplicateRelationCount() );
+	}
+
 	public function testMalformedChatRowsAreSkippedWhileValidRowsMigrate(): void {
 		$this->initClient();
 		update_option( 'wpcf7_telegram_tkn', self::LEGACY_TOKEN, false );
@@ -220,6 +248,29 @@ final class LegacyMigrationImporterTest extends Cf7tg_TestCase {
 			array_filter(
 				$GLOBALS['wp_connection_rows'],
 				static fn( object $connection ): bool => $relation === $connection->relation
+			)
+		);
+	}
+
+	private function formChannelRelationCount( int $formID, int $channelID ): int {
+		return count(
+			array_filter(
+				$GLOBALS['wp_connection_rows'],
+				static fn( object $connection ): bool =>
+					Client::FORM2CHANNEL === $connection->relation &&
+					$formID === (int) $connection->from &&
+					$channelID === (int) $connection->to
+			)
+		);
+	}
+
+	private function formRelationCountFrom( int $formID ): int {
+		return count(
+			array_filter(
+				$GLOBALS['wp_connection_rows'],
+				static fn( object $connection ): bool =>
+					Client::FORM2CHANNEL === $connection->relation &&
+					$formID === (int) $connection->from
 			)
 		);
 	}

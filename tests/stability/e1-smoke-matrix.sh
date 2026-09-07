@@ -37,7 +37,7 @@ Usage: tests/stability/e1-smoke-matrix.sh [options]
 
 Options:
   --case <name>       Run one case. Repeatable. Known names:
-                      fresh, upgrade-0.10, upgrade-0.11,
+                      fresh, upgrade-0.8.1, upgrade-0.10, upgrade-0.11,
                       upgrade-1.0.9, upgrade-1.0.10,
                       upgrade-1.0.11, upgrade-1.0.12
   --artifact-only     Verify/download source artifacts and build candidate zip only.

@@ -7,7 +7,7 @@ Epic 1 treats `1.0.10` as already published. The stability harness validates the
 Included:
 
 - fresh install and activation of the local candidate;
-- upgrade from published `0.10`, `0.11`, `1.0.9`, and `1.0.10` artifacts;
+- upgrade from published `0.8.1`, `0.10`, `0.11`, `1.0.9`, and `1.0.10` artifacts;
 - checksum and plugin header version verification for every published source artifact;
 - cleanup cron presence, absence after deactivation, and duplicate detection;
 - deactivation, reactivation, uninstall, and rollback restoration smoke checks;
@@ -40,6 +40,25 @@ Run one case:
 ```bash
 tests/stability/e1-smoke-matrix.sh --case fresh
 tests/stability/e1-smoke-matrix.sh --case upgrade-1.0.10
+```
+
+Run the exact `0.8.1` migration baseline through its assigned legacy support
+row (it is intentionally not part of the bare E1 default case list or newer
+support rows):
+
+```bash
+tests/stability/e5-support-matrix.sh \
+  --row legacy-wp56-php80-cf7-542
+```
+
+For a single isolated `0.8.1` case, explicitly select the same legacy
+environment recorded in the source manifest:
+
+```bash
+CF7TG_E1_WP_VERSION=5.6.19 \
+CF7TG_E1_WP_CLI_IMAGE=wordpress:cli-php8.0 \
+CF7TG_E1_CF7_VERSION=5.4.2 \
+tests/stability/e1-smoke-matrix.sh --case upgrade-0.8.1
 ```
 
 Use an externally built production zip as the corrective candidate:
@@ -92,6 +111,10 @@ The committed source manifest is [tests/stability/e1-version-sources.json](../..
 
 `0.10` is represented by `0.10.2` because WordPress.org does not publish an exact `cf7-telegram.0.10.zip`, while it does publish `0.10.0`, `0.10.1`, and `0.10.2`.
 
+`0.8.1` is an exact WordPress.org artifact and a migration-only baseline. Its
+case is assigned solely to `legacy-wp56-php80-cf7-542`; it does not extend the
+standalone support policy for that historical release.
+
 The runtime evidence records every artifact checksum and the version parsed from `cf7-telegram/cf7-telegram.php`.
 
 ## Matrix
@@ -99,6 +122,7 @@ The runtime evidence records every artifact checksum and the version parsed from
 | Case | Baseline | Candidate | Fixture | Checks |
 | --- | --- | --- | --- | --- |
 | `fresh` | Clean WordPress | Local candidate or `CF7TG_CANDIDATE_ZIP` | none | install, activate, cleanup cron, no duplicate cleanup event, deactivate, uninstall cleanup |
+| `upgrade-0.8.1` | Exact published `0.8.1`, legacy support row only | Local candidate or `CF7TG_CANDIDATE_ZIP` | `legacy-heavy` by default | legacy activation, fixture seed, rollback export, WordPress single-plugin upgrade, migration event assertion, cleanup cron, deactivate/reactivate, uninstall, rollback import |
 | `upgrade-0.10` | Published `0.10.2` | Local candidate or `CF7TG_CANDIDATE_ZIP` | `legacy-heavy` by default | legacy activation, fixture seed, rollback export, WordPress single-plugin upgrade, migration event assertion, cleanup cron, deactivate/reactivate, uninstall, rollback import |
 | `upgrade-0.11` | Published `0.11` | Local candidate or `CF7TG_CANDIDATE_ZIP` | `legacy-heavy` by default | same as above |
 | `upgrade-1.0.9` | Published `1.0.9` | Local candidate or `CF7TG_CANDIDATE_ZIP` | `legacy-heavy` by default | same as above |
