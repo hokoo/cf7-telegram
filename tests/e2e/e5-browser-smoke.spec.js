@@ -7,7 +7,7 @@ const resultPath = process.env.CF7TG_E5_BROWSER_RESULT_JSON || path.join(
 	process.env.CF7TG_E5_BROWSER_RESULTS_DIR || process.cwd(),
 	'browser-result.json'
 );
-const expectedCandidateVersion = process.env.CF7TG_EXPECTED_CANDIDATE_VERSION || '1.0.13';
+const expectedCandidateVersion = process.env.CF7TG_EXPECTED_CANDIDATE_VERSION || '1.2.0';
 const expectedCandidateSha256 = process.env.CF7TG_CANDIDATE_SHA256 || '';
 const expectedWpVersion = process.env.CF7TG_E5_BROWSER_EXPECTED_WP_VERSION || '';
 const adminUser = process.env.CF7TG_E5_BROWSER_ADMIN_USER || 'admin';
@@ -15,6 +15,7 @@ const adminPassword = process.env.CF7TG_E5_BROWSER_ADMIN_PASSWORD || 'admin-pass
 
 const requiredCheckIds = [
 	'authenticated-admin-render',
+	'cf7-menu-navigation',
 	'no-page-errors',
 	'no-console-errors',
 	'full-page-background',
@@ -277,6 +278,20 @@ test('candidate admin browser lifecycle smoke', async ({baseURL, page}) => {
 	});
 
 	await login(page, baseURL);
+
+	await expectCheck('cf7-menu-navigation', 'The CF7 Telegram submenu is visible under Contact Form 7 and opens its settings page.', async () => {
+		const parent = page.locator('#toplevel_page_wpcf7-dashboard');
+		await expect(parent).toBeVisible();
+		await parent.locator('a.menu-top').click();
+		const submenu = parent.locator('.wp-submenu a[href*="page=wpcf7_tg"]');
+		await expect(submenu).toBeVisible();
+		await Promise.all([
+			page.waitForURL(/\/wp-admin\/admin\.php\?page=wpcf7_tg(?:&|$)/, {waitUntil: 'domcontentloaded'}),
+			submenu.click(),
+		]);
+		await expect(page.locator('#cf7-telegram-container')).toBeVisible();
+		return {parent: 'wpcf7-dashboard', url: page.url()};
+	});
 
 	await expectCheck('authenticated-admin-render', 'Authenticated admin page renders before and after candidate reactivation.', async () => {
 		await openAdmin(page, baseURL);

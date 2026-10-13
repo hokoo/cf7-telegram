@@ -7,7 +7,7 @@ const resultPath = process.env.CF7TG_E6_RESULT_JSON || path.join(
 	process.env.CF7TG_E6_RESULTS_DIR || process.cwd(),
 	'browser-result.json'
 );
-const expectedCandidateVersion = process.env.CF7TG_EXPECTED_CANDIDATE_VERSION || '1.0.13';
+const expectedCandidateVersion = process.env.CF7TG_EXPECTED_CANDIDATE_VERSION || '1.2.0';
 const expectedCandidateSha256 = process.env.CF7TG_CANDIDATE_SHA256 || '';
 const controlAction = 'cf7tg_e6_fake_telegram_control';
 const fullTokenCanary = '660001:E6_FAKE_TOKEN_CANARY';

@@ -19,7 +19,7 @@ if ( ! defined( 'WPCF7TG_PLUGIN_NAME' ) ) {
 }
 
 if ( ! defined( 'WPCF7TG_VERSION' ) ) {
-	define( 'WPCF7TG_VERSION', '1.1.0' );
+	define( 'WPCF7TG_VERSION', '1.2.0' );
 }
 
 if ( ! defined( 'WPCF7TG_FILE' ) ) {
@@ -728,6 +728,12 @@ if ( ! function_exists( 'add_action' ) ) {
 	}
 }
 
+if ( ! function_exists( 'add_submenu_page' ) ) {
+	function add_submenu_page( $parent_slug, $page_title, $menu_title, $capability, $menu_slug, $callback ): void {
+		$GLOBALS['wp_submenu_pages'][] = [ $parent_slug, $page_title, $menu_title, $capability, $menu_slug, $callback ];
+	}
+}
+
 if ( ! function_exists( 'apply_filters' ) ) {
 	function apply_filters( string $hook_name, $value, ...$args ) {
 		if ( empty( $GLOBALS['wp_filter'][ $hook_name ] ) ) {
@@ -1431,6 +1437,8 @@ if ( ! function_exists( 'wp_delete_post' ) ) {
 
 function cf7tg_test_reset_environment(): void {
 	$GLOBALS['wp_filter'] = [];
+	$GLOBALS['admin_page_hooks'] = [];
+	$GLOBALS['wp_submenu_pages'] = [];
 	$GLOBALS['wp_options'] = [];
 	$GLOBALS['wp_posts'] = [];
 	$GLOBALS['wp_posts_by_type'] = [];
