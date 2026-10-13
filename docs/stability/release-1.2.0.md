@@ -1,6 +1,6 @@
 # Release 1.2.0
 
-Status: in_progress
+Status: completed
 
 Outcome: publish the authorized 1.2 update with the CF7 6.2 admin-menu fix,
 accurate release notes, synchronized version metadata and a verified ZIP.
@@ -15,7 +15,7 @@ three semantic-version components), with GitHub tag `v-1.2.0`.
 
 ## B1. Prepare and verify release source
 
-Status: review
+Status: completed
 DoR: user explicitly requested the release; the prior menu fix is accepted.
 AC: header, runtime constant, WordPress stable tag and current candidate/test
 versions agree on 1.2.0; changelog describes the actual shipped changes;
@@ -118,3 +118,113 @@ and WordPress.org stable tag. No gate is waived because of missing tools.
   plugin-check, exact support/upgrade matrix, browser navigation and form
   delivery runtime checks, then independent QA. No commit/push/publication
   by owner or specialists. No successor batch taken.
+
+## B1 frozen PR verification
+
+- Owner technical verdict: `pass_with_notes` for B1 source/PR readiness;
+  root acceptance and independent QA follow. No required PR gate is waived.
+- Reviewed commit: `f800a0165ceff11601d5084fca688ed1802c5bd9`, PR #70;
+  CI run `38453048815` succeeded (verify job 8m50s):
+  https://github.com/hokoo/cf7-telegram/actions/runs/38453048815.
+- CI PHP lint and `composer test` passed: 97 tests/443 assertions. React:
+  8 suites/49 tests. ZIP build, reproducibility, Plugin Check and current
+  lifecycle passed; the E1 default cases include `upgrade-1.1.0` with the
+  pinned official baseline hash. Detailed E1/Plugin Check summaries remained
+  temporary runner files; the full log preserves successful gate outcomes.
+- Downloaded ZIP validates as 1.2.0; SHA-256
+  `64a6742c963a9bcc81969646f1029c29e7b642719b7d0b57cd0f45f139b2de01`.
+- CI audits: `blocking_failed=0`; runtime npm has 2 moderate, 0 high/critical.
+  Existing nonblocking development audit reports 85 findings (3 low,
+  35 moderate, 43 high, 4 critical); dependency upgrades remain excluded.
+- Runtime on WP 7.1/PHP 8.3/CF7 6.2: REST 11/11 steps and 24/24 checks;
+  browser 28/28 steps including `cf7-menu-navigation`; fake delivery 45/45.
+- Evidence for QA: `/tmp/cf7tg-120-ci/run-view.json`, `full-run.log`,
+  `run-watch.log`, and downloaded `artifacts/` (audits, ZIP, REST, browser,
+  fake Telegram). The one in-progress log lookup failed because GitHub
+  withholds logs until completion; retrieval after completion succeeded.
+- Fresh monitor `/root/release_120_prepare/pr_ci_verify`, thread
+  `01a136af-6a5b-7920-8161-6ccc7cb05f5a`, completed: sole watcher exit 0,
+  all commands stopped, no descendants, source checkout remained clean.
+  Prior local specialists were accepted and archived by root (exit 0).
+- Source stays frozen; only this uncommitted checkpoint was appended after
+  monitor stop. Root owns cleanup, independent QA and publication. Full
+  support matrix and publication were intentionally skipped for the PR
+  event and remain mandatory release-workflow gates. No successor batch.
+
+## Independent source QA and root acceptance
+
+- Gate: `pass_with_notes`, accepted by root. Reviewer
+  `/root/release_120_qa`, thread `01a136b9-0b02-76b0-b489-8be279664073`,
+  independently reviewed `10b285ce120983767181cc09ad506638a4dda25e` →
+  `f800a0165ceff11601d5084fca688ed1802c5bd9` and the actual CI artifacts.
+- All source/PR criteria passed. Nonblocking notes are retained unchanged:
+  development audit has 85 findings; runtime audit has 2 moderate and no
+  high/critical findings; detailed E1 and Plugin Check summaries were not
+  retained as artifacts, though the enforced gate outcomes are available.
+- No required check was waived. Full support matrix and SVN publication
+  remain mandatory release-workflow gates before delivery.
+- Reviewer stopped all commands and has no descendants. B1 owner and its
+  PR monitor were accepted, stopped and archived through the serving daemon
+  (both archive commands exited 0). Root owns the remaining publication flow.
+
+## Publication checkpoint
+
+- PR #70 merged as `1b0a378080e8fa109d3e043a18c04f9f7d9edcaa`.
+  Its product/test/workflow tree matches the reviewed source commit.
+- Annotated tag `v-1.2.0` pushed and stable GitHub release created:
+  https://github.com/hokoo/cf7-telegram/releases/tag/v-1.2.0.
+- Publication is in progress, not yet delivered: the existing release workflow
+  must finish the full matrix and WordPress.org deployment.
+- Fresh read-only `/root/release_120_publish_verify` (`gpt-6-luna`, low)
+  observes that workflow and verifies its published artifacts/WordPress.org
+  metadata. Root retains mutation authority; no implementation writer exists.
+
+## Delivered release
+
+- Root accepted the final publication evidence. Release workflow
+  `38455212476` completed successfully on tagged merge commit
+  `1b0a378080e8fa109d3e043a18c04f9f7d9edcaa`:
+  https://github.com/hokoo/cf7-telegram/actions/runs/38455212476.
+  Both verification and publication jobs passed. Master push workflow
+  `38455148823` also succeeded on the same commit.
+- Release gates passed: PHP lint/tests, React tests, required audits, version
+  consistency, ZIP validation/reproducibility, Plugin Check, full lifecycle
+  matrix, REST, authenticated browser and fake Telegram delivery.
+- Full matrix: WP 5.6.19/PHP 8.0/CF7 5.4.2 passed 312/312 steps;
+  WP 7.1/PHP 8.3/CF7 6.2 passed 277/277; the available optional PHP 8.5
+  row passed 277/277. No skipped rows or expected/actual failures.
+  `upgrade-1.1.0` passed 35/35 steps in each row, as did the legacy
+  `upgrade-0.8.1` case. Fixtures used `legacy-heavy` and the pinned official
+  1.1.0 baseline ZIP. Root inspected the saved row evidence directly.
+- REST passed 11/11 steps and 24/24 checks; browser passed 28/28 steps,
+  including visible `cf7-menu-navigation` under `wpcf7-dashboard`; fake
+  Telegram passed 45/45. Required audit failures: 0. The previously recorded
+  nonblocking development/runtime audit findings remain unchanged.
+- Published GitHub asset validates as 1.2.0 and exactly matches the release
+  CI ZIP and accepted PR artifact, SHA-256:
+  `64a6742c963a9bcc81969646f1029c29e7b642719b7d0b57cd0f45f139b2de01`.
+- WordPress.org deployment committed SVN revision `3744804`; stable mirror
+  advanced `3cb8aa6..a12f39e`. Live SVN trunk/tag readmes, tag PHP header and
+  runtime constant report 1.2.0. The public plugin-information API reports
+  version 1.2.0 and the official download is available:
+  https://downloads.wordpress.org/plugin/cf7-telegram.1.2.0.zip.
+- The official WordPress.org ZIP validates as 1.2.0, SHA-256:
+  `0661546af993df5f7facefcb18a65d2aec1f55dadc98b14ecd668c4c7bcaaf96`.
+  Read-only ZIP comparison confirms all 153 normalized file paths and
+  uncompressed file bytes match the GitHub asset; only archive packaging
+  differs. API `tested` metadata was 7.1.3 while the SVN readme retains 7.1;
+  no release version or content discrepancy was found.
+- Evidence: `/tmp/cf7tg-120-release-ci/{run-view.json,full-run.log,run-watch.log}`,
+  downloaded `artifacts/`, `release-asset/cf7-telegram-wp-plugin.zip` and
+  `cf7-telegram.1.2.0.wordpress.org.zip`. Public API/SVN responses were
+  inspected from command output, not saved as separate snapshots.
+- Exact terminal checks: `gh run watch 38455212476 --repo hokoo/cf7-telegram
+  --exit-status` exited 0; `EXPECTED_VERSION=1.2.0
+  scripts/validate-release-zip.sh` passed for both downloaded public ZIPs;
+  Python `zipfile` path/content comparison exited 0 with zero differences.
+- Monitor `/root/release_120_publish_verify`, thread
+  `01a136be-1e9b-7230-a48d-00f336391106`, completed its assignment with all
+  commands stopped and no descendants or source changes. Root accepted the
+  handoff and archived the thread through the serving daemon (exit 0).
+- No remaining release work or publication blocker. This final checkpoint
+  is documentation only and does not alter the immutable release tag/artifact.
