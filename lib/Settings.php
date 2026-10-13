@@ -14,7 +14,9 @@ class Settings {
 
 	static function init(): void {
 		add_action( 'admin_menu', function () {
-			add_submenu_page( 'wpcf7', 'CF7 Telegram', 'CF7 Telegram', self::getCaps(), 'wpcf7_tg', [ self::class, 'plugin_menu_cbf' ] );
+			global $admin_page_hooks;
+			$parent = isset( $admin_page_hooks['wpcf7-dashboard'] ) ? 'wpcf7-dashboard' : 'wpcf7';
+			add_submenu_page( $parent, 'CF7 Telegram', 'CF7 Telegram', self::getCaps(), 'wpcf7_tg', [ self::class, 'plugin_menu_cbf' ] );
 		} );
 		add_action( 'current_screen', [ self::class, 'initScreen' ], 999 );
 		add_action( 'admin_enqueue_scripts', [ self::class, 'admin_enqueue_scripts' ] );
