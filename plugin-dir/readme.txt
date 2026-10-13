@@ -5,7 +5,7 @@ Tags: contact form telegram,contact form 7,telegram
 Requires at least: 5.6
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.1.0
+Stable tag: 1.2.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -59,6 +59,9 @@ This plugin uses [API Telegram](https://core.telegram.org/api "Telegram docs") a
 2. Multiple Telegram recipients and multiple bridges connected to different Contact Form 7 forms.
 
 == Changelog ==
+
+= 1.2.0 =
+- Restore the CF7 Telegram settings submenu in Contact Form 7 6.2 and later, while keeping it available with older Contact Form 7 versions.
 
 = 1.1.0 =
 - Add fake Telegram browser E2E coverage for form delivery, admin setup, partial delivery failures, and CI evidence collection.

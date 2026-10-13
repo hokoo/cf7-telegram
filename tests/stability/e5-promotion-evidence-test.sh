@@ -63,6 +63,7 @@ jq -n --arg candidate_sha256 "${EXPECTED_SHA256}" '
 		candidate: {version: "1.0.13", sha256: $candidate_sha256},
 		checks: [
 			"authenticated-admin-render",
+			"cf7-menu-navigation",
 			"no-page-errors",
 			"no-console-errors",
 			"full-page-background",
@@ -90,6 +91,16 @@ fi
 
 DB_SNAPSHOT="${WORKDIR}/rollback.sql"
 export DB_SNAPSHOT
+jq '(.checks[] | select(.id == "cf7-menu-navigation") | .status) = "fail"' "${BROWSER_SUMMARY}" > "${WORKDIR}/browser-menu-failed.json"
+BROWSER_SUMMARY="${WORKDIR}/browser-menu-failed.json"
+export BROWSER_SUMMARY
+if "${REPO_ROOT}/scripts/verify-promotion-evidence.sh" >/dev/null 2>&1; then
+	printf 'Promotion evidence test failed: failed CF7 menu navigation was accepted.\n' >&2
+	exit 1
+fi
+
+BROWSER_SUMMARY="${WORKDIR}/browser-summary.json"
+export BROWSER_SUMMARY
 jq '.support_matrix = []' "${SUPPORT_SUMMARY}" > "${WORKDIR}/support-empty-matrix.json"
 SUPPORT_SUMMARY="${WORKDIR}/support-empty-matrix.json"
 export SUPPORT_SUMMARY

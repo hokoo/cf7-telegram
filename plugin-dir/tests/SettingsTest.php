@@ -7,6 +7,14 @@ use iTRON\cf7Telegram\Controllers\Migration;
 use iTRON\cf7Telegram\Settings;
 
 final class SettingsTest extends Cf7tg_TestCase {
+	public function testLegacyCf7ParentReceivesTelegramSubmenuAfterRegistration(): void {
+		$this->assertTelegramSubmenuForParent( 'wpcf7' );
+	}
+
+	public function testNewCf7ParentReceivesTelegramSubmenuAfterRegistration(): void {
+		$this->assertTelegramSubmenuForParent( 'wpcf7-dashboard' );
+	}
+
 	public function testDefaultPollingIntervalsAreExplicitAndUseMilliseconds(): void {
 		$this->assertSame( 5000, Settings::DEFAULT_PING_INTERVAL );
 		$this->assertSame( 12000, Settings::DEFAULT_UPDATES_INTERVAL );
@@ -129,6 +137,21 @@ final class SettingsTest extends Cf7tg_TestCase {
 		CPT::get_instance()->cf7_orig_capabilities['edit_posts'] = 'edit_posts';
 
 		$this->assertSame( 'edit_posts', Settings::getCaps() );
+	}
+
+	private function assertTelegramSubmenuForParent( string $parent ): void {
+		CPT::get_instance()->cf7_orig_capabilities['edit_posts'] = 'edit_posts';
+		add_action( 'admin_menu', static function () use ( $parent ): void {
+			$GLOBALS['admin_page_hooks'][ $parent ] = 'Contact';
+		}, 9 );
+
+		Settings::init();
+		$this->assertSame( [], $GLOBALS['wp_submenu_pages'] );
+
+		do_action( 'admin_menu' );
+		$this->assertSame( [
+			[ $parent, 'CF7 Telegram', 'CF7 Telegram', 'edit_posts', 'wpcf7_tg', [ Settings::class, 'plugin_menu_cbf' ] ],
+		], $GLOBALS['wp_submenu_pages'] );
 	}
 
 	private function seedFailedMigrationState(): void {
