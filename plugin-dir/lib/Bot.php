@@ -376,11 +376,13 @@ class Bot extends Entity implements wpPostAble{
 	public function sendMessage( Chat $chat, string $message, string $mode, bool $throwOnError = true, array $extra = [] ): array {
 		$results = [];
 		$mode = TelegramMessageFormatter::normalizeMode( $mode );
+		$messageThreadID = $chat->getMessageThreadID();
 
 		foreach ( TelegramMessageFormatter::chunks( $message ) as $chunkIndex => $chunk ) {
 			$args = array_filter(
 				[
 					'chat_id'                  => $chat->getChatID(),
+					'message_thread_id'        => $messageThreadID,
 					'text'                     => $chunk,
 					'parse_mode'               => $mode,
 					'disable_web_page_preview' => true,
@@ -615,20 +617,35 @@ class Bot extends Entity implements wpPostAble{
 			return;
 		}
 
-		$tgChatID = Util::sanitizeTelegramChatID( $message['chat']['id'] ?? '' );
-		if ( '' === $tgChatID ) {
-			throw new \UnexpectedValueException( 'Telegram chat ID is empty after sanitization.' );
-		}
-
-		if ( isset( $processedChatIDs[ $tgChatID ] ) ) {
+		if ( array_key_exists( 'direct_messages_topic', $message ) || ( is_array( $message['chat'] ?? null ) && array_key_exists( 'is_direct_messages', $message['chat'] ) ) ) {
 			return;
 		}
 
-		$processedChatIDs[ $tgChatID ] = true;
-		$chat = Util::getChatByTelegramID( $tgChatID );
+		if ( true === ( $message['is_topic_message'] ?? false ) && 'private' === ( $message['chat']['type'] ?? null ) ) {
+			if ( ! array_key_exists( 'message_thread_id', $message ) || null === $message['message_thread_id'] ) {
+				throw new \InvalidArgumentException( 'Invalid Telegram topic ID.' );
+			}
+			Util::normalizeMessageThreadID( $message['message_thread_id'] );
+			return;
+		}
+
+		$rawChatID = $message['chat']['id'] ?? null;
+		if ( ! ( is_int( $rawChatID ) || is_string( $rawChatID ) ) || ! preg_match( '/^-?[1-9][0-9]*$/', (string) $rawChatID ) ) {
+			throw new \UnexpectedValueException( 'Invalid Telegram chat ID.' );
+		}
+		$tgChatID = (string) $rawChatID;
+		$messageThreadID = Util::messageThreadIDFromUpdate( $message );
+		$destination = $tgChatID . ':' . ( $messageThreadID ?? 0 );
+
+		if ( isset( $processedChatIDs[ $destination ] ) ) {
+			return;
+		}
+
+		$processedChatIDs[ $destination ] = true;
+		$chat = Util::getChatByTelegramID( $tgChatID, $messageThreadID );
 
 		if ( ! $chat ) {
-			$chat = Util::createChatFromArray( is_array( $message['chat'] ?? null ) ? $message['chat'] : [] );
+			$chat = Util::createChatFromArray( is_array( $message['chat'] ?? null ) ? $message['chat'] : [], $messageThreadID );
 			$result->hasNewChats = true;
 		} else {
 			$chat->setTelegramData( is_array( $message['chat'] ?? null ) ? $message['chat'] : [] );

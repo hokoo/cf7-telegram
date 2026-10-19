@@ -45,6 +45,19 @@ class Chat extends Entity implements WPPostAble{
 		return $this->getParam( 'chatID' );
 	}
 
+	public function setMessageThreadID( $threadID ): Chat {
+		$this->setParam( 'messageThreadID', Util::normalizeMessageThreadID( $threadID ) );
+		return $this;
+	}
+
+	public function getMessageThreadID(): ?int {
+		$threadID = Util::normalizeMessageThreadID( $this->getParam( 'messageThreadID' ) );
+		if ( null !== $threadID && 'supergroup' !== $this->getChatType() ) {
+			throw new \InvalidArgumentException( 'Unsupported Telegram topic destination.' );
+		}
+		return $threadID;
+	}
+
 	public function setChatType( string $chatType ): Chat {
 		$this->setParam( 'chatType', Util::sanitizeTelegramChatType( $chatType ) );
 		return $this;

@@ -417,9 +417,17 @@ class LegacyImporter {
 	private function findChatByTelegramID( string $chatID ): ?Chat {
 		foreach ( $this->getPostIDs( Client::CPT_CHAT ) as $postID ) {
 			$postData = $this->getPostData( $postID );
-			if ( $chatID === $this->normalizeToken( $postData['chatID'] ?? '' ) ) {
-				return new Chat( $postID );
+			if ( $chatID !== $this->normalizeToken( $postData['chatID'] ?? '' ) ) {
+				continue;
 			}
+			try {
+				if ( null !== Util::normalizeMessageThreadID( $postData['messageThreadID'] ?? null ) ) {
+					continue;
+				}
+			} catch ( \InvalidArgumentException $exception ) {
+				continue;
+			}
+			return new Chat( $postID );
 		}
 
 		return null;

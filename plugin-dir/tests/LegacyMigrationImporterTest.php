@@ -8,6 +8,7 @@ use iTRON\cf7Telegram\Chat;
 use iTRON\cf7Telegram\Client;
 use iTRON\cf7Telegram\Controllers\Migration;
 use iTRON\cf7Telegram\Migrations\LegacyImporter;
+use iTRON\cf7Telegram\Util;
 
 final class LegacyMigrationImporterTest extends Cf7tg_TestCase {
 	private const LEGACY_TOKEN = '123456789:TEST_LEGACY_TOKEN';
@@ -143,6 +144,23 @@ final class LegacyMigrationImporterTest extends Cf7tg_TestCase {
 		$this->assertSame( 1, $this->relationCount( Client::CHAT2CHANNEL ) );
 		$this->assertSame( 1, $this->relationCount( Client::BOT2CHANNEL ) );
 		$this->assertSame( 'pending', $this->connectionStatus( Client::BOT2CHAT ) );
+	}
+
+	public function testLegacyImportDoesNotReuseTopicWithSameGroupID(): void {
+		$this->initClient();
+		update_option( 'wpcf7_telegram_tkn', self::LEGACY_TOKEN, false );
+		update_option( 'wpcf7_telegram_chats', [ [ 'id' => '-100700002', 'status' => 'active' ] ], false );
+		$topic = new Chat();
+		$topic->setChatID( '-100700002' )->setChatType( 'supergroup' )->setMessageThreadID( 22 )->publish();
+
+		( new LegacyImporter() )->import();
+		$default = Util::getChatByTelegramID( '-100700002' );
+
+		$this->assertSame( 2, $this->postCount( Client::CPT_CHAT ) );
+		$this->assertTrue( $default instanceof Chat );
+		$this->assertSame( null, $default->getMessageThreadID() );
+		$this->assertSame( 22, ( new Chat( $topic->getPost()->ID ) )->getMessageThreadID() );
+		$this->assertTrue( $default->getPost()->ID !== $topic->getPost()->ID );
 	}
 
 	public function testBrokenBotChannelRelationIsIgnoredAndAValidChannelIsConnected(): void {

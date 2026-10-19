@@ -150,6 +150,27 @@ final class RestChatControllerTest extends Cf7tg_TestCase {
 		$this->assertSame( 'Alice Current', $data['telegramName'] );
 	}
 
+	public function testTopicIdentityIsReadOnlyAndSurvivesTelegramNameRefresh(): void {
+		$gateway = new Cf7tg_RestChatControllerGateway();
+		$gateway->queue( 'getChat', $this->success( [
+			'id' => '-100700001', 'type' => 'supergroup', 'title' => 'Updated group',
+		] ) );
+		$this->installGateway( $gateway, self::TOKEN );
+		$bot = $this->bot();
+		$chat = $this->chat( [ 'id' => '-100700001', 'type' => 'supergroup', 'title' => 'Old group' ] );
+		$chat->setMessageThreadID( 22 )->savePost();
+		$bot->connectChat( $chat );
+		$controller = new ChatController( Client::CPT_CHAT );
+
+		$before = $controller->prepare_item_for_response( $chat->getPost(), $this->request( 'GET', $chat->getPost()->ID ) );
+		$response = $controller->restore_name( $this->request( 'POST', $chat->getPost()->ID, [ 'bot_id' => $bot->getPost()->ID ] ) );
+
+		$this->assertSame( 22, $before->get_data()['messageThreadID'] );
+		$this->assertSame( 22, $response->get_data()['messageThreadID'] );
+		$this->assertSame( 22, ( new Chat( $chat->getPost()->ID ) )->getMessageThreadID() );
+		$this->assertSame( 'Updated group', ( new Chat( $chat->getPost()->ID ) )->getTitle() );
+	}
+
 	public function testRestoreNameReturnsSafeErrorWhenTelegramChatCannotBeLoaded(): void {
 		$gateway = new Cf7tg_RestChatControllerGateway();
 		$gateway->queue( 'getChat', TelegramDeliveryResult::failure( 200, 400, 'Bad Request: chat not found' ) );

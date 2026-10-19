@@ -146,6 +146,7 @@ class ChatController extends Controller {
 			$data = $response->get_data();
 			$data['customName'] = $chat->getCustomName();
 			$data['telegramName'] = $chat->getTelegramName();
+			$data['messageThreadID'] = $chat->getMessageThreadID();
 			$response->set_data( $data );
 
 			$base = sprintf( '%s/%s', $this->namespace, $this->rest_base );

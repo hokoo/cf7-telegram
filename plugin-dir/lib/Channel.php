@@ -226,7 +226,9 @@ class Channel extends Entity implements wpPostAble{
 		$deliveries = [];
 		foreach ( $chats as $chat ) {
 			/** @var Chat $chat */
+			$messageThreadID = null;
 			try {
+				$messageThreadID = $chat->getMessageThreadID();
 				$results = $bot->sendMessage(
 					$chat,
 					$message,
@@ -246,6 +248,7 @@ class Channel extends Entity implements wpPostAble{
 
 			$deliveries[] = [
 				'chatID'     => $chat->getChatID(),
+				'messageThreadID' => $messageThreadID,
 				'chatPostID' => $chat->getPost()->ID,
 				'results'    => $results,
 			];
