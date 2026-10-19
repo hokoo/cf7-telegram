@@ -4,6 +4,7 @@ Execution authorized by the user on 2026-10-19 after the chat analysis/plan.
 Root coordinates with ponytail, delivery-owner and decompose-work. Baseline:
 `8fd2372`. Existing unrelated change: `install/setup.sh` (preserve, never stage).
 Delivery: verified scoped commits and independent epic QA; no push/publication.
+Feature status: completed; final independent gate `pass_with_notes` on `d01a0ee`.
 
 ## Contract
 
@@ -70,7 +71,7 @@ Owner selection: `gpt-6-sol`, `high`; established React/REST patterns, narrow UX
 
 ### B3 — end-to-end acceptance (plan task 4)
 
-Status: review
+Status: completed
 Goal/Scope: extend existing E6 fixture/spec/required-check list; verify candidate
 ZIP through real CF7 and admin UI using fake Telegram, no new harness.
 DoR/Dependencies: B1/B2 accepted; isolated Docker/Playwright runtime available.
@@ -87,7 +88,7 @@ Owner selection: `gpt-6-sol`, `high`; integration work with existing E6 harness.
 
 ### B4 — repair E6 failure-continuity evidence
 
-Status: review — B4 technically accepted; fresh independent epic QA pending
+Status: completed
 Goal/Scope: repair only the existing topic-failure E6 scenario and its fixture
 if needed. Production code and the nonblocking corrupted-record note are excluded.
 DoR/Dependencies: QA1 fail below; no writer or test process remains.
@@ -123,6 +124,10 @@ and present the blocker; do not waive the original failed gate.
 - B4 repair is technically accepted against `de5a09ef8dbc950ebc84109ac18cd15bdc39d1e3` plus scoped `tests/e2e/e6-form-delivery.spec.js` diff SHA-256 `0a7e8cb478e8b4f323547b57d7eed9903989ad65f7fe86414fa8732f3b917217` (11 added lines). The existing scenario reconnects its ordinary recipient after selecting topic 21 and asserts actual ordered sends: General success, topic 21 scripted failure, ordinary success. Existing CF7 `mail_sent`, failed thread, and exactly one General send assertions remain. Fixture, shell required IDs, production code and candidate ZIP are unchanged; ZIP SHA-256 remains `8f810a253ccc806351bb6600231497d3fc21ecca78a197890f6400faadbe8c0b`.
 - B4 focused worker checks: `node --check` exit 0, scoped `git diff --check` exit 0, Playwright `--list` exit 0 (4 tests), 37 required IDs retained. Fresh escalated E6 monitor command: `CF7TG_E6_WORKDIR=/tmp/cf7tg-topics-b4-e6-20261019/work CF7TG_E6_RESULTS_DIR=/tmp/cf7tg-topics-b4-e6-20261019/results tests/stability/e6-form-delivery-smoke.sh --candidate-zip "$PWD/dist/cf7-telegram-wp-plugin.zip" --skip-browser-install`; exit 0, 57 passed/0 failed steps, 37/37 required browser checks including 12 topic IDs, Playwright 4 passed/0 skipped/0 failed. Actual browser evidence confirms General success → topic 21 failure → ordinary success, CF7 `mail_sent`, and no extra General send. Log `/tmp/cf7tg-topics-b4-e6-20261019/run.log`; reports `/tmp/cf7tg-topics-b4-e6-20261019/results/{summary.json,browser-result.json,playwright-report.json}`. WP 7.1/PHP 8.3/CF7 6.2; no Docker containers or E6 processes remain. Unchanged PHP 108/0, React 8 suites/56, E4 24/24 and E1 102/102 evidence above carries forward. Next: root accepts scoped commit and launches fresh independent epic QA; QA1 fail remains recorded.
 - B4 owner `/root/topics_e6_repair`, native `01a1552d-8589-7a90-8d41-234d5d2337e0`, selected `gpt-6-sol/high`. Worker `/root/topics_e6_repair/b4_order`, native `01a1552d-e14d-7700-8125-4844e78d445d` (pinned `gpt-6-sol/high`), and monitor `/root/topics_e6_repair/b4_e6_gate`, native `01a1552f-9e56-7ed0-8b74-ddbf2188a47e` (pinned `gpt-6-luna/low`), stopped and archived by root, exit 0; both absent from agent state. Root handles owner lifecycle after acceptance. `install/setup.sh` remains unrelated and unstaged; no push/publication or live Telegram traffic.
+- Root accepted B4 commit `d01a0eea9ab390e4469771b7f2368d37e4cad60f` after actual 11-line diff, final status, and ordered browser evidence review. Owner completed and was archived, exit 0; descendants/processes stopped. Only unrelated `install/setup.sh` remained modified.
+- QA2 verdict: **pass_with_notes**, reviewed baseline `8fd23726ca3b34017105937ea61b40615254cf08` through frozen `d01a0eea9ab390e4469771b7f2368d37e4cad60f`. All required criteria pass. Independent review verified validated composite identity, General/default compatibility, discovery and migration safety, thread-preserving chunks/retries and failure continuation, REST/rename identity, explicit topic assignment and existing ordinary behavior. Repaired E6 source and browser evidence prove General success → topic 21 failure → ordinary success, exactly one General send and CF7 `mail_sent`; 57/57 steps, 37/37 checks, 4/4 browser tests. Same unchanged candidate hash and product sources justify carried PHP 108/108 compatibility-runner, React 8/56, E4 24/24 and E1 102/102 results. Original QA1 fail remains preserved above.
+- QA2 low nonblocking finding: manually corrupted stored thread identity can be omitted from the REST response and treated as an ordinary row by approval UI, but the send path rejects the invalid destination before delivery; no General reroute, supported creation path unaffected. Optional future hardening: surface a row-specific REST error and prevent autoattachment. Residual limits: no live Telegram test or full historical support matrix; local PHP tests used the configured compatibility runner because `dom`, `mbstring`, `xmlwriter` are unavailable. No technical exception or human decision required.
+- Final reviewer `/root/topics_qa_final`, native `01a15532-ba50-7e51-92b0-4358fb905c77`, pinned `gpt-6-sol/high`, independent of implementation/ownership/QA1, read-only, no descendants or test processes. Review completed; root accepted and archived it, exit 0; agent state now contains root only. Feature accepted and delivery closed with local commits and the verified ZIP, without push/publication. This final checkpoint changes documentation only; reviewed product/test boundary remains `d01a0ee`.
 - At most one active owner and writer; root -> fresh owner -> pinned specialists;
   root launches fresh epic_qa. Specialists do not delegate.
 - Root edits only this concise bookkeeping; product/tests/docs belong to workers.
