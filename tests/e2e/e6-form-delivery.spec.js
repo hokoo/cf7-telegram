@@ -1114,6 +1114,12 @@ test('forum topics use distinct bridges and retain destinations after a failed s
 	});
 
 	await expectCheck('topic-failure-continuity-no-reroute', 'A failed topic retains its thread, CF7 succeeds, and another recipient is attempted without General reroute.', async () => {
+		await openAdmin(page, baseURL);
+		const ordinaryRow = page.getByTestId(`cf7tg-channel-${channelIds[0]}-chat-${ordinaryChat.id}`);
+		await ordinaryRow.click();
+		await expect(ordinaryRow).toHaveClass(/paused/);
+		await ordinaryRow.click();
+		await expect(ordinaryRow).toHaveClass(/active/);
 		await control(page, baseURL, 'reset');
 		await control(page, baseURL, 'script-failure', {method: 'sendMessage', chat_id: groupChatId, message_thread_id: String(threadIds[0]), count: '1'});
 		const marker = `cf7tg-e6-topic-failure-${Date.now()}`;
@@ -1121,6 +1127,11 @@ test('forum topics use distinct bridges and retain destinations after a failed s
 		const calls = sendMessageCalls(await telegramEvidence(page, baseURL)).filter((call) => call.params.text?.includes(marker));
 		expect(body.status).toBe('mail_sent');
 		expect(calls).toHaveLength(3);
+		expect(calls.map((call) => [String(call.params.chat_id), call.params.message_thread_id ?? null, call.response.ok])).toEqual([
+			[String(groupChatId), null, true],
+			[String(groupChatId), threadIds[0], false],
+			[String(ordinaryChatId), null, true],
+		]);
 		const failed = calls.find((call) => String(call.params.chat_id) === String(groupChatId) && call.params.message_thread_id != null);
 		const general = calls.filter((call) => String(call.params.chat_id) === String(groupChatId) && call.params.message_thread_id == null);
 		const ordinary = calls.find((call) => String(call.params.chat_id) === String(ordinaryChatId));
