@@ -200,11 +200,13 @@ body[class*="page_wpcf7_tg"] ul#adminmenu > li.current > a.current:after {
           display: flex;
           justify-content: space-between;
           align-items: center;
+          gap: 8px;
 
           .bot-title {
             display: flex;
             flex-direction: column;
             font-family: monospace;
+            min-width: 0;
 
             .bot-name {
               border-top-right-radius: 5px;
@@ -234,6 +236,7 @@ body[class*="page_wpcf7_tg"] ul#adminmenu > li.current > a.current:after {
 
             .bot-command {
               text-align: center;
+              overflow-wrap: anywhere;
               background-color: #112747;
               border-bottom-right-radius: 5px;
               border-bottom-left-radius: 5px;
@@ -246,6 +249,7 @@ body[class*="page_wpcf7_tg"] ul#adminmenu > li.current > a.current:after {
           .bot-token {
             text-align: center;
             color: #465b79;
+            flex-shrink: 0;
 
             .show-token {
               cursor: pointer;

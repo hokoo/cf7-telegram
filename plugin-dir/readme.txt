@@ -19,9 +19,9 @@ This plugin lets you send Contact Form 7 messages to Telegram chats via a bot. S
 2. Create a bot in the plugin UI.
 3. Paste the bot token into the bot form (PHP constants also available).
 4. Create a bridge in the plugin UI. A bridge links Contact Form 7 forms, a Telegram bot, and one or more Telegram recipients.
-5. Add users to the subscriber list by sending the <code>/cf7tg_start</code> command to your bot. To add a group, first add the bot to the group, then send <code>/cf7tg_start</code> in that group.
+5. Add users to the subscriber list by sending the bot's displayed <code>/cf7tg_start@BotName</code> command. To add a group, first add the bot to the group, then send the command there. To add a forum topic, send it inside that topic.
 6. Approve or decline subscription requests on the Contact Form 7 → CF7 Telegram settings page.
-7. Configure the bridge: choose which forms it handles and which Telegram recipients should receive those messages. Create at least one bridge to run the integration, and add more when different forms should send messages to different sets of Telegram recipients.
+7. Configure the bridge: choose which forms it handles and which Telegram recipients should receive those messages. After approving a topic, select it in each desired bridge; approving it alone does not assign it to bridges. Create at least one bridge to run the integration, and add more when different forms should send messages to different sets of Telegram recipients.
 
 **The integration is configured correctly when the bot panel is highlighted in blue and the bridge panel is highlighted in green.**
 

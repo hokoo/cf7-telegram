@@ -104,7 +104,7 @@ const ChannelView = ({
                                 <span className="resource-loading">{wp.i18n.__( 'Loading bots...', 'cf7-telegram' )}</span>
                             ) : botForChannel ? (
                                 <div
-                                    data-Bot-Id={botForChannel.id}
+                                    data-bot-id={botForChannel.id}
                                     data-testid={`cf7tg-channel-${channel.id}-bot-${botForChannel.id}`}
                                     className={`bot-for-channel ` + (botForChannel?.online ? 'online' : 'offline')}
                                 >
@@ -158,6 +158,12 @@ const ChannelView = ({
                                     title={getToggleButtonLabel(chat.status)}
                                 >
                                     <span className={`chat-username`}>{chat.title.rendered}</span>
+                                    {chat.messageThreadID != null && (
+                                        <small className="topic-identity" style={{marginLeft: 4}}>
+                                            {chat.customName && chat.telegramName ? `${chat.telegramName} · ` : ''}
+                                            {wp.i18n.__( 'Topic', 'cf7-telegram' )} #{chat.messageThreadID}
+                                        </small>
+                                    )}
                                 </div>
                             ))}
                         </>

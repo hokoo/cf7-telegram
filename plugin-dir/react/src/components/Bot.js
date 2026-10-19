@@ -60,6 +60,7 @@ export const updateBotChatStatus = async ({
     newStatus,
     currentStatus,
     chatId,
+    messageThreadID,
     botId,
     bot2ChannelConnections,
     setBot2ChatConnections,
@@ -67,7 +68,7 @@ export const updateBotChatStatus = async ({
 }) => {
     await setBot2ChatConnectionStatus(connectionId, newStatus, setBot2ChatConnections);
 
-    if ('pending' !== currentStatus) {
+    if ('pending' !== currentStatus || messageThreadID != null) {
         return;
     }
 
@@ -398,6 +399,7 @@ const Bot = ({
                 newStatus,
                 currentStatus,
                 chatId,
+                messageThreadID: chats.find(chat => chat.id === chatId)?.messageThreadID,
                 botId: bot.id,
                 bot2ChannelConnections,
                 setBot2ChatConnections,

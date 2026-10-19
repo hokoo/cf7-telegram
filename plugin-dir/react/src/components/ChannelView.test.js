@@ -28,4 +28,28 @@ describe('ChannelView bridge copy', () => {
         expect(screen.getByText('[No forms assigned to this bridge]')).toBeInTheDocument();
         expect(screen.getByRole('button', {name: 'Remove Bridge'})).toBeInTheDocument();
     });
+
+    it('distinguishes same-name topics in the bridge list and keeps pending topics hidden', () => {
+        renderChannelView({
+            botForChannel: {
+                id: 1,
+                title: {rendered: 'Bot'},
+                chats: [
+                    {id: 10, title: {rendered: 'Same label'}, customName: 'Same label', telegramName: 'Operations', messageThreadID: 21},
+                    {id: 11, title: {rendered: 'Same label'}, customName: 'Same label', telegramName: 'Support', messageThreadID: 22},
+                    {id: 12, title: {rendered: 'Support'}, messageThreadID: 23},
+                ],
+            },
+            bot2ChatConnections: [
+                {data: {from: 1, to: 10, meta: {status: ['active']}}},
+                {data: {from: 1, to: 11, meta: {status: ['active']}}},
+                {data: {from: 1, to: 12, meta: {status: ['pending']}}},
+            ],
+        });
+
+        expect(screen.getByTestId('cf7tg-channel-20-chat-10')).toHaveTextContent('Same label');
+        expect(screen.getByTestId('cf7tg-channel-20-chat-10').querySelector('.topic-identity')).toHaveTextContent('Operations · Topic #21');
+        expect(screen.getByTestId('cf7tg-channel-20-chat-11').querySelector('.topic-identity')).toHaveTextContent('Support · Topic #22');
+        expect(screen.queryByTestId('cf7tg-channel-20-chat-12')).not.toBeInTheDocument();
+    });
 });

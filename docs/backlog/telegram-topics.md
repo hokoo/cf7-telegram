@@ -41,7 +41,7 @@ are the Contract exclusions. No task authorizes real Telegram messages.
 
 ### B1 — recipient identity, discovery and delivery (plan tasks 1–2)
 
-Status: review
+Status: completed
 Goal/Scope: implement the backend contract in Chat, Util, Bot, Channel,
 LegacyImporter and relevant existing PHP tests; additive REST identity if useful.
 DoR: implementation authorized; General evidence is a bounded technical check
@@ -57,7 +57,7 @@ adequately covered by the existing tests. Specialists use pinned role defaults.
 
 ### B2 — admin setup and recipient display (plan task 3)
 
-Status: waiting_dependency
+Status: completed
 Goal/Scope: REST response, Bot/BotView/ChannelView as required, focused React/REST
 tests and concise plugin usage copy. Reuse existing components and relations.
 DoR/Dependencies: B1 accepted commit and documented identity contract.
@@ -70,13 +70,15 @@ Owner selection: `gpt-6-sol`, `high`; established React/REST patterns, narrow UX
 
 ### B3 — end-to-end acceptance (plan task 4)
 
-Status: waiting_dependency
+Status: todo
 Goal/Scope: extend existing E6 fixture/spec/required-check list; verify candidate
 ZIP through real CF7 and admin UI using fake Telegram, no new harness.
 DoR/Dependencies: B1/B2 accepted; isolated Docker/Playwright runtime available.
 AC: two forms/bridges to distinct topics in one group; ordinary delivery;
 idempotent discovery; explicit assignment; topic failure/recipient continuity;
-new assertions mandatory in the E6 evidence gate; no token leakage.
+new assertions mandatory in the E6 evidence gate; no token leakage; real
+browser confirms a long qualified bot command fits the bot card beside its
+token, copies in full, and group/topic labels remain readable.
 DoD: shared DoD; PHP and React suites, production ZIP build, E6 and relevant
 existing compatibility gates on the candidate; fresh independent epic QA.
 Notes/Risks: fake examples must match verified Telegram semantics; shared-state
@@ -89,7 +91,10 @@ Owner selection: `gpt-6-sol`, `high`; integration work with existing E6 harness.
 - General normalization follows official Telegram forum/Bot API docs: https://core.telegram.org/api/forum and https://core.telegram.org/bots/api . General is the default destination with no outgoing thread; non-General topic identity is `(chatID, messageThreadID)`. Private forum and channel direct-message updates are consumed without recipient creation. Public send filters retain existing behavior.
 - Focused worker check: 33 selected PHP tests, 0 failures; `php -l` changed files and `git diff --check` passed. Fresh monitor full gate: `cd plugin-dir && composer test` exit 0, 108 tests/0 failures using the existing compatibility fallback (PHP 8.0.30 lacks `dom`, `mbstring`, `xmlwriter`); `git diff --check` exit 0; `php -l` all nine changed PHP files exit 0. Frozen diff hash unchanged; no PHP/Composer process remains. Earlier focused harness setup/fixture failures were corrected before the final pass.
 - Owner `/root/topics_backend` native ID `01a15502-8526-7381-8f5c-bda5b1a6b175`, selected `gpt-6-sol/high`. Worker `/root/topics_backend/b1_php` native ID `01a15502-f5a8-71d3-8800-f1192e361695` (pinned `gpt-6-sol/high`) stopped and archived by root, exit 0. Monitor `/root/topics_backend/b1_gate` native ID `01a1550a-f4a7-7a51-90b8-628870f25873` (pinned `gpt-6-luna/low`) stopped and archived by root, exit 0; both absent from subsequent agent state.
-- B1 remains in review until root accepts the scoped commit. Then B2 is the next ready batch; no B1 publication or real Telegram traffic was authorized.
+- Root accepted B1 commit `99eeb8d7bac3a275b880b346b64521d567737f60` after checking actual hunks, paths, evidence and post-commit status. Owner and descendants stopped; owner archived with native CLI, exit 0. B2 then became ready. No publication or real Telegram traffic.
+- B2 admin implementation is technically accepted against B1 commit `99eeb8d7bac3a275b880b346b64521d567737f60`; scoped nine-path diff SHA-256 before commit: `2073bf6c102cb8d60f85e2094a3bdd54b615b16b3e7dfab15be574418818ab21`. Changed `react/src/App.scss`, components `Bot`, `BotView`, `ChannelView` and four existing React tests, plus `plugin-dir/readme.txt`. Topic rows show group context and thread ID through rename/Restore; the copied command addresses the current bot; topic approval leaves bridge choice explicit, while default recipients retain auto-attachment. Existing REST identity and permissions are unchanged. `install/setup.sh` remains unrelated and unstaged.
+- B2 focused worker gate: four React suites/27 tests, then `BotView.test.js` 7/7 after the CSS fit repair; Sass compiled and `git diff --check` passed. Fresh monitor serial full gate before CSS: `cd plugin-dir && composer test` exit 0, 108/0 using the existing PHP compatibility fallback; `cd plugin-dir/react && CI=true npm test -- --watchAll=false --runInBand` exit 0, 8 suites/56 tests; `npm run build` exit 0; diff check exit 0. After CSS, fresh monitor repeated affected React suite 8/56, build and diff check, all exit 0; scoped hash unchanged within that gate; no test/build processes or generated tracked artifacts remain. PHP was unchanged, so its result stands. Worker Chromium measurement exited `Operation not permitted` in sandbox; B3 real-browser AC covers visual fit and readable labels.
+- B2 owner `/root/topics_admin` native ID `01a1550d-206e-7173-aac3-a4c3cc968d65`, selected `gpt-6-sol/high`. Worker `/root/topics_admin/b2_ui` native ID `01a1550d-7d3b-7b83-a74e-20d352e4153c` (pinned `gpt-6-sol/high`) and first monitor `/root/topics_admin/b2_gate` native ID `01a15511-7333-7ef0-99c8-29636ec05a84` (pinned `gpt-6-luna/low`) stopped and archived by root, exit 0. Affected-gate monitor `/root/topics_admin/b2_css_gate` native ID `01a15513-8398-7a12-82cb-0ca69907d912` (pinned `gpt-6-luna/low`) stopped; root handles lifecycle cleanup. B3 is ready after the B2 scoped commit; no publication or real Telegram traffic.
 - At most one active owner and writer; root -> fresh owner -> pinned specialists;
   root launches fresh epic_qa. Specialists do not delegate.
 - Root edits only this concise bookkeeping; product/tests/docs belong to workers.
