@@ -307,6 +307,10 @@ final class BotTelegramTest extends Cf7tg_TestCase {
 		$invalid->publish();
 		$valid = new Chat();
 		$valid->setChatID( '-100700001' )->setChatType( 'supergroup' )->setMessageThreadID( 22 )->publish();
+		$bot->connectChat( $invalid );
+		$invalid->setActivated( $bot );
+		$bot->connectChat( $valid );
+		$valid->setActivated( $bot );
 		$channel->connectChat( $invalid );
 		$channel->connectChat( $valid );
 
@@ -318,6 +322,34 @@ final class BotTelegramTest extends Cf7tg_TestCase {
 		$this->assertSame( 22, $deliveries[1]['messageThreadID'] );
 		$this->assertSame( 1, count( $gateway->calls ) );
 		$this->assertSame( 22, $gateway->calls[0]['args']['message_thread_id'] );
+	}
+
+	public function testChannelSendsOnlyToActivatedRecipients(): void {
+		$gateway = $this->gateway();
+		$gateway->queue( 'sendMessage', $this->success( [ 'message_id' => 1 ] ) );
+		$this->installGateways( [ self::OLD_TOKEN => $gateway ] );
+		$bot = $this->bot( self::OLD_TOKEN, '1001' );
+		$channel = new Channel();
+		$channel->setTitle( 'Channel' )->publish();
+		$bot->connectChannel( $channel );
+
+		$chat = new Chat();
+		$chat->setChatID( '700001' )->publish();
+		$bot->connectChat( $chat );
+		$channel->connectChat( $chat );
+		$orphan = new Chat();
+		$orphan->setChatID( '700002' )->publish();
+		$channel->connectChat( $orphan );
+
+		$this->assertSame( [], $channel->doSendOut( 'Hello', '' ) );
+		$chat->setPending( $bot );
+		$this->assertSame( [], $channel->doSendOut( 'Hello', '' ) );
+		$chat->setActivated( $bot );
+		$this->assertSame( 1, count( $channel->doSendOut( 'Hello', '' ) ) );
+		$this->assertSame( '700001', $gateway->calls[0]['args']['chat_id'] );
+		$chat->setMuted( $bot );
+		$this->assertSame( [], $channel->doSendOut( 'Hello', '' ) );
+		$this->assertSame( [ 'sendMessage' ], array_column( $gateway->calls, 'method' ) );
 	}
 
 	public function testGeneralOmitsThreadAndLegacyFilterCanCustomizeIt(): void {
@@ -374,6 +406,10 @@ final class BotTelegramTest extends Cf7tg_TestCase {
 		$firstChat->setChatID( '-100700001' )->setChatType( 'supergroup' )->setMessageThreadID( 21 )->setTitle( 'Topic Alice' )->publish();
 		$secondChat = new Chat();
 		$secondChat->setChatID( '700002' )->setTitle( 'Private Bob' )->publish();
+		$bot->connectChat( $firstChat );
+		$firstChat->setActivated( $bot );
+		$bot->connectChat( $secondChat );
+		$secondChat->setActivated( $bot );
 		$channel->connectChat( $firstChat );
 		$channel->connectChat( $secondChat );
 

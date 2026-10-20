@@ -242,7 +242,7 @@ class Chat extends Entity implements WPPostAble{
 	 */
 	private function setChannelConnectionStatus( Channel $channel, string $status ): Chat {
 		$connection = $this->getChannelConnection( $channel );
-		$connection->meta->where( 'key', self::STATUS_KEY )->clear();
+		$connection->meta = $connection->meta->filter( static fn( Meta $meta ): bool => self::STATUS_KEY !== $meta->getKey() );
 		$connection->meta->add( new Meta( self::STATUS_KEY, $status ) );
 		$connection->update();
 		return $this;
@@ -255,7 +255,7 @@ class Chat extends Entity implements WPPostAble{
 	 */
 	private function setBotConnectionStatus( Bot $bot, string $status ): Chat {
 		$connection = $this->getBotConnection( $bot );
-		$connection->meta->where( 'key', self::STATUS_KEY )->clear();
+		$connection->meta = $connection->meta->filter( static fn( Meta $meta ): bool => self::STATUS_KEY !== $meta->getKey() );
 		$connection->meta->add( new Meta( self::STATUS_KEY, $status ) );
 		$connection->update();
 		return $this;

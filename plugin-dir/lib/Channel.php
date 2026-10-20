@@ -9,6 +9,7 @@ use iTRON\cf7Telegram\Collections\ChatCollection;
 use iTRON\cf7Telegram\Collections\FormCollection;
 use iTRON\cf7Telegram\Telegram\TelegramDeliveryResult;
 use iTRON\wpConnections\Abstracts\Connection;
+use iTRON\wpConnections\Exceptions\ConnectionNotFound;
 use iTRON\wpConnections\Exceptions\ConnectionWrongData;
 use iTRON\wpConnections\Exceptions\MissingParameters;
 use iTRON\wpConnections\Exceptions\RelationNotFound;
@@ -226,6 +227,14 @@ class Channel extends Entity implements wpPostAble{
 		$deliveries = [];
 		foreach ( $chats as $chat ) {
 			/** @var Chat $chat */
+			try {
+				if ( Chat::STATUS_ACTIVE !== $chat->getBotConnectionStatus( $bot ) ) {
+					continue;
+				}
+			} catch ( ConnectionNotFound $exception ) {
+				continue;
+			}
+
 			$messageThreadID = null;
 			try {
 				$messageThreadID = $chat->getMessageThreadID();
