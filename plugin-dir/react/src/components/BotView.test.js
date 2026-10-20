@@ -69,12 +69,11 @@ describe('BotView copyable bot name', () => {
         });
     });
 
-    it('copies the command addressed to the current bot and explains topic discovery', async () => {
+    it('copies the command addressed to the current bot', async () => {
         render(<BotView bot={{id: 1}} nameValue="current_bot" isTokenEmpty tokenValue="" online />);
 
         const command = screen.getByTitle('Click to copy bot command');
         expect(command).toHaveTextContent('/cf7tg_start@current_bot');
-        expect(screen.getByText('To add a forum topic, send this command inside that topic.')).toBeInTheDocument();
         fireEvent.click(command);
         await waitFor(() => expect(navigator.clipboard.writeText).toHaveBeenCalledWith('/cf7tg_start@current_bot'));
     });
@@ -102,7 +101,6 @@ describe('BotView copyable bot name', () => {
         expect(screen.getByTestId('cf7tg-bot-1-chat-10').querySelector('.topic-identity')).toHaveTextContent('Operations · Topic #21');
         expect(screen.getByTestId('cf7tg-bot-1-chat-11').querySelector('.topic-identity')).toHaveTextContent('Support · Topic #22');
         expect(screen.getByTestId('cf7tg-bot-1-chat-11-name-input')).toHaveValue('Custom');
-        expect(screen.getByText('After activating a topic, select it in each bridge that should receive messages.')).toBeInTheDocument();
     });
 
     it('keeps the group name visible while renaming an uncustomized topic', () => {

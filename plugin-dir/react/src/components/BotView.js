@@ -110,8 +110,6 @@ const BotView = ({
                     </div>
                 </div>
 
-                <p>{wp.i18n.__( 'To add a forum topic, send this command inside that topic.', 'cf7-telegram' )}</p>
-
                 {error && <p style={{color: 'red'}}>{error}</p>}
 
                 <div className="frame chats-for-bot">
@@ -208,9 +206,6 @@ const BotView = ({
                         <span className="unknown-bot-status-message">{ wp.i18n.__( 'Trying to load chat list...', 'cf7-telegram' ) }</span>
                     ) : (
                         <span className="no-chats-found">{ wp.i18n.__( 'Waiting for chats to join...', 'cf7-telegram' ) }</span>
-                    )}
-                    {chatsForBot.some(chat => chat.messageThreadID != null) && (
-                        <p>{wp.i18n.__( 'After activating a topic, select it in each bridge that should receive messages.', 'cf7-telegram' )}</p>
                     )}
                 </div>
 
