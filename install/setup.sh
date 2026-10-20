@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 # import functions
 . ./install/setup-functions.sh
 
@@ -20,8 +22,7 @@ docker-compose -p cf7t exec php sh -c "composer install"
 
 # Setup plugins for migration tests.
 docker-compose -p cf7t exec php sh -c "\
-mkdir ./dev-content && \
-mkdir ./betas-content && \
+mkdir -p ./dev-content ./betas-content && \
 cp -r ./wordpress/wp-content/* ./dev-content && \
 cp -r ./wordpress/wp-content/* ./betas-content && \
 rm -rf ./wordpress/wp-content && \
@@ -31,7 +32,7 @@ docker-compose -p cf7t exec php sh -c "cd ./plugin-dir && composer install"
 
 # Create symlink for the plugin
 echo "Symlinking plugin..."
-docker-compose -p cf7t exec php sh -c "ln -s /srv/web/plugin-dir /srv/web/dev-content/plugins/cf7-telegram"
+docker-compose -p cf7t exec php sh -c "ln -s ../../plugin-dir ./dev-content/plugins/cf7-telegram"
 echo -e "${ICYAN}Result: ${RYELLOW}$(ls -l ./dev-content/plugins/ | grep cf7-telegram)${COLOR_OFF}"
 
 echo "WP setup preparing..."
