@@ -54,6 +54,41 @@ final class AbilitiesTest extends Cf7tg_TestCase {
 		return array_column( $diagnosis['issues'], 'code' );
 	}
 
+	public function testSavedDestinationAddressShapesControlEligibility(): void {
+		$cases = [
+			[ 'abc', 'private', 'invalid' ], [ 'private', 'private', 'invalid' ],
+			[ true, 'private', 'invalid' ], [ false, 'private', 'invalid' ], [ 123.5, 'private', 'invalid' ],
+			[ null, 'private', 'invalid' ], [ [ '12345' ], 'private', 'invalid' ],
+			[ ' ', 'private', 'invalid' ], [ ' 12345 ', 'private', 'invalid' ], [ '12 345', 'private', 'invalid' ],
+			[ '<b>12345</b>', 'private', 'invalid' ], [ '0', 'private', 'invalid' ],
+			[ '+12345', 'private', 'invalid' ], [ '123.5', 'private', 'invalid' ],
+			[ '@bad/name', 'channel', 'invalid' ], [ '@channel_name', 'private', 'invalid' ],
+			[ '@channel_name', 'group', 'invalid' ], [ '12345', 'unknown', 'invalid' ],
+			[ 12345, 'private', 'default' ], [ '12345', 'private', 'default' ],
+			[ '-100123456789', 'supergroup', 'default' ], [ '12345', 'channel', 'default' ],
+			[ '@channel_name', 'channel', 'default' ], [ '@forum_name', 'supergroup', 'default' ],
+		];
+		foreach ( $cases as [ $chatID, $type, $kind ] ) {
+			$form = $this->post( Client::CPT_CF7FORM, 'Address form' );
+			[ , , $recipient ] = $this->route( $form, [ 'token' => 'saved-token' ], [ 'chatID' => $chatID, 'chatType' => $type ] );
+			$item = array_column( $this->read( 'recipients' )['items'], null, 'id' )[ $recipient ];
+			$diagnosis = $this->diagnose( $form );
+			$this->assertSame( $kind, $item['destination_kind'], json_encode( [ $chatID, $type ] ) );
+			$this->assertSame( 'invalid' === $kind ? 'blocked' : 'ready', $diagnosis['configuration_status'] );
+			$this->assertSame( 'invalid' === $kind ? [] : [ $recipient ], $diagnosis['bridges'][0]['eligible_recipient_ids'] );
+			$this->assertSame( 'invalid' === $kind ? [ 'invalid_destination' ] : [], $this->codes( $diagnosis ) );
+		}
+
+		$form = $this->post( Client::CPT_CF7FORM, 'Mixed address form' );
+		[ , , $good ] = $this->route( $form, [ 'token' => 'saved-token' ], [ 'chatID' => '@forum_name', 'chatType' => 'supergroup', 'messageThreadID' => 22 ] );
+		$this->route( $form, [ 'token' => 'saved-token' ], [ 'chatID' => 'abc', 'chatType' => 'private' ] );
+		$diagnosis = $this->diagnose( $form );
+		$this->assertSame( 'partial', $diagnosis['configuration_status'] );
+		$this->assertSame( [ $good ], $diagnosis['bridges'][0]['eligible_recipient_ids'] );
+		$this->assertSame( [], $diagnosis['bridges'][1]['eligible_recipient_ids'] );
+		$this->assertSame( [ 'invalid_destination' ], $this->codes( $diagnosis ) );
+	}
+
 	public function testRegistrationAndSchemasAreStrict(): void {
 		Abilities::init();
 		do_action( 'wp_abilities_api_categories_init' );

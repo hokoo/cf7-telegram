@@ -499,7 +499,10 @@ class Abilities {
 	private static function destination( array $params ): array {
 		$chatID = $params['chatID'] ?? null;
 		$type = $params['chatType'] ?? null;
-		if ( ! is_scalar( $chatID ) || '' === Util::sanitizeTelegramChatID( $chatID ) || ! is_string( $type ) || '' === Util::sanitizeTelegramChatType( $type ) ) return [ 'invalid', null ];
+		$address = is_int( $chatID ) || is_string( $chatID ) ? (string) $chatID : '';
+		$numeric = (bool) preg_match( '/^-?[1-9][0-9]*\z/', $address );
+		$username = in_array( $type, [ 'supergroup', 'channel' ], true ) && (bool) preg_match( '/^@[A-Za-z0-9_]+\z/', $address );
+		if ( ( ! $numeric && ! $username ) || ! is_string( $type ) || '' === Util::sanitizeTelegramChatType( $type ) ) return [ 'invalid', null ];
 		try {
 			$thread = Util::normalizeMessageThreadID( $params['messageThreadID'] ?? null );
 			if ( null !== $thread && 'supergroup' !== $type ) return [ 'invalid', $thread ];

@@ -69,6 +69,23 @@ $edge( Client::FORM2CHANNEL, $ready_form, $ready_bridge );
 $edge( Client::BOT2CHANNEL, $ready_bot, $ready_bridge );
 $edge( Client::CHAT2CHANNEL, $ready_recipient, $ready_bridge );
 $edge( Client::BOT2CHAT, $ready_bot, $ready_recipient, 'active' );
+$bad_address_form = $post( Client::CPT_CF7FORM, 'R1 bad address form' );
+$bad_address_bridge = $post( Client::CPT_CHANNEL, 'R1 bad address bridge' );
+$bad_address_bot = $post( Client::CPT_BOT, 'R1 bad address bot', wp_json_encode( [ 'token' => '123456789:R1_BAD_ADDRESS_TOKEN' ] ) );
+$bad_address_recipient = $post( Client::CPT_CHAT, 'R1 bad address recipient', wp_json_encode( [ 'chatID' => 'abc', 'chatType' => 'private' ] ) );
+$edge( Client::FORM2CHANNEL, $bad_address_form, $bad_address_bridge );
+$edge( Client::BOT2CHANNEL, $bad_address_bot, $bad_address_bridge );
+$edge( Client::CHAT2CHANNEL, $bad_address_recipient, $bad_address_bridge );
+$edge( Client::BOT2CHAT, $bad_address_bot, $bad_address_recipient, 'active' );
+$mixed_address_form = $post( Client::CPT_CF7FORM, 'R1 mixed address form' );
+$edge( Client::FORM2CHANNEL, $mixed_address_form, $ready_bridge );
+$edge( Client::FORM2CHANNEL, $mixed_address_form, $bad_address_bridge );
+$username_recipient = $post( Client::CPT_CHAT, 'R1 username recipient', wp_json_encode( [ 'chatID' => '@forum_name', 'chatType' => 'supergroup', 'messageThreadID' => 22 ] ) );
+$integer_recipient = $post( Client::CPT_CHAT, 'R1 integer recipient', wp_json_encode( [ 'chatID' => 700005, 'chatType' => 'private' ] ) );
+foreach ( [ $username_recipient, $integer_recipient ] as $id ) {
+	$edge( Client::CHAT2CHANNEL, $id, $bridge );
+	$edge( Client::BOT2CHAT, $bot, $id, 'active' );
+}
 $no_bot_form = $post( Client::CPT_CF7FORM, 'R1 no bot form' );
 $no_bot_bridge = $post( Client::CPT_CHANNEL, 'R1 no bot bridge' );
 $edge( Client::FORM2CHANNEL, $no_bot_form, $no_bot_bridge );
@@ -145,7 +162,7 @@ $first = $call( $names[0], [ 'resource' => 'forms', 'page' => 1, 'per_page' => 5
 $pages = [ $first ];
 for ( $page = 2; $page <= 4; $page++ ) $pages[] = $call( $names[0], [ 'resource' => 'forms', 'page' => $page, 'per_page' => 50 ] );
 $visible = array_values( array_diff( array_merge( $preexisting_forms,
-	[ $form, $empty, $ready_form, $no_bot_form, $no_token_form, $malformed_form, $mixed_form, $two_bot_form, $corrupt_form ], $padding ), $hidden ) );
+	[ $form, $empty, $ready_form, $bad_address_form, $mixed_address_form, $no_bot_form, $no_token_form, $malformed_form, $mixed_form, $two_bot_form, $corrupt_form ], $padding ), $hidden ) );
 sort( $visible, SORT_NUMERIC );
 $all_ids = [];
 foreach ( $pages as $page ) if ( is_array( $page ) ) $all_ids = array_merge( $all_ids, array_column( $page['items'], 'id' ) );
@@ -272,6 +289,8 @@ $output_probe = static function ( string $name, array $schema, array $output ): 
 $record( 'r1-core-nested-output-validation', 'ability_invalid_output' === $output_probe( 'list', $list->get_output_schema(), $bad_list ) &&
 	'ability_invalid_output' === $output_probe( 'diagnosis', $diagnose->get_output_schema(), $bad_diagnosis ) );
 $ready_diagnosis = $call( $names[1], [ 'form_id' => $ready_form ] );
+$bad_address_diagnosis = $call( $names[1], [ 'form_id' => $bad_address_form ] );
+$mixed_address_diagnosis = $call( $names[1], [ 'form_id' => $mixed_address_form ] );
 $no_bot_diagnosis = $call( $names[1], [ 'form_id' => $no_bot_form ] );
 $no_token_diagnosis = $call( $names[1], [ 'form_id' => $no_token_form ] );
 $malformed_diagnosis = $call( $names[1], [ 'form_id' => $malformed_form ] );
@@ -289,6 +308,18 @@ $record( 'r1-all-diagnosis-codes', $all_codes === $expected_codes &&
 $record( 'r1-offline-warning-only', 'ready' === ( $ready_diagnosis['configuration_status'] ?? null ) &&
 	[ 'cached_bot_offline' ] === array_column( $ready_diagnosis['issues'] ?? [], 'code' ) &&
 	'warning' === ( $ready_diagnosis['issues'][0]['severity'] ?? null ) );
+$record( 'r1-address-validity', ( $recipient_items[ $bad_address_recipient ]['destination_kind'] ?? null ) === 'invalid' &&
+	( $recipient_items[ $username_recipient ]['destination_kind'] ?? null ) === 'forum_topic' &&
+	( $recipient_items[ $integer_recipient ]['destination_kind'] ?? null ) === 'default' &&
+	'blocked' === ( $bad_address_diagnosis['configuration_status'] ?? null ) &&
+	[] === ( $bad_address_diagnosis['bridges'][0]['eligible_recipient_ids'] ?? null ) &&
+	in_array( 'invalid_destination', array_column( $bad_address_diagnosis['issues'] ?? [], 'code' ), true ) &&
+	'partial' === ( $mixed_address_diagnosis['configuration_status'] ?? null ) &&
+	[ $ready_recipient ] === ( $mixed_address_diagnosis['bridges'][0]['eligible_recipient_ids'] ?? null ) &&
+	[] === ( $mixed_address_diagnosis['bridges'][1]['eligible_recipient_ids'] ?? null ) &&
+	in_array( 'invalid_destination', array_column( $mixed_address_diagnosis['issues'] ?? [], 'code' ), true ) &&
+	in_array( $username_recipient, $healthy['bridges'][0]['eligible_recipient_ids'] ?? [], true ) &&
+	in_array( $integer_recipient, $healthy['bridges'][0]['eligible_recipient_ids'] ?? [], true ) );
 $mixed_diagnosis = $call( $names[1], [ 'form_id' => $mixed_form ] );
 $two_bot_diagnosis = $call( $names[1], [ 'form_id' => $two_bot_form ] );
 $corrupt_diagnosis = $call( $names[1], [ 'form_id' => $corrupt_form ] );
@@ -325,18 +356,29 @@ add_filter( 'query', static function ( string $sql ) use ( &$mutations ): string
 }, PHP_INT_MAX );
 $read1 = $call( $names[0], [ 'resource' => 'bots' ] );
 $read2 = $call( $names[1], [ 'form_id' => $form ] );
+$other_reads1 = [];
+foreach ( [ 'forms', 'bridges', 'recipients' ] as $resource ) $other_reads1[ $resource ] = $call( $names[0], [ 'resource' => $resource ] );
+$read_bad_address = $call( $names[1], [ 'form_id' => $bad_address_form ] );
+$read_mixed_address = $call( $names[1], [ 'form_id' => $mixed_address_form ] );
 $read_missing = $call( $names[1], [ 'form_id' => $no_token_form ] );
 $read_malformed = $call( $names[1], [ 'form_id' => $malformed_form ] );
 $read3 = $call( $names[0], [ 'resource' => 'bots' ] );
 $read4 = $call( $names[1], [ 'form_id' => $form ] );
+$other_reads2 = [];
+foreach ( [ 'forms', 'bridges', 'recipients' ] as $resource ) $other_reads2[ $resource ] = $call( $names[0], [ 'resource' => $resource ] );
+$read_bad_address_again = $call( $names[1], [ 'form_id' => $bad_address_form ] );
+$read_mixed_address_again = $call( $names[1], [ 'form_id' => $mixed_address_form ] );
 $read_missing_again = $call( $names[1], [ 'form_id' => $no_token_form ] );
 $read_malformed_again = $call( $names[1], [ 'form_id' => $malformed_form ] );
 $after = $snapshot();
 $record( 'r1-readonly-repeated', null !== $before && $before === $after && 0 === $mutations && 0 === $http && 0 === $gateway &&
-	$read1 === $read3 && $read2 === $read4 && $read_missing === $read_missing_again && $read_malformed === $read_malformed_again );
-$serialized = wp_json_encode( [ $read1, $read2, $read_missing, $read_malformed, $resources,
+	$read1 === $read3 && $read2 === $read4 && $other_reads1 === $other_reads2 &&
+	$read_bad_address === $read_bad_address_again && $read_mixed_address === $read_mixed_address_again &&
+	$read_missing === $read_missing_again && $read_malformed === $read_malformed_again );
+$serialized = wp_json_encode( [ $read1, $read2, $other_reads1, $read_bad_address, $read_mixed_address, $read_missing, $read_malformed, $resources,
 	$invalid_rest_input->get_data(), $malformed_response->get_data(), $scalar_response->get_data() ] );
 $record( 'r1-secret-redaction', is_string( $serialized ) && ! str_contains( $serialized, 'SECRET_TOKEN_SENTINEL' ) &&
+	! str_contains( $serialized, 'R1_BAD_ADDRESS_TOKEN' ) &&
 	! str_contains( $serialized, 'SECRET_JSON_SENTINEL' ) && ! str_contains( $serialized, 'R1_SCOPED_TOKEN_SENTINEL' ) &&
 	! str_contains( $serialized, 'R1_LEGACY_TOKEN_SENTINEL' ) && ! str_contains( $serialized, 'R1_SCOPED_OVERRIDE_SENTINEL' ) &&
 	! str_contains( $serialized, '-100123456789' ) && ! str_contains( $serialized, 'contact@example.com' ) );

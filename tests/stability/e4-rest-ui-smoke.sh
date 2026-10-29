@@ -491,7 +491,7 @@ run_abilities() {
 		fail_step "r1" "versions" "Feature row runtime versions do not match requested versions."
 	fi
 	local id
-	for id in r1-core-available r1-registered-two r1-core-schema r1-visible-pagination r1-php-rest-parity r1-core-input-validation r1-rest-method-validation r1-rest-normalization-scope r1-numeric-string-input-parity r1-four-resources r1-topic-identity r1-relation-statuses r1-two-bot-cardinality r1-token-precedence r1-diagnose-status r1-diagnose-rest-parity r1-core-nested-output-validation r1-all-diagnosis-codes r1-offline-warning-only r1-mixed-and-corrupt-graph r1-readonly-repeated r1-secret-redaction r1-anonymous-denied r1-subscriber-denied r1-diagnose-hidden-graph r1-hidden-relation; do
+	for id in r1-core-available r1-registered-two r1-core-schema r1-visible-pagination r1-php-rest-parity r1-core-input-validation r1-rest-method-validation r1-rest-normalization-scope r1-numeric-string-input-parity r1-four-resources r1-topic-identity r1-relation-statuses r1-two-bot-cardinality r1-token-precedence r1-diagnose-status r1-diagnose-rest-parity r1-core-nested-output-validation r1-all-diagnosis-codes r1-offline-warning-only r1-address-validity r1-mixed-and-corrupt-graph r1-readonly-repeated r1-secret-redaction r1-anonymous-denied r1-subscriber-denied r1-diagnose-hidden-graph r1-hidden-relation; do
 		if ! jq -e --arg id "${id}" '[.checks[] | select(.id == $id)] | length == 1 and .[0].status == "pass"' "${ABILITY_JSON}" >/dev/null; then
 			fail_step "r1" "${id}" "Required Core assertion missing, skipped, duplicated, or failed." "$(jq -c --arg id "${id}" '[.checks[] | select(.id == $id)] | first | .extra // {}' "${ABILITY_JSON}")"
 		fi
