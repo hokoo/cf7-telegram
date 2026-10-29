@@ -1,91 +1,91 @@
-# Адаптация плагина к WordPress Abilities API
+# Adapting the plugin to the WordPress Abilities API
 
-Общий объём: шесть abilities; открытые вопросы остальных возможностей сохраняют
-статус `needs_design`. Пользователь выделил первый самостоятельный этап:
-`get-configuration` и `diagnose-form`. Реализация этого этапа разрешена
-2026-10-29 и выполняется в ветке `release/abilities-readonly`.
-Дата: 2026-10-29. База: Message Bridge for Contact Form 7 and Telegram 1.2.1,
-commit `e25d811`. Координация: root; номер релиза пока не назначен.
+Overall scope: six abilities; open questions for the remaining abilities retain
+`needs_design` status. The user separated the first independent stage:
+`get-configuration` and `diagnose-form`. Implementation of this stage was authorized
+on 2026-10-29 and takes place on `release/abilities-readonly`.
+Date: 2026-10-29. Baseline: Message Bridge for Contact Form 7 and Telegram 1.2.1,
+commit `e25d811`. Coordination: root; no release number has been assigned yet.
 
-## Цель и объём
+## Goal and scope
 
-Предоставить администраторам, другим плагинам и подключённым AI-клиентам
-структурированные операции для просмотра маршрутов CF7 → Telegram,
-диагностики конфигурации и проверки отправки через существующий мост.
-Сохранить текущую доставку форм, интерфейс, права CF7 и поддержку старых WordPress.
+Provide administrators, other plugins, and connected AI clients with structured
+operations to inspect CF7 → Telegram routes, diagnose configuration, and test
+sending through the existing bridge. Preserve current form delivery, UI, CF7
+permissions, and support for older WordPress versions.
 
-Целевой набор содержит шесть abilities. В первый самостоятельный выпуск входят
-только первые две; отдельный план не зависит от решения вопросов остальных четырёх.
+The target set contains six abilities. Only the first two belong to the first
+independent release; their plan does not depend on decisions about the other four.
 
-| Имя | Назначение | Внешние действия |
+| Name | Purpose | External effects |
 | --- | --- | --- |
-| `cf7-telegram/get-configuration` | Список форм, мостов, ботов или получателей с их связями | Нет |
-| `cf7-telegram/diagnose-form` | Проверка сохранённого маршрута конкретной формы | Нет |
-| `cf7-telegram/send-test-message` | Тестовое сообщение активным получателям выбранного моста | Реальная отправка в Telegram |
-| `cf7-telegram/preview-message` | Предпросмотр шаблона на синтетических значениях | Нет |
-| `cf7-telegram/configure-bridge` | Создание или изменение моста с существующими объектами | Запись конфигурации |
-| `cf7-telegram/get-recent-errors` | Ограниченная выборка очищенных ошибок из журнала | Нет |
+| `cf7-telegram/get-configuration` | List forms, bridges, bots, or recipients and their relationships | None |
+| `cf7-telegram/diagnose-form` | Inspect the saved route of a particular form | None |
+| `cf7-telegram/send-test-message` | Send a test message to active recipients of a selected bridge | Actual Telegram send |
+| `cf7-telegram/preview-message` | Preview a template with synthetic values | None |
+| `cf7-telegram/configure-bridge` | Create or update a bridge using existing objects | Configuration write |
+| `cf7-telegram/get-recent-errors` | Fetch a bounded set of sanitized log errors | None |
 
-Имена — новый публичный контракт. В API используется `bridge`, хотя существующая
-PHP-модель называется `Channel`; переименование модели и CPT не требуется.
+These names are a new public contract. The API uses `bridge`, although the
+existing PHP model is named `Channel`; the model and CPT need no renaming.
 
-Не входят в общий целевой набор: создание/одобрение получателей,
-смена токенов, polling, webhook-настройки, ремонт связей, миграции, чтение
-содержимого заявок, повторная доставка заявок, очередь, подтверждение прочтения,
-новый UI, собственный MCP-сервер и AI-провайдер. Изменение конфигурации ограничено
-составом и названием моста; формы и боты не редактируются. Тест всей обработки формы —
-отдельный будущий сценарий, описанный ниже.
+Outside the overall target set: creating/approving recipients, changing tokens,
+polling, webhook settings, repairing relationships, migrations, reading submission
+content, redelivering submissions, a queue, read receipts, new UI, a custom MCP
+server, and an AI provider. Configuration changes are limited to a bridge's
+membership and name; forms and bots are not edited. A full form-processing test
+is a separate future scenario described below.
 
-## Текущая основа
+## Existing foundation
 
-| Поведение | Существующий код | Следствие для реализации |
+| Behavior | Existing code | Implementation consequence |
 | --- | --- | --- |
-| Формы, мосты, боты, получатели соединены отношениями | [Client](../../plugin-dir/lib/Client.php), [Channel](../../plugin-dir/lib/Channel.php) | Использовать эти отношения, не создавать параллельную конфигурацию |
-| Права CPT получены от CF7 | [CPT](../../plugin-dir/lib/Controllers/CPT.php), [Settings](../../plugin-dir/lib/Settings.php) | Проверять capabilities, а не названия ролей |
-| Передача сообщения активным получателям | `Channel::doSendOut()`, [Bot](../../plugin-dir/lib/Bot.php) | Переиспользовать транспорт, фильтры и обработку ошибок |
-| Тема — часть назначения; General хранится как default | [Chat](../../plugin-dir/lib/Chat.php), [контракт тем](telegram-topics.md) | Различать получателей одного чата, не перенаправлять сбой темы в General |
-| CF7 вызывает отправку через `wpcf7_before_send_mail` | [CF7](../../plugin-dir/lib/Controllers/CF7.php) | Тест моста не доказывает работу шаблона, валидации и обработчиков формы |
-| Результат Telegram содержит ответ API | [Gateway](../../plugin-dir/lib/Telegram/WordPressTelegramGateway.php), [DeliveryResult](../../plugin-dir/lib/Telegram/TelegramDeliveryResult.php) | Извлекать подтверждение из `result`, не возвращать клиенту весь Telegram payload |
-| Очистка секретов и ошибок уже есть | [LogRedactor](../../plugin-dir/lib/LogRedactor.php), [TelegramRedactor](../../plugin-dir/lib/Telegram/TelegramRedactor.php) | Переиспользовать очистку дополнительно к явному списку разрешённых полей |
+| Forms, bridges, bots, and recipients are connected by relationships | [Client](../../plugin-dir/lib/Client.php), [Channel](../../plugin-dir/lib/Channel.php) | Use these relationships; do not create parallel configuration |
+| CPT permissions derive from CF7 | [CPT](../../plugin-dir/lib/Controllers/CPT.php), [Settings](../../plugin-dir/lib/Settings.php) | Check capabilities, not role names |
+| Messages go to active recipients | `Channel::doSendOut()`, [Bot](../../plugin-dir/lib/Bot.php) | Reuse transport, filters, and error handling |
+| Topic is part of the destination; General is stored as default | [Chat](../../plugin-dir/lib/Chat.php), [topic contract](telegram-topics.md) | Distinguish recipients in one chat; do not redirect a failed topic to General |
+| CF7 sends through `wpcf7_before_send_mail` | [CF7](../../plugin-dir/lib/Controllers/CF7.php) | A bridge test does not prove form templates, validation, or handlers work |
+| Telegram result contains the API response | [Gateway](../../plugin-dir/lib/Telegram/WordPressTelegramGateway.php), [DeliveryResult](../../plugin-dir/lib/Telegram/TelegramDeliveryResult.php) | Extract confirmation from `result`; do not return the whole Telegram payload |
+| Secret and error redaction already exist | [LogRedactor](../../plugin-dir/lib/LogRedactor.php), [TelegramRedactor](../../plugin-dir/lib/Telegram/TelegramRedactor.php) | Reuse redaction in addition to an explicit field allowlist |
 
-`Bot::ping()` записывает статус/данные бота, а `fetchUpdates()` меняет offset и
-получателей. Они не подходят для abilities с `readonly: true`.
-Кроме того, `new Bot()` при отсутствии токена меняет статус и пишет лог через
-`initAPI()`, а `Entity` создаёт Logger со служебной инициализацией таблицы.
-Read callbacks должны читать данные без этих побочных действий: использовать
-существующие WP/relations read API и при необходимости выделить небольшой общий
-чистый helper для определения источника токена. Не копировать правила приоритета
-констант/меты в независимую реализацию и не менять поведение обычной отправки.
-Существующий `mail_sent` от CF7 возможен при ошибке Telegram; это закреплено в
+`Bot::ping()` writes bot status/data, while `fetchUpdates()` changes the offset and
+recipients. They are unsuitable for abilities marked `readonly: true`.
+Also, `new Bot()` changes status and logs through `initAPI()` when the token is
+missing, and `Entity` creates a Logger whose initialization may create a table.
+Read callbacks must read data without those side effects: use existing WP and
+relationship read APIs, and extract a small shared pure helper for identifying
+the token source if necessary. Do not duplicate constant/meta precedence rules
+in a separate implementation or change ordinary sending behavior.
+CF7 can report `mail_sent` despite a Telegram error; this is established by
 [E6](../../tests/e2e/e6-form-delivery.spec.js).
 
-## Регистрация и совместимость
+## Registration and compatibility
 
-1. Подключить один небольшой модуль регистрации, например `lib/Abilities.php`.
-   Категория `cf7-telegram` регистрируется на `wp_abilities_api_categories_init`,
-   abilities — на `wp_abilities_api_init`. Регистрация описывает контракты и
-   callbacks; она не загружает конфигурацию и не обращается к Telegram.
-2. Проверять наличие `wp_register_ability()` и `wp_register_ability_category()`.
-   При отсутствии API адаптация не загружается. Не добавлять polyfill или
-   обязательный Abilities API/MCP-плагин. Основной минимум остаётся WP 5.6 / PHP 8.0;
-   встроенный Abilities API доступен начиная с WP 6.9.
-3. Зарегистрировать callbacks достаточно рано для ленивой инициализации реестра.
-   Выполнение требует завершённой инициализации CF7/CPT/отношений. Ранний вызов
-   возвращает `cf7tg_not_ready`, без undefined capability, фатальной ошибки или
-   попытки повторно запустить миграции. Отсутствие CF7 не должно добавлять новых
-   ошибок загрузки со стороны адаптации.
-4. Каждая ability получает переводимые label/description в домене `cf7-telegram`,
-   input/output JSON Schema, `permission_callback` и `execute_callback`.
-   Использовать поддерживаемое WordPress подмножество JSON Schema; проверять
-   контракты через настоящий `WP_Ability::execute()`, включая WP 6.9.
-5. Указать `meta.show_in_rest = true`, `meta.mcp.public = true` и `meta.public = true`.
-   Явные флаги каналов обеспечивают работу без зависимости от более нового
-   поведения `meta.public`. Это доступность для клиентов с авторизацией,
-   а не анонимное разрешение. MCP Adapter остаётся отдельной необязательной
-   интеграцией. Администратор может ограничить exposure штатными средствами
-   WordPress/адаптера; отдельная страница настроек для этого не добавляется.
+1. Load one small registration module, for example `lib/Abilities.php`.
+   Register category `cf7-telegram` on `wp_abilities_api_categories_init` and
+   abilities on `wp_abilities_api_init`. Registration describes contracts and
+   callbacks; it does not load configuration or contact Telegram.
+2. Check for `wp_register_ability()` and `wp_register_ability_category()`.
+   Without the API, the adaptation does not load. Do not add a polyfill or a
+   mandatory Abilities API/MCP plugin. The baseline remains WP 5.6 / PHP 8.0;
+   the built-in Abilities API is available from WP 6.9.
+3. Register callbacks early enough for lazy registry initialization.
+   Execution requires CF7/CPT/relationship initialization to have completed.
+   An early call returns `cf7tg_not_ready`, without an undefined capability,
+   fatal error, or attempt to rerun migrations. Missing CF7 must not introduce
+   new loading errors from this adaptation.
+4. Give every ability translatable label/description in the `cf7-telegram` domain,
+   input/output JSON Schema, `permission_callback`, and `execute_callback`.
+   Use the WordPress-supported JSON Schema subset; verify contracts through real
+   `WP_Ability::execute()`, including on WP 6.9.
+5. Set `meta.show_in_rest = true`, `meta.mcp.public = true`, and
+   `meta.public = true`. Explicit channel flags allow operation independently of
+   newer `meta.public` behavior. Exposure is for authenticated clients, not
+   anonymous permission. MCP Adapter remains a separate optional integration.
+   Administrators can limit exposure using standard WordPress/adapter facilities;
+   no separate settings page is added for it.
 
-| Ability | `readonly` | `destructive` | `idempotent` | Метод REST |
+| Ability | `readonly` | `destructive` | `idempotent` | REST method |
 | --- | --- | --- | --- | --- |
 | `get-configuration` | true | false | true | GET |
 | `diagnose-form` | true | false | true | GET |
@@ -94,252 +94,259 @@ Read callbacks должны читать данные без этих побоч
 | `configure-bridge` | false | true | false | POST |
 | `get-recent-errors` | true | false | true | GET |
 
-Аннотации описывают поведение, но не заменяют проверку прав. Повторный тест
-создаёт новое сообщение. Описание ability должно прямо сообщать это клиенту.
-`configure-bridge` может удалять существующие связи, а создание нового моста
-не идемпотентно. В Core сочетание destructive=true и idempotent=false использует
-POST; DELETE требуется для destructive+idempotent. Описание предупреждает,
-что полный список назначений заменяет текущий.
+Annotations describe behavior but do not replace permission checks. A repeated
+test creates a new message. The ability description must tell the client so.
+`configure-bridge` may remove existing relationships, and creating a bridge is
+not idempotent. In Core, destructive=true with idempotent=false uses POST;
+DELETE is required for destructive+idempotent. Its description warns that the
+complete destination list replaces the current one.
 
-Основания: [Abilities API](https://developer.wordpress.org/apis/abilities-api/),
-[регистрация](https://developer.wordpress.org/reference/functions/wp_register_ability/),
+References: [Abilities API](https://developer.wordpress.org/apis/abilities-api/),
+[registration](https://developer.wordpress.org/reference/functions/wp_register_ability/),
 [PHP reference](https://developer.wordpress.org/apis/abilities-api/php-reference/),
 [MCP Adapter](https://wordpress.org/plugins/mcp-adapter/).
 
-## Права и данные
+## Permissions and data
 
-- Все шесть операций требуют аутентифицированного текущего WP-пользователя и
-  capability страницы настроек, разрешённой через `Settings::getCaps()` после
-  инициализации. Нет проверки `administrator` по имени и нет обхода через PHP/MCP.
-- Чтение проверяет `read_post` соответствующего CPT для конкретных объектов.
-  Списки исключают недоступные объекты и ссылки на них; пагинация и counts не
-  раскрывают скрытые записи. Поле `relations_complete: false` означает, что
-  часть связанного контекста недоступна, без раскрытия его ID/названий.
-- Диагностика конкретной формы требует доступа ко всему существующему графу
-  этой формы. Тест требует `edit_post` для моста и бота, а также `read_post`
-  для каждого выбранного получателя. Недостаток прав прекращает операцию до
-  отправки; недоступные получатели не превращаются в молча успешный неполный тест.
-- Preview требует `read_post` формы. Configure требует capability создания
-  мостов при create или `edit_post` моста при update, `edit_post` всех форм,
-  чьи связи меняются, и чтение старого/нового бота и получателей. Чтение журнала
-  дополнительно требует `manage_options`, поскольку журнал общий для плагина.
-- До проверки объектов по ID проверить общую capability. Для разрешённого
-  пользователя отсутствующий объект или неверный CPT дают 404; недоступный
-  существующий объект — 403 без его данных. Не создавать сущность при ID 0.
-- Вход принимает только WP post IDs и параметры соответствующей операции.
-  Не принимает bot token, Telegram chat ID, URL, SQL, текст произвольной рассылки
-  или имя PHP callback. Дополнительные свойства входного объекта запрещены.
-  Исключения: preview принимает синтетические значения полей; configure —
-  название, ссылки на существующие объекты и маркер версии конфигурации.
-- Выход формируется по разрешённым полям. Запрещены токены, их маски/фрагменты,
-  имена констант токенов, webhook URL, raw post meta, submission payload,
-  email/телефоны заявителей и сырой Telegram `result`.
-  Preview возвращает только введённые для него синтетические данные и текст
-  доступного пользователю шаблона; не читает реальные заявки и не пишет samples
-  в журнал. Токены очищаются также в preview.
-- Идентификаторы назначения в ответах — локальный `recipient_id` и нормализованный
-  `message_thread_id`; настоящий Telegram `chat_id` нужен только для внутренней
-  сверки. Разрешённые названия могут содержать персональные данные, поэтому
-  их выдача тоже защищена capabilities; текст очищается существующим redactor.
-  Идентичность не должна зависеть от очищенного названия.
-  Если существующий `getName()` использует chat ID как fallback, API заменяет
-  этот fallback на «Recipient #<WP ID>» и не выдаёт настоящий Telegram chat ID.
-- Description/error text — обычные данные, не инструкции для AI-клиента.
-  Не возвращать HTML административных уведомлений, stack traces и HTTP bodies.
-- Операции работают в текущем сайте WordPress. Входного `site_id` и переключения
-  сайтов нет. Cookie+nonce и Application Passwords обрабатывает WordPress REST;
-  отдельная авторизация в плагине не добавляется.
+- All six operations require an authenticated current WP user and the settings
+  page capability resolved through `Settings::getCaps()` after initialization.
+  There is no role-name check for `administrator` or bypass through PHP/MCP.
+- Reads check `read_post` for each specific CPT object. Lists omit inaccessible
+  objects and references to them; pagination and counts do not reveal hidden
+  records. `relations_complete: false` indicates that some related context is
+  inaccessible without disclosing its IDs or names.
+- Diagnosing a particular form requires access to its entire existing graph.
+  Testing requires `edit_post` for bridge and bot, and `read_post` for every
+  selected recipient. Missing permission stops the operation before sending;
+  inaccessible recipients do not become a silently successful partial test.
+- Preview requires `read_post` for the form. Configure requires the capability
+  to create bridges on create or `edit_post` for the bridge on update, `edit_post`
+  for every form whose relationships change, and read access to the old/new bot
+  and recipients. Reading the log also requires `manage_options`, since the log
+  is shared across the plugin.
+- Check the general capability before looking up objects by ID. For an authorized
+  user, a missing object or wrong CPT produces 404; an existing inaccessible
+  object produces 403 without its data. Do not create an entity for ID 0.
+- Input accepts only WP post IDs and the operation's parameters. It does not
+  accept a bot token, Telegram chat ID, URL, SQL, arbitrary broadcast text, or
+  PHP callback name. Additional input object properties are forbidden.
+  Exceptions: preview accepts synthetic field values; configure accepts a name,
+  references to existing objects, and a configuration revision marker.
+- Output uses an explicit field allowlist. Tokens, their masks/fragments, token
+  constant names, webhook URLs, raw post meta, submission payload, submitter
+  emails/phone numbers, and raw Telegram `result` are forbidden. Preview returns
+  only its supplied synthetic data and the template text accessible to the user;
+  it neither reads real submissions nor logs samples. Tokens are redacted in
+  preview as well.
+- Response destination identifiers are local `recipient_id` and normalized
+  `message_thread_id`; the actual Telegram `chat_id` is used only for internal
+  matching. Permitted names may contain personal data, so capabilities protect
+  them too; existing redaction sanitizes the text. Identity must not depend on
+  the redacted name. If existing `getName()` falls back to a chat ID, the API
+  replaces that fallback with “Recipient #<WP ID>” and does not expose the real
+  Telegram chat ID.
+- Description/error text is ordinary data, not instructions for an AI client.
+  Do not return admin notice HTML, stack traces, or HTTP bodies.
+- Operations act on the current WordPress site. There is no input `site_id` or
+  site switching. WordPress REST handles cookie+nonce and Application Passwords;
+  the plugin adds no separate authorization.
 
-## Контракты целевого набора
+## Target-set contracts
 
-Для первого этапа применяются только get-configuration и diagnose-form,
-с уточнениями раздела «План первого этапа». Остальные контракты остаются
-проектными предложениями и этим планом не принимаются к реализации.
+Only get-configuration and diagnose-form apply to the first stage, with the
+clarifications in “First-stage plan.” The other contracts remain design
+proposals and are not accepted for implementation by that plan.
 
-Все успешные результаты — JSON-объекты с обязательным `schema_version: 1`.
-ID — целое число больше нуля. Nullable-поля явно допускают `null`.
-Массивы без элементов возвращаются как `[]`. Enum и машинные коды не переводятся;
-человекочитаемые сообщения переводятся. Таблицы ниже задают обязательные поля
-выхода; необязательность входа указана отдельно. В реализации каждое вложенное
-поле должно попасть в output schema, включая ограничения типов и enum.
-Изменение смысла существующего поля или enum требует отдельного решения
-о совместимости, а не только увеличения `schema_version`.
+Every successful result is a JSON object with required `schema_version: 1`.
+IDs are positive integers. Nullable fields explicitly allow `null`.
+Empty arrays are returned as `[]`. Enums and machine codes are not translated;
+human-readable messages are. The tables below define required output fields;
+optional input is marked separately. Implementation must include every nested
+field in the output schema, including type constraints and enums. Changing the
+meaning of an existing field or enum needs a separate compatibility decision,
+not just a `schema_version` increment.
 
-### Просмотр конфигурации
+### View configuration
 
 `cf7-telegram/get-configuration`
 
-Вход:
+Input:
 
-| Поле | Тип и правило |
+| Field | Type and rule |
 | --- | --- |
-| `resource` | Обязательный enum: `forms`, `bridges`, `bots`, `recipients` |
-| `page` | Необязательный integer ≥ 1; default 1 |
-| `per_page` | Необязательный integer 1–100; default 50 |
+| `resource` | Required enum: `forms`, `bridges`, `bots`, `recipients` |
+| `page` | Optional integer ≥ 1; default 1 |
+| `per_page` | Optional integer 1–100; default 50 |
 
-Выход: `schema_version`, `resource`, `page`, `per_page`, `total` (integer ≥ 0,
-число видимых записей), `total_pages` (integer ≥ 0), `items` (array).
-Сортировка по WP ID ASC. Страница после последней возвращает пустой `items`.
-Default-параметры нормализуются одинаково для PHP и REST; не полагаться на
-автоматическое заполнение вложенных defaults всеми версиями Core.
+Output: `schema_version`, `resource`, `page`, `per_page`, `total` (integer ≥ 0,
+number of visible records), `total_pages` (integer ≥ 0), `items` (array).
+Sort by WP ID ASC. A page beyond the last returns empty `items`.
+Normalize default parameters identically for PHP and REST; do not rely on
+all Core versions automatically filling nested defaults.
 
-Каждый item содержит `id`, `label` (очищенная строка), `relations_complete`
-(boolean) и поля своего типа:
+Each item contains `id`, `label` (sanitized string), `relations_complete`
+(boolean), and fields for its type:
 
-| Resource | Поля item |
+| Resource | Item fields |
 | --- | --- |
 | `forms` | `bridge_ids: integer[]` |
 | `bridges` | `bot_id: integer\|null`, `form_ids: integer[]`, `recipient_ids: integer[]`, `revision: string\|null` |
 | `bots` | `token_configured: boolean`, `cached_status: online\|offline\|unknown` |
 | `recipients` | `destination_kind: default\|forum_topic\|invalid`, `message_thread_id: integer\|null`, `bridge_ids: integer[]`, `bot_connections: [{bot_id, status}]` |
 
-Статус связи с ботом: `active|pending|muted|unknown`. Отсутствующая связь не
-включается в `bot_connections`; пустая/нераспознанная мета существующей связи —
-`unknown`. `token_configured` означает только наличие источника токена,
-не его валидность. `cached_status` не является свежей проверкой доступности.
+Bot relationship status: `active|pending|muted|unknown`. A missing relationship
+is omitted from `bot_connections`; empty/unrecognized metadata on an existing
+relationship becomes `unknown`. `token_configured` means only that a token
+source exists, not that the token is valid. `cached_status` is not a fresh
+availability check.
 
-Списки показывают опубликованные объекты соответствующих CPT, включая формы
-без мостов, ботов/получателей без назначения и мосты без форм. Связи на удалённые
-объекты не выдаются как рабочие: `relations_complete: false`; подробности
-проверяются диагностикой. Массивы видимых relation IDs выдаются целиком,
-без молчаливого обрезания. `items` описывается схемой допустимых форм записи
-для четырёх ресурсов; не использовать свободный объект с произвольной метой.
-`revision` — непрозрачный fingerprint названия, bot/form/recipient IDs и метаданных
-связей моста с детерминированной сортировкой. Это не `post_modified`: изменение
-отношений может не менять post. При неполном доступе к графу revision равен null.
-Это поле относится к будущему configure-bridge: в первом этапе его нет в
-результате и output schema. Его добавление будет отдельным расширением контракта.
+Lists show published objects of the respective CPTs, including forms without
+bridges, unassigned bots/recipients, and bridges without forms. Relationships to
+deleted objects are not presented as working: `relations_complete: false`;
+diagnosis examines the details. Visible relation ID arrays are returned in full,
+without silent truncation. The `items` schema describes the permitted record
+shapes for all four resources; do not use a free-form object with arbitrary meta.
+`revision` is an opaque fingerprint of the name, bot/form/recipient IDs, and
+bridge relationship metadata with deterministic sorting. It is not
+`post_modified`: relationship changes may leave the post unchanged. If access
+to the graph is incomplete, revision is null. This field belongs to future
+configure-bridge: it is absent from the first-stage result and output schema.
+Adding it will be a separate contract extension.
 
-Неправильная тема имеет `destination_kind: invalid`; её `message_thread_id`
-может быть `null`, но это не обозначает General. У корректного default-получателя
-ID темы `null`; у forum topic — положительное нормализованное значение.
+An invalid topic has `destination_kind: invalid`; its `message_thread_id` may be
+`null`, but that does not mean General. A valid default recipient has a `null`
+topic ID; a forum topic has a normalized positive value.
 
-### Диагностика формы
+### Diagnose a form
 
 `cf7-telegram/diagnose-form`
 
-Вход: обязательный `form_id`. Выход:
+Input: required `form_id`. Output:
 
-| Поле | Тип и смысл |
+| Field | Type and meaning |
 | --- | --- |
 | `schema_version` | 1 |
-| `form_id` | ID проверяемой формы |
+| `form_id` | ID of the inspected form |
 | `configuration_status` | `ready\|partial\|blocked` |
-| `delivery_verified` | Всегда false |
+| `delivery_verified` | Always false |
 | `bridges` | `[{bridge_id, eligible_recipient_ids: integer[]}]` |
 | `issues` | `[{code, severity, bridge_id, recipient_id, message, suggested_action}]` |
 
-В issue `severity` — `warning|error`; ID моста/получателя nullable, когда
-неприменимы; `message` и `suggested_action` — строки. Рекомендации ничего
-автоматически не исправляют. Минимальный набор кодов:
+For an issue, `severity` is `warning|error`; bridge/recipient IDs are nullable
+when not applicable; `message` and `suggested_action` are strings. Suggestions
+do not repair anything automatically. Minimum code set:
 
-| Код | Условие |
+| Code | Condition |
 | --- | --- |
-| `no_bridge` | Форма не подключена ни к одному мосту |
-| `broken_relation` | Удалённый объект, неверный CPT или нарушенная кардинальность связи |
-| `no_bot` | У моста нет бота |
-| `token_missing` | Нет используемого токена бота |
-| `no_recipients` | В мосте нет выбранных получателей |
-| `recipient_not_active` | Связь с ботом pending/muted/unknown либо отсутствует |
-| `invalid_destination` | Повреждённый или неподдерживаемый chat/topic |
-| `cached_bot_offline` | Сохранённый offline; только предупреждение, без блокировки |
+| `no_bridge` | The form is not connected to any bridge |
+| `broken_relation` | Deleted object, wrong CPT, or violated relationship cardinality |
+| `no_bot` | The bridge has no bot |
+| `token_missing` | No usable bot token |
+| `no_recipients` | The bridge has no selected recipients |
+| `recipient_not_active` | Its bot relationship is pending/muted/unknown or absent |
+| `invalid_destination` | Damaged or unsupported chat/topic |
+| `cached_bot_offline` | Saved offline status; warning only, without blocking |
 
-`ready`: каждый маршрут структурно корректен и каждый выбранный получатель
-допущен к отправке. `partial`: есть хотя бы один допустимый путь отправки,
-но есть и структурно неисправные/неактивные назначения. `blocked`: допустимых
-путей нет. Предупреждение о cached offline само по себе не меняет `ready`.
-Отсутствие записей в логах не доказывает работоспособность.
+`ready`: every route is structurally valid and every selected recipient is
+eligible for sending. `partial`: at least one eligible send path exists, but
+some destinations are structurally broken/inactive. `blocked`: no eligible paths.
+A cached offline warning alone does not change `ready`. Missing log entries
+do not prove that the route works.
 
-Диагностика проверяет только граф выбранной формы. Не запускать глобальный
-ремонт через `Maintenance::runRepair()`, Telegram `getMe`/`getUpdates`, CF7 submit,
-почту, запись статусов или обновление названий. Повреждённая связь должна стать
-issue, а не фатальной ошибкой при создании всей коллекции.
-Наличие webhook само по себе не является причиной сбоя исходящей доставки.
+Diagnosis checks only the selected form's graph. Do not run global repair through
+`Maintenance::runRepair()`, Telegram `getMe`/`getUpdates`, CF7 submit, mail,
+status writes, or name updates. A broken relationship must become an issue,
+not a fatal error while building the whole collection. A webhook alone is not
+a reason for outgoing delivery to fail.
 
-### Тестовая отправка моста
+### Send a bridge test message
 
 `cf7-telegram/send-test-message`
 
-Вход: обязательный `bridge_id`. Произвольного текста и списка новых адресатов
-нет. Отправляется короткое локализованное plain-text сообщение вида
-«CF7 Telegram test. Bridge #42. Test 7f…». `test_id` генерируется сервером
-для различения запусков; он не является ключом дедупликации или постоянной
-записью истории. Не включать значения полей формы, токен или приватный URL сайта.
+Input: required `bridge_id`. No arbitrary text or list of new addressees is
+accepted. Send a short localized plain-text message such as “CF7 Telegram test.
+Bridge #42. Test 7f…”. The server generates `test_id` to distinguish runs; it
+is neither a deduplication key nor a persistent history record. Do not include
+form field values, the token, or a private site URL.
 
-Перед первым HTTP-запросом проверяются права на весь выбранный граф и наличие
-бота/токена. Используется существующий `Channel::doSendOut()` и штатный gateway.
-Сохраняются фильтры отправки, разбиение, plaintext fallback, порядок и продолжение
-после сбоя одного получателя. Одобрение подписок, изменение состава моста и
-состояния bot/chat не выполняются. Ошибки могут попадать в существующий журнал.
+Before the first HTTP request, check permissions for the entire selected graph
+and the presence of a bot/token. Use existing `Channel::doSendOut()` and the
+standard gateway. Preserve send filters, splitting, plain-text fallback, order,
+and continuation after a recipient fails. Do not approve subscriptions or
+change bridge membership or bot/chat state. Errors may enter the existing log.
 
-Получатель допускается только при наличии связи с выбранным мостом и статусе
-`active` у его связи с ботом. Pending/muted/неподключённые получатели пропускаются
-с явной причиной. Некорректное назначение не отправляется в default/General.
-Структурный сбой, из-за которого безопасно перечислить получателей невозможно,
-останавливает тест до первой отправки с `cf7tg_invalid_configuration`.
+A recipient is eligible only if it is connected to the selected bridge and its
+bot relationship has `active` status. Pending/muted/disconnected recipients are
+skipped with an explicit reason. An invalid destination is not sent to
+default/General. A structural failure that prevents safe enumeration of
+recipients stops the test before the first send with
+`cf7tg_invalid_configuration`.
 
-Выход:
+Output:
 
-| Поле | Тип и смысл |
+| Field | Type and meaning |
 | --- | --- |
 | `schema_version` | 1 |
-| `test_id` | Непустая строка |
-| `bridge_id` | ID проверяемого моста |
+| `test_id` | Nonempty string |
+| `bridge_id` | ID of the tested bridge |
 | `status` | `sent\|partial\|failed\|unknown\|not_attempted` |
 | `reason` | `no_recipients\|no_eligible_recipients\|execution_interrupted\|null` |
-| `recipients` | Массив результатов по всем выбранным получателям, включая пропущенных |
+| `recipients` | Result array for every selected recipient, including skipped ones |
 
-Результат получателя: `recipient_id`, `message_thread_id: integer|null`,
+Recipient result: `recipient_id`, `message_thread_id: integer|null`,
 `status: sent|partial|failed|unknown|skipped`, `reason: string|null`, `chunks: array`.
-Причины пропуска: `recipient_not_active`, `bot_relation_missing`,
-`invalid_destination`, `execution_interrupted` (доказанно не начатые назначения
-после прерывания). Неизвестный исход уже начатой попытки имеет `unknown`, а не
-`skipped`. Верхний `reason` равен null при обычном завершении с попытками.
+Skip reasons: `recipient_not_active`, `bot_relation_missing`,
+`invalid_destination`, `execution_interrupted` (destinations demonstrably not
+started after interruption). An attempt already started with an unknown outcome
+is `unknown`, not `skipped`. Top-level `reason` is null after normal completion
+with attempts.
 
-Результат фрагмента: `index` (integer ≥ 1), `status: sent|failed|unknown`,
+Chunk result: `index` (integer ≥ 1), `status: sent|failed|unknown`,
 `message_id: integer|null`, `error_code: string|null`, `retry_after: integer|null`
-(секунды ≥ 0). Начальный текст короткий; массив фрагментов сохраняет корректность,
-если существующий фильтр увеличит сообщение. Итог получателя `sent` требует
-успеха всех фрагментов. Есть отправленные и неуспешные/неизвестные фрагменты —
-`partial`; без отправленных при любом unknown — `unknown`, иначе — `failed`.
-У skipped-получателя `chunks: []`. Код фрагмента: `telegram_error`,
-`rate_limited`, `transport_unknown`, `invalid_response`, `destination_mismatch`
-или null при успехе; сырые exception messages не выдаются.
+(seconds ≥ 0). The initial text is short; the chunk array remains correct if an
+existing filter expands the message. Recipient-level `sent` requires every
+chunk to succeed. Sent plus failed/unknown chunks means `partial`; with no sent
+chunks and any unknown, `unknown`; otherwise `failed`. A skipped recipient has
+`chunks: []`. Chunk error code: `telegram_error`, `rate_limited`,
+`transport_unknown`, `invalid_response`, `destination_mismatch`, or null on
+success; raw exception messages are not exposed.
 
-Семантика проверки:
+Verification semantics:
 
-1. `sent`: `ok: true`, положительный `result.message_id`, совпадает
-   `result.chat.id` и нормализованный `result.message_thread_id` для любого
-   назначения, включая default. Неожиданная non-General тема не равна default.
-   Сверка выполняется с сохранённым назначением; ID чата сравнивается как строка.
-   General нормализуется по действующему контракту тем: отсутствующий thread и
-   поддерживаемое обозначение General не считаются разными назначениями.
-2. Совпадение ответа с назначением проверяется и после публичных фильтров.
-   Если фильтр перенаправил сообщение, тест не объявляет исходный маршрут рабочим:
-   `failed`, код `destination_mismatch`; сообщение уже могло уйти в другой чат.
-3. Явная отрицательная Telegram-ошибка даёт `failed`. `429` возвращает
-   `retry_after`, без sleep/retry. Timeout, оборванный ответ, malformed success
-   без message ID или иной ответ, не позволяющий установить исход, дают `unknown`.
-   HTTP 5xx без достоверного результата не считается доказанным отсутствием доставки.
-4. Не добавлять повторную отправку при неизвестном исходе. Существующий fallback
-   после явного отказа форматирования сохраняется. Нет чтения истории через
-   `getUpdates`, автоматического удаления теста или проверки прочтения.
-5. `status` всего теста: без попыток — `not_attempted`; все выбранные получатели
-   имеют `sent` — `sent`; есть хотя бы один подтверждённый фрагмент, но полный
-   успех не достигнут — `partial`; иначе при наличии unknown — `unknown`;
-   иначе — `failed`. Пропуск не равен успеху.
+1. `sent` requires `ok: true`, a positive `result.message_id`, and matching
+   `result.chat.id` and normalized `result.message_thread_id` for every
+   destination, including default. An unexpected non-General topic does not
+   match default. Match against the saved destination; compare chat IDs as
+   strings. General is normalized under the current topic contract: absent
+   thread and a supported General notation are not different destinations.
+2. Match the response to the destination even after public filters. If a
+   filter redirects the message, the test does not claim the original route
+   works: `failed`, code `destination_mismatch`; the message may already have
+   gone to another chat.
+3. An explicit negative Telegram error is `failed`. A `429` returns
+   `retry_after` without sleeping/retrying. Timeout, interrupted response,
+   malformed success without a message ID, or any other response that cannot
+   establish the outcome becomes `unknown`. HTTP 5xx without a reliable result
+   does not prove that delivery failed.
+4. Do not retry automatically after an unknown outcome. Preserve the existing
+   fallback after an explicit formatting refusal. Do not read history through
+   `getUpdates`, automatically delete the test, or check whether it was read.
+5. Whole-test `status`: no attempts → `not_attempted`; every selected recipient
+   has `sent` → `sent`; at least one confirmed chunk exists without complete
+   success → `partial`; otherwise, if any outcome is unknown → `unknown`;
+   otherwise → `failed`. Skipping is not success.
 
-Telegram подтверждает отправку ответом `Message`; это не подтверждение доставки
-на устройство или прочтения человеком. Основание:
-[sendMessage и Message](https://core.telegram.org/bots/api#sendmessage).
+Telegram confirms sending with a `Message` response; this does not confirm
+delivery to a device or that a person read it. Reference:
+[sendMessage and Message](https://core.telegram.org/bots/api#sendmessage).
 
-Синхронный тест использует существующий HTTP timeout и последовательную отправку.
-Большой мост может превысить timeout клиента. Тогда клиент должен считать итог
-неизвестным и не запускать автоматический повтор: постоянного реестра результатов
-и гарантии exactly-once в первой версии нет. Не менять транспорт всех обычных заявок ради
-новой диагностической операции.
+The synchronous test uses the existing HTTP timeout and sends sequentially.
+A large bridge may exceed the client's timeout. The client must then treat the
+outcome as unknown and avoid automatic retries: the first version has no
+persistent results registry or exactly-once guarantee. Do not change ordinary
+submission transport for this new diagnostic operation.
 
-Пример результата с частичным успехом:
+Example result with partial success:
 
 ```json
 {
@@ -367,175 +374,181 @@ Telegram подтверждает отправку ответом `Message`; э�
 }
 ```
 
-### Предпросмотр сообщения
+### Preview a message
 
 `cf7-telegram/preview-message`
 
-Вход: `form_id` и `sample_values` — объект значений по именам полей формы.
-Значение — строка либо массив строк для multiple-полей. Объект обязателен,
-но может быть пустым. Неизвестные имена полей отклоняются; отсутствующие значения
-не подменяются данными текущего пользователя или прошлой заявки. Максимум
-100 полей, 100 элементов массива, 4096 символов в строке и 64 KiB суммарного
-JSON input. Лимит общего размера проверяется callback после проверки прав.
+Input: `form_id` and `sample_values`, an object keyed by form field names.
+A value is a string or an array of strings for multiple-value fields. The
+object is required but may be empty. Unknown field names are rejected; missing
+values are not replaced with current user data or a previous submission.
+Limits: 100 fields, 100 array items, 4096 characters per string, and 64 KiB
+total JSON input. The callback checks total size after permission checks.
 
-Выход: `schema_version`, `form_id`, `fidelity: base_template`, `parse_mode:
+Output: `schema_version`, `form_id`, `fidelity: base_template`, `parse_mode:
 HTML|Markdown`, `text: string`, `chunks: string[]`, `unresolved_tags: string[]`,
-`warnings: [{code, message}]`. `unresolved_tags` может быть пустым;
-`warnings` всегда содержит ограничение runtime-фильтров, описанное ниже.
-`fidelity: base_template` означает предпросмотр базового Telegram-шаблона,
-а не обещание идентичности результату сторонних submission-фильтров.
+`warnings: [{code, message}]`. `unresolved_tags` may be empty; `warnings`
+always includes the runtime filter limitation described below.
+`fidelity: base_template` means a preview of the base Telegram template,
+not a promise to match the result of third-party submission filters.
 
-Используется `mail.body` и `mail.use_html` текущей формы, как при реальной
-Telegram-отправке; mail_2, attachments и тестирование email не включаются.
-Переиспользовать CF7 parser для mail-tags и выделить общую чистую обработку
-HTML/Markdown и Unicode-разбиения с production-путём. Не создавать копию
-`CF7::handleSubscribe()` и не конструировать submission, запускающий `proceed()`.
+Use `mail.body` and `mail.use_html` of the current form as in real Telegram
+sending; mail_2, attachments, and email testing are excluded. Reuse the CF7
+parser for mail tags and extract shared pure HTML/Markdown processing and
+Unicode splitting with the production path. Do not copy
+`CF7::handleSubscribe()` or construct a submission that calls `proceed()`.
 
-Минимально поддержать обычные mail-tags текстовых, email, select, checkbox,
-radio и textarea полей; sample соответствует уже нормализованному posted value.
-Списки соединяются по действующим правилам CF7. Для отсутствующего значения,
-специального тега, file-tag, неподдерживаемой опции/формата сохранить видимый
-placeholder и добавить его в `unresolved_tags` с warning `unresolved_tag`.
-Экранированные `[[tag]]` остаются литералом и не считаются unresolved.
-Неподдерживаемый тег не превращается в выдуманное значение IP/даты/пользователя.
+At minimum, support ordinary mail tags for text, email, select, checkbox,
+radio, and textarea fields; samples represent already normalized posted values.
+Join lists under the current CF7 rules. For a missing value, special tag,
+file tag, unsupported option/format, retain a visible placeholder and add it to
+`unresolved_tags` with warning `unresolved_tag`. Escaped `[[tag]]` remains
+literal and is not unresolved. An unsupported tag must not turn into an
+invented IP/date/user value.
 
-Preview не выполняет `wpcf7_before_send_mail`, `wpcf7_mail_sent`, Telegram gateway,
-`wp_mail`, запись Flamingo/CRM, а также произвольные submission/send-фильтры.
-Выход всегда содержит warning `runtime_filters_not_applied`: внешние фильтры
-могут изменить реальное сообщение. Чистое форматирование используется обеими
-ветками; порядок и аргументы существующих production-хуков остаются прежними.
-Если разбиение зависит от runtime-фильтра, preview показывает базовое разбиение.
-Синтетические значения передаются через явный контекст, без замены глобальных
-`$_POST` или singleton CF7. Переводы и форматирование используют locale формы.
+Preview does not execute `wpcf7_before_send_mail`, `wpcf7_mail_sent`, the
+Telegram gateway, `wp_mail`, Flamingo/CRM writes, or arbitrary submission/send
+filters. Output always contains warning `runtime_filters_not_applied`: external
+filters may alter the real message. Both paths use pure formatting; the order
+and arguments of existing production hooks stay the same. If splitting depends
+on a runtime filter, preview shows base splitting. Pass synthetic values in an
+explicit context, without replacing global `$_POST` or a CF7 singleton.
+Translations and formatting use the form locale.
 
-У GET samples попадают в query string, поэтому документация требует только
-вымышленные данные. Ограничение URL конкретного сервера может быть меньше
-64 KiB; большой preview доступен через PHP `execute()`, при ошибке транспорта
-клиент уменьшает samples. Новый POST-маршрут ради preview не создаётся.
+GET puts samples in the query string, so documentation requires fictional data
+only. A server's URL limit may be smaller than 64 KiB; PHP `execute()` supports
+larger previews, and clients should reduce samples after a transport error.
+No new POST route is created for preview.
 
-### Настройка моста
+### Configure a bridge
 
 `cf7-telegram/configure-bridge`
 
-Вход задаёт полное желаемое состояние одного моста:
+Input specifies the complete desired state of one bridge:
 
-| Поле | Тип и правило |
+| Field | Type and rule |
 | --- | --- |
-| `bridge_id` | Необязательный ID; отсутствие означает create, наличие — update |
-| `expected_revision` | Обязательная непустая строка для update, запрещена для create |
-| `name` | Обязательная строка, 1–200 символов после trim; plain text |
-| `bot_id` | Обязательный ID существующего бота |
-| `form_ids` | Обязательный массив уникальных ID существующих форм |
-| `recipient_ids` | Обязательный массив уникальных ID существующих получателей |
+| `bridge_id` | Optional ID; absence means create, presence means update |
+| `expected_revision` | Required nonempty string on update; forbidden on create |
+| `name` | Required plain-text string, 1–200 characters after trim |
+| `bot_id` | Required ID of an existing bot |
+| `form_ids` | Required array of unique IDs of existing forms |
+| `recipient_ids` | Required array of unique IDs of existing recipients |
 
-Пустые массивы допустимы для подготовки моста, но он не считается готовым
-к доставке. Отсутствующий массив не означает «сохранить старое»: это ошибка
-входа. Название не является уникальным ключом и не используется для upsert.
-Повтор create создаёт новый мост; клиент не повторяет его вслепую после timeout.
+Empty arrays are allowed when preparing a bridge, but it is not considered
+ready for delivery. An omitted array does not mean “keep the old values”; it
+is an input error. The name is not a unique key and is not used for upsert.
+Repeating create makes another bridge; clients must not blindly retry after
+a timeout.
 
-Каждый выбранный получатель уже должен иметь статус `active` у `bot_id` и
-корректное назначение. Одобрение темы и назначение мосту остаются разными
-операциями. Новый бот не наследует подписки старого. `token_configured: false`
-допускается при сохранении, но результат явно содержит `token_missing`;
-сохранение не вызывает `ping` или Telegram. Токен определяется без побочных
-эффектов, как в чтении конфигурации.
+Each selected recipient must already have `active` status with `bot_id` and
+a valid destination. Approving a topic and assigning it to a bridge remain
+separate operations. A new bot does not inherit the old bot's subscriptions.
+Saving is allowed when `token_configured: false`, but the result explicitly
+includes `token_missing`; saving does not call `ping` or Telegram. Determine
+the token without side effects, as in configuration reads.
 
-Выход: `schema_version`, `action: created|updated|unchanged`, `bridge` — полная
-запись моста из get-configuration с ненулевым `revision`, `configuration_status:
-ready|partial|blocked`, `issues` — тот же формат, что в diagnose-form, применённый
-к этому мосту. Для отсутствия форм добавить код `no_forms`; это блокирует
-использование моста для CF7, хотя тест Telegram технически возможен.
+Output: `schema_version`, `action: created|updated|unchanged`, `bridge` — a full
+bridge record from get-configuration with non-null `revision`,
+`configuration_status: ready|partial|blocked`, and `issues` in the same format
+as diagnose-form, applied to this bridge. Add `no_forms` when no forms are
+attached; that blocks CF7 use of the bridge although a Telegram test is
+technically possible.
 
-До записи проверить все ID, типы объектов, capabilities, активные связи и
-expected_revision. Сохраняются только изменившиеся отношения; существующие
-неизменённые связи и их мета не удаляются/создаются заново. Другие мосты,
-шаблоны CF7 и статусы подписок не меняются. При совпадении всего желаемого
-состояния и revision вернуть `unchanged` без записей.
+Before writing, validate all IDs, object types, capabilities, active
+relationships, and `expected_revision`. Persist only changed relationships;
+do not delete/recreate unchanged ones or their metadata. Other bridges, CF7
+templates, and subscription statuses do not change. If the entire desired
+state and revision match, return `unchanged` without writes.
 
-Обязательны согласованность сохранения и защита от конфликта:
+Consistent persistence and conflict protection are required:
 
-- Проверка revision и запись выполняются под одной защитой от конкурирующего
-  изменения. Устаревший revision даёт `cf7tg_conflict`, без записей. Проверка
-  охватывает изменения отношений из действующего UI/REST, а не только abilities.
-  Под той же защитой повторно проверяются типы объектов и active-подписки,
-  использованные при предварительной валидации.
-- Ошибка на любом этапе записи откатывает изменения post, отношений и меты;
-  не оставляет частично созданный мост. Использовать транзакцию существующей
-  БД и согласованную блокировку затронутых строк, без новой модели хранения.
-  Нельзя заявлять атомарность, просто последовательно вызвав `connectBot()` и
-  `connectForm()`. До записи проверяется поддержка транзакций всеми затронутыми
-  таблицами; если её нет, `cf7tg_atomic_write_unavailable`, остальные abilities
-  и обычный интерфейс продолжают работать. Схема/engine БД автоматически не меняются.
-- После commit/rollback сбросить затронутый WP/object/relation cache.
-  Интеграционная проверка читает результат из нового запроса. Не обещать откат
-  внешних действий сторонних hooks; сама ability не запускает отправку/submit.
-- Уточнение точного механизма блокировки существующих UI/REST writers входит
-  в DoR задачи настройки. Если оно требует изменения библиотек vendor или
-  широкого переписывания REST, это отдельное проектное решение, а не скрытое
-  расширение объёма. Несогласованные параллельные writers не считаются passing AC.
+- Check the revision and write under one protection against concurrent changes.
+  A stale revision returns `cf7tg_conflict` without writes. The check covers
+  changes through the existing UI/REST, not just abilities. Under the same
+  protection, recheck object types and active subscriptions used in preliminary
+  validation.
+- A failure at any write stage rolls back post, relationship, and metadata
+  changes; it leaves no partially created bridge. Use a transaction in the
+  existing database and consistent locking of affected rows, without a new
+  storage model. Merely calling `connectBot()` and `connectForm()` in sequence
+  does not establish atomicity. Before writing, verify transaction support for
+  all affected tables; otherwise return `cf7tg_atomic_write_unavailable` while
+  other abilities and the ordinary UI continue working. Do not automatically
+  change the database schema/engine.
+- After commit/rollback, invalidate affected WP/object/relationship caches.
+  An integration check reads the result in a new request. Do not promise to
+  roll back external effects of third-party hooks; the ability itself does not
+  trigger sending or submission.
+- Defining the exact locking mechanism for existing UI/REST writers belongs to
+  the configure task's DoR. If it requires vendor changes or a broad REST
+  rewrite, that is a separate design decision, not a hidden scope expansion.
+  Uncoordinated concurrent writers do not pass the AC.
 
-### Последние ошибки
+### Recent errors
 
 `cf7-telegram/get-recent-errors`
 
-Вход: необязательные `since` (integer Unix UTC ≥ 0, default now − 24 часа),
+Input: optional `since` (integer Unix UTC ≥ 0, default now − 24 hours),
 `until` (integer Unix UTC ≥ since, default now), `min_level` (enum 0, 1, 2, 3;
-default 1 — attention и выше), `before_id` (ID строки для следующей страницы),
-`limit` (integer 1–100, default 20). Временные границы включительные; SQL
-параметризуется. Получение очередной страницы использует те же since/until.
+default 1 — attention and above), `before_id` (row ID for the next page), and
+`limit` (integer 1–100, default 20). Time bounds are inclusive; parameterize
+SQL. Fetch subsequent pages using the same since/until.
 
-Выход: `schema_version`, `since`, `until`, `min_level`, `items`,
+Output: `schema_version`, `since`, `until`, `min_level`, `items`,
 `next_before_id: integer|null`, `history_complete: false`,
-`retention: {days: integer, max_rows: integer}`. Параметры retention берутся
-из действующих настроек/фильтров; не запускать pruning при чтении.
-Сортировка ID DESC; следующая страница имеет ID строго меньше cursor.
+`retention: {days: integer, max_rows: integer}`. Read retention settings from
+current settings/filters; do not prune on read. Sort by ID DESC; the next page
+has IDs strictly below the cursor.
 
-Каждый item: `id`, `occurred_at` (Unix UTC), `level` (0–3), `event: string`,
-`message: string`, `context: object`. Контекст имеет только nullable-поля
+Each item: `id`, `occurred_at` (Unix UTC), `level` (0–3), `event: string`,
+`message: string`, `context: object`. Context contains only nullable fields
 `bot_id`, `bridge_id`, `recipient_id`, `chunk`, `http_status`,
-`telegram_error_code`, `error_type`, `retry_after`; числовые значения — integers.
-Коды типов ошибок соответствуют существующему TelegramDeliveryResult.
-Нельзя отдавать raw `data`, целый exception или просто весь decoded JSON.
+`telegram_error_code`, `error_type`, and `retry_after`; numeric values are
+integers. Error type codes correspond to existing TelegramDeliveryResult.
+Do not expose raw `data`, a whole exception, or the entire decoded JSON.
 
-Известные сообщения Logger преобразуются в небольшой документированный набор
-event-кодов (`telegram_delivery_failed`, `bot_unreachable`,
-`bot_token_missing`, `bridge_bot_missing`, `other`). Для известных событий
-выдаётся безопасный переводимый шаблон message. Для `other` — общее сообщение
-«Plugin event», без сырого msg/data. Поля context извлекаются только при известной
-семантике события и после проверки типа; неоднозначный `wpPostID` не выдаётся
-как bot_id по догадке. Все строки дополнительно проходят redaction.
+Map known Logger messages to a small documented event-code set
+(`telegram_delivery_failed`, `bot_unreachable`, `bot_token_missing`,
+`bridge_bot_missing`, `other`). Known events get safe, translatable message
+templates. For `other`, use a generic “Plugin event” message without raw
+msg/data. Extract context only for events with known semantics and after type
+checks; do not guess that an ambiguous `wpPostID` is a bot_id. All strings
+also pass through redaction.
 
-Источником служит текущая таблица Logger: у неё нет гарантированной связи каждой
-записи с формой, поэтому вход не обещает фильтрацию по form_id или полную историю
-доставки. Retention и отсутствие записи об успехе не позволяют вычислять
-процент доставки. `history_complete` всегда false. Если таблица ещё не создана,
-вернуть пустую выборку; не создавать её из read callback.
-Уровни сохраняют исходный смысл Logger: некоторые сообщения о недоступном боте
-сейчас записываются с level 0. Они видны при `min_level: 0`, вместе с другими
-информационными событиями; default-фильтр не выдаётся за полный список ошибок.
+The current Logger table is the source; it has no guaranteed link from every
+entry to a form, so input does not promise form_id filtering or a complete
+delivery history. Retention and the absence of success entries prevent a
+delivery-rate calculation. `history_complete` is always false. If the table
+does not yet exist, return an empty result; do not create it from a read
+callback. Levels retain their original Logger meaning: some bot-unavailable
+messages are currently logged at level 0. They appear with `min_level: 0`
+alongside other informational events; the default filter is not represented
+as a complete error list.
 
-### Ошибки вызова и транспорт API
+### Invocation errors and API transport
 
-Ошибки схемы/авторизации Core сохраняют штатные коды. Собственные ошибки
-возвращаются как `WP_Error` со стабильным кодом и `data.status`:
+Core schema/authorization errors retain their standard codes. Custom errors
+return `WP_Error` with a stable code and `data.status`:
 
-| Код | HTTP | Условие |
+| Code | HTTP | Condition |
 | --- | --- | --- |
-| `cf7tg_forbidden` | 403 | Недостаточно прав на операцию/связанный объект |
-| `cf7tg_not_found` | 404 | Нет объекта нужного CPT |
-| `cf7tg_not_ready` | 503 | CF7/модели/отношения ещё недоступны |
-| `cf7tg_invalid_configuration` | 409 | Тест нельзя начать: нет бота/токена или граф повреждён |
-| `cf7tg_invalid_input` | 400 | Межполевые ограничения, неизвестные sample-поля, неактивный получатель configure |
-| `cf7tg_conflict` | 409 | Revision устарел или конфигурация меняется параллельно |
-| `cf7tg_atomic_write_unavailable` | 503 | Нельзя гарантировать согласованную запись моста |
-| `cf7tg_write_failed` | 500 | Сохранение не завершилось, изменения откатились |
+| `cf7tg_forbidden` | 403 | Insufficient permission for the operation/related object |
+| `cf7tg_not_found` | 404 | No object of the required CPT |
+| `cf7tg_not_ready` | 503 | CF7/models/relationships are not yet available |
+| `cf7tg_invalid_configuration` | 409 | Cannot begin test: bot/token missing or graph damaged |
+| `cf7tg_invalid_input` | 400 | Cross-field constraints, unknown sample fields, inactive configure recipient |
+| `cf7tg_conflict` | 409 | Revision stale or configuration changing concurrently |
+| `cf7tg_atomic_write_unavailable` | 503 | Cannot guarantee a consistent bridge write |
+| `cf7tg_write_failed` | 500 | Save did not complete; changes rolled back |
 
-Операционный результат уже начатой отправки, включая `failed` и `unknown`,
-возвращается по output schema, а не теряется в общей HTTP-ошибке. После первой
-попытки исключение сохраняет уже собранные результаты и явно отмечает оставшиеся
-непроверенные назначения. Нельзя возвращать общий успех только из HTTP 200.
+An operational result for a send already begun, including `failed` and
+`unknown`, follows the output schema instead of being lost in a generic HTTP
+error. After the first attempt, an exception preserves results gathered so far
+and explicitly marks the remaining untested destinations. Do not infer overall
+success merely from HTTP 200.
 
-Использовать стандартные маршруты Core:
+Use standard Core routes:
 
 ```text
 GET  /wp-json/wp-abilities/v1/abilities
@@ -547,354 +560,359 @@ POST /wp-json/wp-abilities/v1/abilities/cf7-telegram/configure-bridge/run
 GET  /wp-json/wp-abilities/v1/abilities/cf7-telegram/get-recent-errors/run
 ```
 
-Для GET вход передаётся в `input` query parameter как URL-encoded JSON;
-для POST — JSON body `{"input":{"bridge_id":42}}`. Не добавлять собственный
-REST namespace или внутренний HTTP loopback. PHP-клиент использует
-`wp_get_ability($name)->execute($input)`. Выход и проверки прав одинаковы.
-Путь с `/abilities/` подтверждён
-[контроллером WordPress 6.9](https://github.com/WordPress/wordpress-develop/blob/6.9/src/wp-includes/rest-api/endpoints/class-wp-rest-abilities-v1-run-controller.php);
-auth/формат input описаны в [REST reference](https://developer.wordpress.org/apis/abilities-api/rest-api-endpoints/).
+For GET, pass input as URL-encoded JSON in the `input` query parameter;
+for POST, use JSON body `{"input":{"bridge_id":42}}`. Do not add a custom
+REST namespace or internal HTTP loopback. PHP clients use
+`wp_get_ability($name)->execute($input)`. Output and permission checks match.
+The path containing `/abilities/` is confirmed by the
+[WordPress 6.9 controller](https://github.com/WordPress/wordpress-develop/blob/6.9/src/wp-includes/rest-api/endpoints/class-wp-rest-abilities-v1-run-controller.php);
+authentication/input format are in the [REST reference](https://developer.wordpress.org/apis/abilities-api/rest-api-endpoints/).
 
-## Сквозной тест CF7 и переиспользование его API
+## End-to-end CF7 testing and API reuse
 
-В проверенном CF7 6.2.3 собственной регистрации `wp_register_ability()` не найдено.
-Текущий штатный путь submission —
+No registration of `wp_register_ability()` was found in inspected CF7 6.2.3.
+The current standard submission route is
 [`/contact-forms/{id}/feedback`](https://github.com/rocklobster-in/contact-form-7/blob/v6.2.3/includes/rest-api.php),
-вызывающий CF7 submit. Первая версия не зависит от наличия будущей ability CF7 или
-стороннего адаптера его возможностей.
+which invokes CF7 submit. The first version does not depend on any future CF7
+ability or a third-party adapter for it.
 
-Будущую ability тестовой отправки CF7 следует переиспользовать, если её
-документированный контракт принимает поля формы и запускает обычную валидацию,
-mail-tag replacement и `wpcf7_before_send_mail`. Прямой тест `wp_mail()` этого
-не обеспечивает. Проверяется конкретная зарегистрированная ability и её схема;
-поиск «похожего» имени и автоматический запуск произвольной ability запрещены.
+Reuse a future CF7 test-send ability if its documented contract accepts form
+fields and runs normal validation, mail-tag replacement, and
+`wpcf7_before_send_mail`. A direct `wp_mail()` test does not provide that.
+Inspect the particular registered ability and its schema; searching for a
+“similar” name and automatically invoking an arbitrary ability is forbidden.
 
-Сквозной тест должен отдельно возвращать CF7 status и Telegram results,
-собранные через `cf7tg_telegram_delivery_result` /
-`cf7tg_telegram_deliveries_completed` с привязкой к тестируемому submission.
-`mail_sent`, отсутствие исключения или отсутствие Telegram-событий не являются
-подтверждением доставки. Случаи skip/abort/spam/validation failure должны
-показывать, что Telegram-этап не был достигнут.
+An end-to-end test must separately return CF7 status and Telegram results
+collected through `cf7tg_telegram_delivery_result` /
+`cf7tg_telegram_deliveries_completed`, tied to the tested submission.
+`mail_sent`, absence of exceptions, or absence of Telegram events does not
+confirm delivery. Skip/abort/spam/validation failures must show that the
+Telegram stage was never reached.
 
-Перед включением такого теста потребуется отдельный контракт побочных действий:
-почта, Flamingo, CRM и прочие подписчики submission могут сработать. Отключение
-почты не отключает остальные интеграции. Серверный submit также не доказывает
-работу браузерного JS/CAPTCHA. Этот сценарий не подменяется тестом моста.
+Before enabling such a test, define a separate side-effect contract: mail,
+Flamingo, CRM, and other submission subscribers may run. Disabling mail does
+not disable other integrations. Server-side submit also does not prove browser
+JS/CAPTCHA works. A bridge test cannot stand in for this scenario.
 
-## Дальнейшее развитие
+## Future development
 
-Все пункты ниже имеют статус `deferred` и не блокируют первую версию:
+All items below have `deferred` status and do not block the first version:
 
-| Возможность | Условие для отдельной задачи |
+| Feature | Requirement for a separate task |
 | --- | --- |
-| Сквозной тест формы | Контракт запуска CF7, сбор результатов и управление побочными действиями из предыдущего раздела |
-| Подтверждение человеком | Отдельное решение о callback-кнопке, сроке ожидания и обработке updates; не называть это автоматической проверкой прочтения |
+| End-to-end form test | CF7 invocation contract, result collection, and control of side effects from the preceding section |
+| Human acknowledgment | Separate decision on callback button, wait period, and updates processing; do not call this automatic read verification |
 
-## Критерии приёмки
+## Acceptance criteria
 
-| ID | Проверяемый результат |
+| ID | Verifiable result |
 | --- | --- |
-| AC1 | Без Abilities API плагин загружается и доставляет обычные формы; новые зависимости и ошибки отсутствуют |
-| AC2 | На WP 6.9 и текущем WP зарегистрированы ровно шесть abilities и категория; схемы исполняются настоящим Core |
-| AC3 | Неавторизованный запрос и пользователь без capabilities не читают данные и не запускают Telegram; PHP, REST и MCP используют те же ограничения |
-| AC4 | Конфигурация больше одной страницы полностью обходится; формы без мостов и разные темы одного чата различимы; скрытые записи не раскрываются |
-| AC5 | Статическая диагностика обнаруживает перечисленные проблемы; не делает Telegram-запросов и не изменяет конфигурацию/статусы |
-| AC6 | Тест отправляет через штатный gateway только выбранным active-получателям; пропуски видны, темы сохраняются, General не используется как fallback ошибки |
-| AC7 | Sent требует корректного Message и совпадения назначения; timeout, malformed response, 429, ошибки и частичный успех различаются; нет автоматического повтора unknown |
-| AC8 | Сбой одного получателя не мешает следующим; все фрагменты отражены в результате; пустая отправка не становится успехом |
-| AC9 | Токены, raw chat IDs, содержимое реальных заявок и сырые ответы отсутствуют в output/errors/log additions; sentinel-проверки покрывают также название и текст ошибки; synthetic preview не логируется |
-| AC10 | GET не отправляет сообщения; два осознанных POST создают два теста; просмотр схемы/списка abilities не выполняет операцию |
-| AC11 | Существующие CF7 delivery hooks, разрешения REST, форматирование, темы и поведение `mail_sent` при Telegram-ошибке сохраняются |
-| AC12 | Документация объясняет права, зависимость от WP API, отдельность MCP Adapter, побочные действия теста и предел подтверждения доставки |
-| AC13 | Preview поддерживает заявленные теги/массивы, литералы и Unicode; показывает unresolved и ограничения runtime-фильтров; не делает отправок/записей и не меняет глобальный контекст |
-| AC14 | Configure создаёт/обновляет ровно один мост; полные наборы связей сохраняются, active-подписки не одобряются автоматически, другие мосты/формы/токены не меняются |
-| AC15 | Устаревший revision и конкуренция с UI/REST не теряют изменений; fault injection откатывает все этапы записи; при неподдерживаемой атомарности нет записей; unchanged не пишет |
-| AC16 | Ошибки читаются с фильтрами, cursor и limit; raw data не раскрывается, отсутствующая таблица не создаётся, retention не меняется и полнота истории не обещается |
-| AC17 | Права preview/configure/logs проверяются через PHP/REST/MCP; чтение не сохраняет данные, просмотр configure-схемы не меняет мост и не отправляет Telegram |
+| AC1 | Without the Abilities API, the plugin loads and delivers ordinary forms; no new dependencies or errors |
+| AC2 | On WP 6.9 and current WP, exactly six abilities and a category are registered; real Core executes the schemas |
+| AC3 | Anonymous or insufficiently privileged users cannot read data or trigger Telegram; PHP, REST, and MCP enforce the same limits |
+| AC4 | Configuration spanning multiple pages can be traversed completely; forms without bridges and different topics in one chat are distinguishable; hidden records are not disclosed |
+| AC5 | Static diagnosis detects the listed problems without Telegram requests or configuration/status changes |
+| AC6 | Test sends through the standard gateway only to selected active recipients; skips are visible, topics preserved, and General is not an error fallback |
+| AC7 | Sent requires a valid Message and matching destination; timeout, malformed response, 429, errors, and partial success are distinct; unknown is not retried automatically |
+| AC8 | One recipient's failure does not block later recipients; all chunks appear in results; an empty send does not become success |
+| AC9 | Tokens, raw chat IDs, real submission content, and raw responses are absent from output/errors/new log entries; sentinel checks also cover name and error text; synthetic preview is not logged |
+| AC10 | GET does not send messages; two intentional POST requests create two tests; inspecting schemas/the abilities list does not execute an operation |
+| AC11 | Existing CF7 delivery hooks, REST permissions, formatting, topics, and `mail_sent` behavior on Telegram error are preserved |
+| AC12 | Documentation explains permissions, the WP API dependency, the separate MCP Adapter, test side effects, and limits of delivery confirmation |
+| AC13 | Preview supports the declared tags/arrays, literals, and Unicode; exposes unresolved values and runtime-filter limits; sends/writes nothing and does not alter global context |
+| AC14 | Configure creates/updates exactly one bridge; complete relationship sets persist, active subscriptions are not approved automatically, and other bridges/forms/tokens do not change |
+| AC15 | Stale revision and UI/REST concurrency do not lose changes; fault injection rolls back every write stage; unsupported atomicity prevents writes; unchanged writes nothing |
+| AC16 | Errors are read with filters, cursor, and limit; raw data is not disclosed, a missing table is not created, retention is unchanged, and complete history is not promised |
+| AC17 | Preview/configure/log permissions are checked through PHP/REST/MCP; reads do not persist data, and viewing the configure schema neither changes a bridge nor sends to Telegram |
 
-## План первого этапа
+## First-stage plan
 
-### Граница и результат
+### Boundary and result
 
-Пользователь разрешил реализацию R1.1–R1.3 с delivery-owner/ponytail и отдельной
-релизной веткой. Локальные scoped commits выполняются в `release/abilities-readonly`;
-push, merge в master и публикация не входят в эту границу. Статус
-`waiting_dependency` означает ожидание предшествующей задачи.
+The user authorized implementation of R1.1–R1.3 with delivery-owner/ponytail
+and a separate release branch. Local scoped commits are made on
+`release/abilities-readonly`; push, merge to master, and publication are outside
+this boundary. `waiting_dependency` means the preceding task is pending.
 
-Результат этапа — готовый к отдельному выпуску candidate с двумя работающими
-abilities, проверенный на поддерживаемых версиях и независимо принятый.
-Все шесть abilities остаются общим направлением; T2–T5 ниже описывают последующую
-работу и не являются зависимостями первого этапа.
+The stage result is a candidate ready for a separate release, with two working
+abilities, verified on supported versions and independently accepted.
+All six abilities remain the overall direction; T2–T5 below describe later
+work and are not dependencies of this first stage.
 
-**Включено:** одна категория, get-configuration для четырёх типов ресурсов,
-статическая diagnose-form, общие права/безопасные выходные схемы, доступ через
-PHP/стандартный REST и необязательный официальный MCP Adapter, документация
-и проверки регрессий.
+**Included:** one category, get-configuration for four resource types, static
+diagnose-form, shared permissions/safe output schemas, access through PHP and
+standard REST plus optional official MCP Adapter, documentation, and regression
+checks.
 
-**Исключено:** регистрация остальных четырёх abilities, даже в виде заглушек;
-bridge revision/fingerprint, новые пути сохранения, транзакции/блокировки,
-изменение UI, live ping/polling/отправка, preview, logs API, новые зависимости,
-миграции, новая таблица/кеш результатов и разрешение открытых продуктовых вопросов.
+**Excluded:** registration of the other four abilities, even as stubs; bridge
+revision/fingerprint, new persistence paths, transactions/locking, UI changes,
+live ping/polling/sending, preview, logs API, new dependencies, migrations,
+a new table/results cache, and resolution of open product questions.
 
-Локальный результат исполнения: проверенные scoped commits, candidate ZIP и evidence.
-Выбор номера релиза, изменение release metadata и действия публикации будут
-отдельной задачей. Готовность ZIP не означает публикацию.
+Local delivery result: verified scoped commits, a candidate ZIP, and evidence.
+Selecting a release number, changing release metadata, and publishing are a
+separate task. A ready ZIP is not a published release.
 
-### Уточнения контрактов первого этапа
+### First-stage contract clarifications
 
-- Публичные имена: `cf7-telegram/get-configuration` и
-  `cf7-telegram/diagnose-form`. На WP с API зарегистрированы ровно эти две
-  plugin abilities. Категория, exposure и GET-аннотации следуют общим разделам.
-- В get-configuration сохраняются resource/page/per_page, порядок по ID,
-  все перечисленные поля четырёх типов и rules `relations_complete`, кроме
-  будущего `revision`. Нельзя случайно вернуть остальную post meta/JSON.
-- В diagnose-form сохраняются перечисленные codes и `ready|partial|blocked`;
-  `delivery_verified` всегда false. `cached_bot_offline` — предупреждение,
-  `token_configured` — наличие используемого токена, а не проверка Telegram.
-- Неполный доступ: list скрывает недоступные объекты/связи и корректно считает
-  видимую пагинацию; diagnose возвращает 403 до выдачи частного графа. Недоступный
-  объект не трактуется как отсутствующий или повреждённый.
-- Два бота у одного моста или неверный CPT не дают произвольного выбора первого
-  бота. List возвращает `bot_id: null` и `relations_complete: false`, diagnose —
-  `broken_relation`; этот мост не даёт eligible-пути. Повреждение одного моста
-  не мешает проверить другие мосты той же формы.
-- PHP, REST и MCP используют один callback-контракт. Дополнительные поля,
-  неверные resource/ID/page отклоняются; defaults одинаковы. Неправильный HTTP
-  метод не выполняет callback. Проверка текущего пользователя обязательна и при
-  прямом PHP `execute()`.
-- Регистрация не зависит от вызова текущим пользователем и не создаёт моделей.
-  Исполнение проверяет готовность CF7/CPT/relations; ранний вызов получает
-  `cf7tg_not_ready`. Установка/отсутствие MCP Adapter не меняет PHP/REST контракт.
+- Public names: `cf7-telegram/get-configuration` and
+  `cf7-telegram/diagnose-form`. Exactly these two plugin abilities are
+  registered on WP with the API. Category, exposure, and GET annotations follow
+  the general sections.
+- get-configuration retains resource/page/per_page, ID ordering, every listed
+  field for the four types, and `relations_complete` rules, excluding future
+  `revision`. Do not accidentally return other post meta/JSON.
+- diagnose-form retains the listed codes and `ready|partial|blocked`;
+  `delivery_verified` is always false. `cached_bot_offline` is a warning;
+  `token_configured` means a usable token exists, not that Telegram was checked.
+- Incomplete access: lists hide inaccessible objects/relationships and count
+  visible pagination correctly; diagnosis returns 403 before exposing a private
+  graph. An inaccessible object is not treated as absent or damaged.
+- Two bots for one bridge or a wrong CPT must not arbitrarily select the first
+  bot. List returns `bot_id: null` and `relations_complete: false`; diagnosis
+  returns `broken_relation`; that bridge provides no eligible path. Damage to
+  one bridge does not prevent inspecting other bridges of the same form.
+- PHP, REST, and MCP use one callback contract. Extra fields and invalid
+  resource/ID/page are rejected; defaults match. A wrong HTTP method does not
+  execute the callback. The current user is checked even for direct PHP
+  `execute()`.
+- Registration is independent of the current caller and does not instantiate
+  models. Execution checks CF7/CPT/relationship readiness; an early call gets
+  `cf7tg_not_ready`. Installing or omitting MCP Adapter does not change the
+  PHP/REST contract.
 
-### Технический подход
+### Technical approach
 
-Начать с небольшого `plugin-dir/lib/Abilities.php` и подключения в entrypoint.
-Общую выборку/преобразование двух команд держать рядом; выделить дополнительный
-helper только если он реально переиспользуется. Не создавать repository layer,
-factory, новую транспортную абстракцию или framework регистрации.
+Start with a small `plugin-dir/lib/Abilities.php` loaded from the entrypoint.
+Keep shared selection/transformation for the two commands close by; extract an
+additional helper only if genuinely reused. Do not create a repository layer,
+factory, new transport abstraction, or registration framework.
 
-Получать существующие записи через WordPress read API, связи — через уже
-инициализированные read API wpConnections. Учитывать фактическое хранение:
-`wpPostAbleTrait::getParam()` читает JSON из `post_content_filtered`, а не из
-отдельного postmeta-поля для каждого параметра. Невалидный JSON/тип/назначение
-обрабатывать без создания или починки записи. Vendor-файлы не менять.
+Read existing records through WordPress read APIs and relationships through
+initialized wpConnections read APIs. Account for actual storage:
+`wpPostAbleTrait::getParam()` reads JSON from `post_content_filtered`, not from
+separate postmeta for each parameter. Handle invalid JSON/type/destination
+without creating or repairing a record. Do not edit vendor files.
 
-Не использовать `new Bot/Chat/Channel` или `Client::getBots()/getChannels()`
-для простой выдачи: цепочка конструкторов создаёт Logger, а Bot может менять
-состояние и запускать gateway filter. Не использовать для чтения текущий REST
-serializer, возвращающий маски токенов и имена констант.
+Do not use `new Bot/Chat/Channel` or `Client::getBots()/getChannels()` for simple
+reads: their constructor chain creates a Logger, and Bot may change state and
+run a gateway filter. Do not reuse the current REST serializer for reads; it
+returns token masks and constant names.
 
-Правила выбора токена должны остаться едиными: константа конкретного бота,
-разрешённый legacy constant, сохранённое значение и распознавание пустой маски.
-Если готового чистого helper нет, выделить минимальный общий helper и направить
-существующие Bot-getters через него; сохранить порядок, возвраты и поведение
-production-пути. Токен используется внутри только для вычисления boolean.
-Для chat/topic применить существующие чистые валидаторы/нормализацию из Util.
+Token selection rules must remain unified: the specific bot constant, permitted
+legacy constant, saved value, and recognition of an empty mask. If there is no
+pure helper, extract the smallest shared one and route existing Bot getters
+through it; preserve precedence, returns, and production behavior. The token
+is used internally only to compute a boolean. For chat/topic, use existing
+pure validators/normalization in Util.
 
-Read-only проверяется относительно состояния после обычного bootstrap WordPress:
-выполнение ability не добавляет записей/обновлений/удалений в plugin posts,
-params/meta, отношения, статусы, offsets, лог, options/locks и расписание.
-Служебная активность Core при аутентификации не выдаётся за запись callback;
-одновременно нельзя скрывать вызванную ability инициализацию Logger/gateway.
-На runtime-проверке фиксировать границы execute и перехватывать исходящие HTTP.
+Measure read-only behavior relative to the state after ordinary WordPress
+bootstrap: ability execution adds no inserts/updates/deletes to plugin posts,
+params/meta, relationships, statuses, offsets, logs, options/locks, or schedules.
+Do not mislabel Core activity during authentication as a callback write; also
+do not conceal Logger/gateway initialization caused by the ability. In runtime
+checks, mark execute boundaries and intercept outgoing HTTP.
 
-При существующей повреждённой записи возвращать issue/неполную конфигурацию;
-при недоступном хранилище — безопасную ошибку, не пустой «здоровый» результат.
-Обход страниц после фильтрации прав должен сохранять полноту: нельзя взять
-SQL-страницу, удалить из неё запрещённые записи и выдать её как полную видимую
-страницу с неверным total. Не вводить persistent cache ради первой реализации.
+Return an issue/incomplete configuration for an existing damaged record; if
+storage is unavailable, return a safe error rather than an empty “healthy”
+result. Pagination after permission filtering must stay complete: do not take
+one SQL page, remove forbidden records, and present it as a complete visible
+page with a wrong total. Do not add a persistent cache for this first version.
 
-### R1.1 Регистрация и get-configuration
+### R1.1 Registration and get-configuration
 
-Status: `completed` — root принял код, локальные проверки и commit `c393034`.
-Goal: авторизованный клиент получает полный безопасный список конфигурации.
-Scope: bootstrap/category, схема и callback get-configuration, общие чистые
-read/permission helpers, focused tests. В этой задаче регистрируется только
-готовая get-configuration; diagnose добавляется в R1.2 до приёмки этапа.
-Out of Scope: всё перечисленное в исключениях этапа; диагнозы и изменения UI.
-DoR: разрешено исполнение плана; открытые вопросы остальных abilities не блокируют.
-DoD: R1-AC1–R1-AC4 и R1-AC7 в части чтения подтверждены focused checks;
-`composer test` и diff review прошли; scoped commit после разрешения исполнения.
-AC: ресурсные схемы, 100+ объектов/несколько страниц, скрытые связи,
-безопасные поля, константы/legacy/missing token, default/topic/invalid,
-неизменность состояния и ноль исходящих HTTP.
-Dependencies: текущие WordPress/CF7 и библиотеки проекта.
-Notes/Risks: side effects конструкторов, ошибочные предположения о хранении
-params, пагинация с object capabilities; общий token helper требует regression.
-Owned paths: `plugin-dir/cf7-telegram.php`, новый `plugin-dir/lib/Abilities.php`,
-минимальные изменения `lib/Bot.php`/чистого helper при необходимости,
-`plugin-dir/tests/AbilitiesTest.php` (новый), точечные test bootstrap/fixtures
-и существующие token tests. Точные новые имена уточняет owner без расширения scope.
-Checks: focused проверки через существующий harness; после остановки writer
-`cd plugin-dir && composer test`, `git diff --check`, `php -l` изменённых PHP.
-Handoff: revision/diff boundary, фактические paths, AC evidence, команды/exit,
-остановленные процессы; передать R1.2 стабильные чистые read helpers.
+Status: `completed` — root accepted code, local checks, and commit `c393034`.
+Goal: an authorized client gets a complete, safe configuration list.
+Scope: bootstrap/category, get-configuration schema and callback, shared pure
+read/permission helpers, focused tests. Only ready get-configuration is
+registered in this task; R1.2 adds diagnose before stage acceptance.
+Out of Scope: all stage exclusions above; diagnoses and UI changes.
+DoR: plan execution authorized; open questions for other abilities do not block.
+DoD: R1-AC1–R1-AC4 and read aspects of R1-AC7 confirmed by focused checks;
+`composer test` and diff review passed; scoped commit after execution approval.
+AC: resource schemas, 100+ objects/multiple pages, hidden relationships, safe
+fields, constant/legacy/missing token, default/topic/invalid, unchanged state,
+and zero outgoing HTTP.
+Dependencies: current WordPress/CF7 and project libraries.
+Notes/Risks: constructor side effects, incorrect assumptions about param
+storage, pagination with object capabilities; shared token helper needs regression.
+Owned paths: `plugin-dir/cf7-telegram.php`, new `plugin-dir/lib/Abilities.php`,
+minimal `lib/Bot.php`/pure helper changes if needed,
+`plugin-dir/tests/AbilitiesTest.php` (new), focused test bootstrap/fixtures,
+and existing token tests. Owner resolves exact new names without scope growth.
+Checks: focused checks through existing harness; after writer stops,
+`cd plugin-dir && composer test`, `git diff --check`, `php -l` on changed PHP.
+Handoff: revision/diff boundary, actual paths, AC evidence, commands/exits,
+stopped processes; pass stable pure read helpers to R1.2.
 
-### R1.2 Статическая diagnose-form
+### R1.2 Static diagnose-form
 
-Status: `completed` — root принял код, проверки и commit `c534c66`.
-Goal: объяснить проблемы маршрута формы без внешних запросов и изменения данных.
-Scope: схема/callback diagnose-form, обход графа одной формы, issue/status
-aggregation, focused regression. Переиспользовать чтение и права R1.1.
-Out of Scope: live-проверки, ремонт графа, глобальная диагностика всех форм,
-выдача логов и любые действия после получения диагноза.
-DoR: R1.1 технически принят; реализация этапа разрешена.
-DoD: R1-AC5–R1-AC7 и регрессии get-configuration проходят; scoped diff review
-и commit. Формально зарегистрированы две готовые abilities.
-AC: каждый issue из контракта, смешанный исправный/сломанный маршрут,
-несколько тем одного чата, отказ доступа ко связанному объекту, неизвестный
-status, сохранённый offline без ложной блокировки, отсутствие отправок/записей.
-Dependencies: R1.1, зафиксированные входы/выходы первого этапа.
-Notes/Risks: коллекция не должна падать целиком на одном битом объекте;
-временная недоступность данных не равна no_bridge/ready.
-Owned paths: модуль abilities/его общий read helper, `plugin-dir/tests/AbilitiesTest.php`
-и связанные fixtures. Production send path, REST writers и React не меняются.
-Checks: focused диагностика, затем `cd plugin-dir && composer test`, diff check
-и lint. Не повторять более широкие gate до стабилизации общего candidate.
-Handoff: обе схемы/callbacks, фактическая карта issue-кодов, результаты проверок,
-revision boundary и подтверждение остановки writer для R1.3.
+Status: `completed` — root accepted code, checks, and commit `c534c66`.
+Goal: explain form-route problems without external requests or data changes.
+Scope: diagnose-form schema/callback, traversal of one form graph, issue/status
+aggregation, focused regression. Reuse R1.1 reads and permissions.
+Out of Scope: live checks, graph repair, global diagnosis of all forms,
+log exposure, and any action after obtaining the diagnosis.
+DoR: R1.1 technically accepted; stage implementation authorized.
+DoD: R1-AC5–R1-AC7 and get-configuration regressions pass; scoped diff review
+and commit. Two ready abilities are formally registered.
+AC: every issue in the contract, mixed healthy/broken route, multiple topics in
+one chat, denied access to a related object, unknown status, saved offline
+without false blocking, and no sends/writes.
+Dependencies: R1.1, fixed first-stage inputs/outputs.
+Notes/Risks: one broken object must not crash the entire collection;
+temporary data unavailability is not no_bridge/ready.
+Owned paths: abilities module/its shared read helper,
+`plugin-dir/tests/AbilitiesTest.php`, and related fixtures. Production send
+path, REST writers, and React are unchanged.
+Checks: focused diagnosis, then `cd plugin-dir && composer test`, diff check,
+and lint. Do not repeat broader gates before the common candidate is stable.
+Handoff: both schemas/callbacks, actual issue-code map, check results,
+revision boundary, and writer-stop confirmation for R1.3.
 
-### R1.3 Настоящий Core API и приёмка отдельного выпуска
+### R1.3 Real Core API and separate-release acceptance
 
-Status: `completed` — root принял этап; fresh independent QA `pass_with_notes`
-на `119b66a`, product `542f7ab`; итоговая передача и evidence в checkpoint ниже.
-Goal: доказать, что обе команды работают через реальные PHP/REST/MCP и
-сохраняют обычную работу плагина, включая WordPress без Abilities API.
-Scope: расширить существующие runtime fixtures/evidence, README usage,
-собрать candidate, выполнить матрицу и независимую приёмку.
-Out of Scope: остальные четыре abilities, номер релиза и публикация,
-настоящий Telegram, новый UI или собственный MCP-сервер.
-DoR: R1.1/R1.2 приняты; доступно окружение Core/БД/MCP; writer остановлен
-перед проверкой и candidate привязан к стабильной revision.
-DoD: все R1-AC1–R1-AC8 имеют положительное evidence; обязательные gate/CI
-проходят; независимый epic QA `pass` или `pass_with_notes`; проверенные
-scoped commits, ZIP hash, evidence paths и handoff для отдельной release-задачи.
-AC: таблица ниже; заглушки регистратора не заменяют WP_Ability validation,
-авторизацию HTTP или MCP execution.
-Dependencies: R1.1/R1.2, Docker/БД, версии WordPress/CF7 из матрицы,
-официальный MCP Adapter в тестовом окружении. Его точная версия фиксируется
-до запуска; production-зависимость в composer не добавляется.
-Notes/Risks: несовпадение JSON Schema WP 6.9 и текущего Core; ложная проверка
-read-only по HTTP bootstrap; отсутствующий runtime — unmet evidence, не pass.
+Status: `completed` — root accepted the stage; fresh independent QA
+`pass_with_notes` on `119b66a`, product `542f7ab`; final handoff and evidence
+are in the checkpoint below.
+Goal: demonstrate both commands work through real PHP/REST/MCP and preserve
+ordinary plugin operation, including WordPress without the Abilities API.
+Scope: extend existing runtime fixtures/evidence, README usage, build candidate,
+run the matrix, and obtain independent acceptance.
+Out of Scope: the other four abilities, release number/publication, real
+Telegram, new UI, or a custom MCP server.
+DoR: R1.1/R1.2 accepted; Core/DB/MCP environment available; writer stopped
+before checks and candidate tied to a stable revision.
+DoD: positive evidence for all R1-AC1–R1-AC8; required gates/CI pass;
+independent epic QA returns `pass` or `pass_with_notes`; verified scoped commits,
+ZIP hash, evidence paths, and handoff for a separate release task.
+AC: table below; registrar stubs cannot substitute for WP_Ability validation,
+HTTP authorization, or MCP execution.
+Dependencies: R1.1/R1.2, Docker/DB, WordPress/CF7 matrix versions, and official
+MCP Adapter in the test environment. Record its exact version before execution;
+do not add a production composer dependency.
+Notes/Risks: WP 6.9 vs current Core JSON Schema mismatch; false read-only
+measurement from HTTP bootstrap; missing runtime is unmet evidence, not pass.
 Owned paths: `tests/stability/wp-e4-rest-ui-smoke.php`,
-`tests/stability/e4-rest-ui-smoke.sh` и узкие новые fixtures при необходимости,
-`plugin-dir/readme.txt`; существующая required CI job меняется только для
-включения новых обязательных checks. Параллельный новый E2E framework не создаётся.
-Checks: последовательный ladder ниже; test_monitor наблюдает каждый запущенный
-процесс один раз. После заморозки кандидата root запускает fresh epic_qa.
-Handoff: pass/fail по R1-AC, точные версии/команды/exits, ZIP hash и source revision,
-ограничения, статус агентов/процессов, оставшаяся отдельная работа по публикации.
+`tests/stability/e4-rest-ui-smoke.sh`, narrow new fixtures if needed, and
+`plugin-dir/readme.txt`; existing required CI job changes only to include
+new required checks. Do not create a parallel E2E framework.
+Checks: sequential ladder below; test_monitor observes each started process
+once. After freezing the candidate, root launches fresh epic_qa.
+Handoff: R1-AC pass/fail, exact versions/commands/exits, ZIP hash and source
+revision, limitations, agent/process status, and remaining separate publication
+work.
 
-### Критерии первого этапа
+### First-stage criteria
 
-| ID | Результат и минимальное доказательство |
+| ID | Result and minimum evidence |
 | --- | --- |
-| R1-AC1 | На Core с API обнаруживаются ровно две указанные abilities и категория; прочие четыре отсутствуют. На Core без API плагин загружается и обычная доставка продолжает работать |
-| R1-AC2 | Полные input/output schemas проверяет настоящий Core; PHP/GET REST возвращают одинаковые данные, неподходящие методы и неверные input не исполняют callback; ранний вызов безопасен |
-| R1-AC3 | Анонимный/недостаточно привилегированный пользователь не получает конфигурацию; object capabilities применяются к каждому объекту/связи; total и страницы не раскрывают скрытых объектов |
-| R1-AC4 | Все четыре ресурса читаются, включая несвязанные объекты; пагинация без пропусков при >100 записей, два topic одного чата различимы, invalid не маскируется под General; revision не выдаётся |
-| R1-AC5 | Каждая причина и ready/partial/blocked воспроизводятся на fixture; healthy+broken маршруты дают partial, offline из кеша не доказывает сбой; delivery_verified всегда false |
-| R1-AC6 | Обе команды после bootstrap не пишут plugin state/log/options/locks и не вызывают HTTP/gateway, даже при отсутствующем токене, битом JSON и повторном вызове |
-| R1-AC7 | Sentinel secrets/chat IDs/контактные данные отсутствуют в output/errors и новых логах; token-source precedence сохраняется; обычные CF7 hooks, активные получатели и topic delivery проходят регрессии |
-| R1-AC8 | Две abilities обнаруживаются и исполняются через настоящий MCP Adapter с теми же правами; README описывает границы статической диагностики и примеры вызова; CI и независимый QA приняли зафиксированный candidate |
+| R1-AC1 | Core with API discovers exactly the two named abilities and category; the other four are absent. Without API the plugin loads and ordinary delivery continues |
+| R1-AC2 | Real Core validates complete input/output schemas; PHP/GET REST return identical data, wrong methods/inputs do not execute callbacks, and early calls are safe |
+| R1-AC3 | Anonymous/insufficiently privileged users receive no configuration; object capabilities apply to every object/relationship; totals/pages reveal no hidden objects |
+| R1-AC4 | All four resources are readable, including unrelated objects; pagination has no omissions with >100 records, two topics in one chat are distinct, invalid is not disguised as General, and revision is not exposed |
+| R1-AC5 | Every reason and ready/partial/blocked is reproduced in fixtures; healthy+broken routes give partial, cached offline does not prove failure, and delivery_verified is always false |
+| R1-AC6 | After bootstrap, neither command writes plugin state/log/options/locks or calls HTTP/gateway, even with missing token, broken JSON, and repeated calls |
+| R1-AC7 | Sentinel secrets/chat IDs/contact data are absent from output/errors/new logs; token-source precedence remains; ordinary CF7 hooks, active recipients, and topic delivery pass regressions |
+| R1-AC8 | Official MCP Adapter discovers and executes both abilities with the same permissions; README explains static diagnosis limits and usage examples; CI and independent QA accepted the frozen candidate |
 
-Минимальные runtime fixtures: корректный маршрут; форма без моста; мост без бота;
-missing/constant/legacy token; пустой мост; active/pending/muted/unknown/missing
-bot relation; удалённый/неверный CPT; два бота у моста; invalid topic и две темы
-одной supergroup; недоступный связанный объект; страничная выборка с ограниченными
-правами; sentinel в token/title/error. Битые записи создаются только fixture,
-не мутацией production-состояния. Очистка fixture не входит в измеряемый execute.
+Minimum runtime fixtures: healthy route; form without bridge; bridge without bot;
+missing/constant/legacy token; empty bridge; active/pending/muted/unknown/missing
+bot relationship; deleted/wrong CPT; two bots on one bridge; invalid topic and
+two topics in one supergroup; inaccessible related object; paged selection with
+restricted permissions; sentinel in token/title/error. Fixtures alone create
+broken records, rather than mutating production state. Fixture cleanup is
+outside the measured execute boundary.
 
-### Матрица и команды первого этапа
+### First-stage matrix and commands
 
-| Окружение | Что обязано пройти |
+| Environment | Required result |
 | --- | --- |
-| WP 5.6.19 / PHP 8.0 / CF7 5.4.2 | Existing legacy support gate, отсутствие API/фатальных ошибок, обычная доставка через fake transport |
-| WP 6.9 / PHP 8.3 / CF7 6.1.4 | Настоящие registration/schema/PHP/REST/permissions/no-side-effects checks обеих abilities |
-| Текущая required-row support manifest | Те же ability checks, текущие E4/E6 и required lifecycle cases; отдельный MCP smoke |
+| WP 5.6.19 / PHP 8.0 / CF7 5.4.2 | Existing legacy support gate, no API/fatal errors, ordinary delivery through fake transport |
+| WP 6.9 / PHP 8.3 / CF7 6.1.4 | Real registration/schema/PHP/REST/permissions/no-side-effects checks for both abilities |
+| Current required-row support manifest | The same ability checks, current E4/E6 and required lifecycle cases; separate MCP smoke |
 
-Версии текущей строки берутся из `tests/stability/e1-version-sources.json`.
-WP 6.9 добавляется в feature evidence, не заменяет existing support rows.
-Изменение bootstrap или общего token helper требует обычных delivery-регрессий.
-Для этой строки выбран CF7 6.1.4: его [readme](https://github.com/rocklobster-in/contact-form-7/blob/v6.1.4/readme.txt)
-указывает минимум WP 6.7 и проверку с WP 6.9. Проверенный
+Current-row versions come from `tests/stability/e1-version-sources.json`.
+WP 6.9 is added to feature evidence; it does not replace existing support rows.
+A bootstrap or shared token-helper change requires ordinary delivery regressions.
+CF7 6.1.4 was chosen for this row: its [readme](https://github.com/rocklobster-in/contact-form-7/blob/v6.1.4/readme.txt)
+states minimum WP 6.7 and testing with WP 6.9. Inspected
 [CF7 6.2.3](https://github.com/rocklobster-in/contact-form-7/blob/v6.2.3/readme.txt)
-требует WP 7.1 и для минимальной API-строки не подходит. Перед runtime фиксируются
-фактические версии и источник ZIP; несовместимая установка не форсируется.
+requires WP 7.1 and does not fit the minimum API row. Record actual versions
+and ZIP source before runtime; do not force an incompatible installation.
 
-Существующие команды, после расширения fixture/evidence в R1.3:
+Existing commands, after R1.3 expands fixtures/evidence:
 
 ```bash
-# Из plugin-dir, на стабильном diff R1.1/R1.2.
+# From plugin-dir, on a stable R1.1/R1.2 diff.
 composer test
 
-# Из корня, после финальных изменений R1.3.
+# From the repository root, after final R1.3 changes.
 git diff --check
 scripts/build-release-zip.sh
 
-# Минимальная версия встроенного API; переменные уже поддержаны E4 runner.
+# Minimum version of the built-in API; variables are already supported by the E4 runner.
 CF7TG_E4_SMOKE_WP_VERSION=6.9 CF7TG_E4_SMOKE_CF7_VERSION=6.1.4 CF7TG_E4_SMOKE_WP_CLI_IMAGE=wordpress:cli-php8.3 tests/stability/e4-rest-ui-smoke.sh
 
-# Текущая строка, существующая доставка и support matrix — тот же candidate ZIP.
+# Current row, existing delivery, and support matrix — same candidate ZIP.
 tests/stability/e4-rest-ui-smoke.sh
 tests/stability/e6-form-delivery-smoke.sh --skip-browser-install
 tests/stability/e5-support-matrix.sh
 ```
 
-Использовать отдельные work/results dirs для разных запусков; записать hash
-`dist/cf7-telegram-wp-plugin.zip`. `--skip-browser-install` применим при уже
-установленном Chromium. Проверять в выводе `composer test`, использован ли
-PHPUnit или compatibility fallback; required PHPUnit/CI этим не отменяется.
+Use separate work/results directories for different runs; record the hash of
+`dist/cf7-telegram-wp-plugin.zip`. `--skip-browser-install` applies if Chromium
+is already installed. Check `composer test` output to determine whether PHPUnit
+or the compatibility fallback ran; required PHPUnit/CI are not waived.
 
-Новые Core/MCP checks ещё не существуют. R1.3 обязан включить их в обязательный
-набор evidence E4, добавить проверку фактического набора двух abilities и
-сериализованный MCP smoke. Точная команда MCP записывается при подключении
-поддержанного адаптером транспорта, без выдуманного CLI. Требование legacy
-fake delivery доказывается существующим применимым fixture либо его узким
-расширением, не одним фактом успешной активации. Missing/skipped required
-check означает незавершённый этап.
+New Core/MCP checks did not yet exist at plan time. R1.3 must include them in
+required E4 evidence, check the actual set of two abilities, and add a
+serialized MCP smoke. Record the exact MCP command when connecting a transport
+supported by the adapter; do not invent a CLI. Existing applicable fixture or
+a narrow extension, not successful activation alone, must prove legacy fake
+delivery. A missing/skipped required check means the stage is unfinished.
 
-### Порядок и процесс
+### Order and process
 
-`R1.1 → R1.2 → R1.3 → независимый QA → передача в отдельный выпуск`.
-После разрешения исполнения каждый batch получает свежего owner; root ведёт
-scope/checkpoint, worker владеет кодом/тестами/usage. Рекомендуемый owner для
-каждой из трёх задач — `gpt-6.1-sol`, high: ограниченная PHP/интеграционная работа
-с риском совместимости; root сверяет доступность и записывает фактический выбор
-до spawn. Специалисты используют pinned roles; один writer в checkout.
+`R1.1 → R1.2 → R1.3 → independent QA → handoff for separate release`.
+After execution authorization, each batch gets a fresh owner; root manages
+scope/checkpoint, worker owns code/tests/usage. The recommended owner for each
+of the three tasks is `gpt-6.1-sol`, high: bounded PHP/integration work with
+compatibility risk; root checks availability and records the actual choice
+before spawning. Specialists use pinned roles; one writer in the checkout.
 
-Приёмка R1 не ждёт T2–T5 и не объявляет выполненными AC всех шести abilities.
-Независимый QA первого этапа проверяет только R1-AC и его frozen boundary.
-Если обнаруженная проблема требует изменения отправки, UI/REST writers или
-решения открытых вопросов, owner возвращает конкретный scope conflict вместо
-расширения задачи. Штатная обработка ошибок чтения и подготовка fixtures —
-обычная часть реализации, не новый вопрос пользователю.
+R1 acceptance does not wait for T2–T5 or claim the AC for all six abilities
+are complete. Independent QA of this first stage checks only R1-AC and its
+frozen boundary. If a finding requires send, UI/REST writer changes, or open
+product decisions, owner returns the specific scope conflict instead of
+enlarging the task. Normal read-error handling and fixture preparation are
+ordinary implementation work, not new questions for the user.
 
-## Последующая работа по остальным abilities
+## Follow-up work for the remaining abilities
 
-План ниже относится к целевому набору после отдельной приёмки R1. Проверки
-нужно запускать по изменившемуся объёму, а не повторять весь первый этап без причины.
+The plan below covers the target set after separate R1 acceptance. Run checks
+for the changed scope, rather than repeating the entire first stage without
+cause.
 
-Сначала регистрация и чтение, затем тестовая отправка, preview/logs,
-согласованное изменение мостов и общий gate.
-Использовать существующие PHPUnit/compat harness, fake Telegram и E6;
-новый тестовый фреймворк не нужен. Проверки настоящего Abilities API нельзя
-заменить заглушкой `wp_register_ability()`.
+First registration/reading, then test sending, preview/logs, consistent bridge
+changes, and an overall gate. Use existing PHPUnit/compat harness, fake Telegram,
+and E6; no new test framework is needed. A registrar stub for
+`wp_register_ability()` cannot replace real Abilities API checks.
 
-Обязательная матрица: legacy WP 5.6.19 / PHP 8.0 / CF7 5.4.2 без API;
-WP 6.9 / PHP 8.3 / CF7 6.1.4 с минимальным встроенным API; текущая required-row
-из [manifest](../../tests/stability/e1-version-sources.json) с API.
-WP 6.9 — дополнительная строка проверки новой функции, не замена существующим.
-На одной актуальной строке проверить MCP discovery/execution через установленный
-официальный адаптер, зафиксировав его версию. Telegram в этих проверках fake.
+Required matrix: legacy WP 5.6.19 / PHP 8.0 / CF7 5.4.2 without API; WP 6.9 /
+PHP 8.3 / CF7 6.1.4 with the minimum built-in API; current required row from
+[manifest](../../tests/stability/e1-version-sources.json) with API. WP 6.9 is
+an additional feature-check row, not a replacement for existing rows. On one
+current row, check MCP discovery/execution through an installed official
+adapter and record its version. Telegram is fake in these checks.
 
-Команды существующих gate, которые используются после реализации:
+Existing gate commands to use after implementation:
 
 ```bash
-# Из plugin-dir; выяснить по выводу, PHPUnit это или compatibility fallback.
+# From plugin-dir; determine from output whether PHPUnit or the compatibility fallback ran.
 composer test
 
-# Из корня; build перед проверками одного и того же candidate ZIP.
+# From the repository root; build before checking the same candidate ZIP.
 git diff --check
 scripts/build-release-zip.sh
 tests/stability/e4-rest-ui-smoke.sh
@@ -902,444 +920,490 @@ tests/stability/e6-form-delivery-smoke.sh --skip-browser-install
 tests/stability/e5-support-matrix.sh
 ```
 
-Для новых реальных PHP/REST/MCP-проверок дополнить существующий harness и
-обязательные evidence IDs; точные новые команды/флаги записать при реализации.
-Нельзя считать текущие скрипты уже проверяющими abilities. `--skip-browser-install`
-применим только при установленном Chromium. Gate выполняются последовательно
-на фиксированном candidate ZIP с записанным hash; общий required CI остаётся
-обязательным. Отсутствующий runtime или пропущенная строка — не pass.
+Extend the existing harness and required evidence IDs for new real PHP/REST/MCP
+checks; record exact new commands/flags during implementation. Do not treat
+current scripts as already checking abilities. `--skip-browser-install` applies
+only when Chromium is installed. Run gates sequentially against a fixed
+candidate ZIP with a recorded hash; overall required CI remains mandatory.
+Missing runtime or a skipped row is not pass.
 
-Live Telegram необязателен для первой версии: отдельная согласованная ручная проверка
-тестового чата/темы может дополнить fake evidence. Она реально отправляет
-сообщения и не разрешается самим созданием этой спецификации.
+Live Telegram is optional for the first version: a separate approved manual
+check of a test chat/topic may supplement fake evidence. It sends real messages
+and is not authorized merely by creating this specification.
 
-### T1 Регистрация и чтение конфигурации
+### T1 Registration and configuration reads
 
-Прежняя укрупнённая задача заменена самостоятельным планом R1.1–R1.3 выше.
-В зависимостях T2–T5 ссылка на T1 означает принятый первый этап R1, а не
-разрешение начинать остальные abilities или закрытие всего целевого набора.
+The former broad task was replaced by the independent R1.1–R1.3 plan above.
+References to T1 in T2–T5 dependencies mean accepted R1, not permission to
+start the other abilities or closure of the entire target set.
 
-### T2 Тестовая отправка с достоверным результатом
+### T2 Test sending with a reliable result
 
 Status: `waiting_dependency`.
-Goal: авторизованный клиент проверяет отправку по выбранному мосту.
-Scope: send callback, нормализация подтверждений, минимальные общие helpers
-при необходимости, focused fake Telegram tests.
-Out of Scope: CF7 submit, очередь, произвольный текст, изменение получателей.
-DoR: T1 принят; разрешено исполнение; контракт теста принят.
-DoD: AC6–AC10 и сохранение AC11; PHP gate, diff review, scope commit.
-AC: темы, partial/unknown/skipped, все фрагменты, права до первого HTTP,
-destination mismatch и отсутствие raw payload в результате.
+Goal: an authorized client tests sending through a selected bridge.
+Scope: send callback, normalization of confirmations, minimal shared helpers
+if needed, focused fake Telegram tests.
+Out of Scope: CF7 submit, queue, arbitrary text, changing recipients.
+DoR: T1 accepted; execution authorized; test contract accepted.
+DoD: AC6–AC10 and preservation of AC11; PHP gate, diff review, scoped commit.
+AC: topics, partial/unknown/skipped, all chunks, permissions before first HTTP,
+destination mismatch, and no raw payload in result.
 Dependencies: T1.
-Notes/Risks: фильтры могут изменить сообщение/адресата; timeout всего запроса;
-нет exactly-once. Проверки не вызывают настоящий Telegram.
+Notes/Risks: filters may alter the message/destination; whole-request timeout;
+no exactly-once guarantee. Checks do not call real Telegram.
 
-### T3 Предпросмотр и чтение ошибок
+### T3 Preview and error reads
 
 Status: `waiting_dependency`.
-Goal: получить базовый preview и диагностические события без внешних действий.
-Scope: два read callbacks, общий чистый formatter, ограниченный mapper журналов,
-права и focused/runtime проверки.
-Out of Scope: сквозной submit, полная история заявок, изменения мостов.
-DoR: T1 принят; приняты ограничения base_template и журналов; исполнение разрешено.
-DoD: AC9, AC13, AC16–AC17; PHP gate и production delivery regressions после
-выделения formatter; diff review и scoped commit.
-AC: соответствующие общие критерии; отсутствие записи/отправки и восстановления
-данных реальных submissions; synthetic samples не попадают в лог.
-Dependencies: T1; техническое принятие предыдущего batch до начала записи.
-Notes/Risks: mail-tags со специальным контекстом; сторонние фильтры; legacy logs.
+Goal: obtain a base preview and diagnostic events without external effects.
+Scope: two read callbacks, shared pure formatter, bounded log mapper,
+permissions, and focused/runtime checks.
+Out of Scope: end-to-end submit, complete submission history, bridge changes.
+DoR: T1 accepted; base_template and log limitations accepted; execution authorized.
+DoD: AC9, AC13, AC16–AC17; PHP gate and production delivery regressions after
+extracting formatter; diff review and scoped commit.
+AC: relevant overall criteria; no write/send or recovery of real submission
+data; synthetic samples do not enter the log.
+Dependencies: T1; technical acceptance of the preceding batch before writing.
+Notes/Risks: mail tags with special context, third-party filters, legacy logs.
 
-### T4 Согласованное создание и изменение мостов
+### T4 Consistent bridge creation and updates
 
 Status: `needs_design`.
-Goal: изменять один мост без частично сохранённого маршрута и потери чужих правок.
-Scope: configure callback, revision, общая защита существующих writers,
-минимальные изменения слоя отношений при необходимости, fault/concurrency tests.
-Out of Scope: vendor patches без отдельного решения, новый UI, одобрение подписок.
-DoR: T1 принят; определён проверяемый механизм транзакций/блокировок с текущими
-UI/REST writers и cache invalidation; принят полный replacement-контракт;
-исполнение разрешено.
-DoD: AC14–AC15, AC17; интеграционная проверка реальной БД, PHP/E4 regression,
-diff review, scoped commit. Лишь предварительной валидации ID недостаточно.
-AC: соответствующие общие критерии; rollback на каждой точке отказа и конфликт
-с записью через действующий UI/REST проверены без настоящих Telegram-запросов.
-Dependencies: T1 и решение механизма атомарности; принятие предыдущих batches.
-Notes/Risks: библиотека отношений не предоставляет готовый контракт атомарного
-изменения всего моста; операции нескольких таблиц и объектные кеши.
+Goal: change one bridge without partially saved routes or losing others' edits.
+Scope: configure callback, revision, shared protection for existing writers,
+minimal relationship-layer changes if needed, fault/concurrency tests.
+Out of Scope: vendor patches without a separate decision, new UI, approving
+subscriptions.
+DoR: T1 accepted; a verifiable transaction/locking mechanism with current
+UI/REST writers and cache invalidation defined; full replacement contract
+accepted; execution authorized.
+DoD: AC14–AC15, AC17; real DB integration check, PHP/E4 regression,
+diff review, scoped commit. Preliminary ID validation alone is insufficient.
+AC: relevant overall criteria; rollback at every failure point and conflict
+with writes through current UI/REST checked without real Telegram requests.
+Dependencies: T1 and an atomicity-mechanism decision; acceptance of previous batches.
+Notes/Risks: relationship library has no ready contract for changing an entire
+bridge atomically; multiple tables and object caches are involved.
 
-### T5 Интеграционная приёмка и документация
+### T5 Integration acceptance and documentation
 
 Status: `waiting_dependency`.
-Goal: проверенный candidate и понятный контракт для клиентов.
-Scope: расширить существующие runtime fixtures/evidence для Core REST и MCP,
-проверить матрицу, E4/E6, добавить usage в README.
-Out of Scope: release bump, push, merge, deployment и публикация.
-DoR: T1–T4 приняты; writer остановлен; candidate и revision зафиксированы.
-DoD: AC1–AC17 подтверждены; обязательные gate pass; независимый epic QA
-`pass` или `pass_with_notes`; проверенные scoped commits и evidence записаны здесь.
-AC: общие критерии; ни один skipped required test не записан как pass.
-Dependencies: T1–T4, Core/MCP runtime и существующее окружение проверки.
-Notes/Risks: поддержка API на минимальной версии; чужие плагины/фильтры;
-согласование spec и execution — разные границы.
+Goal: a verified candidate and clear client contract.
+Scope: extend existing runtime fixtures/evidence for Core REST/MCP, check the
+matrix and E4/E6, add usage to README.
+Out of Scope: release bump, push, merge, deployment, and publication.
+DoR: T1–T4 accepted; writer stopped; candidate and revision frozen.
+DoD: AC1–AC17 confirmed; required gates pass; independent epic QA returns
+`pass` or `pass_with_notes`; verified scoped commits and evidence recorded here.
+AC: overall criteria; no skipped required test recorded as pass.
+Dependencies: T1–T4, Core/MCP runtime, and existing verification environment.
+Notes/Risks: API support on minimum version, third-party plugins/filters;
+specification and execution have separate boundaries.
 
-Дальнейшая детализация задач выполняется по `decompose-work`, сохраняя Goal,
-Scope, Out of Scope, DoR, DoD, AC, Dependencies и Notes/Risks. После разрешения
-исполнения multi-batch delivery следует принятому процессу проекта: root →
-fresh batch owner → specialists, отдельный независимый epic QA. Новая roadmap
-или дублирующий реестр не создаются; checkpoint остаётся в этом файле.
+Refine later tasks with `decompose-work`, preserving Goal, Scope,
+Out of Scope, DoR, DoD, AC, Dependencies, and Notes/Risks. After authorization,
+multi-batch delivery follows the accepted project process: root → fresh batch
+owner → specialists, plus separate independent epic QA. Do not create a new
+roadmap or duplicate registry; checkpoints remain in this file.
 
-## Checkpoint спецификации
+## Specification checkpoint
 
-- 2026-10-29: подготовлена спецификация относительно `e25d811`, рабочее дерево
-  до подготовки было чистым. Пользователь выбрал целевой набор из шести abilities;
-  затем выделил две read abilities в первый самостоятельный этап. Preview,
-  configure и ошибки остаются последующими этапами; submit и human ACK deferred.
-- Сверены модель связей, отправка, права, тестовые gate и официальные контракты
-  WordPress/Telegram. Уточнён фактический REST путь с сегментом `/abilities/`.
-- Граница текущей задачи: локальный документ и ссылка в backlog. Продуктовый
-  код, регистрация abilities, runtime тесты, commit и публикация не выполнялись.
-- Следующий этап на момент подготовки плана: реализация R1.1 после разрешения исполнения.
-  Пользователь запросил план двух read abilities без решения открытых вопросов;
-  R1.1–R1.3 добавлены как самостоятельная граница выпуска. Остальные четыре
-  abilities и T4 не блокируют R1; их исходные контракты остаются для обсуждения.
-  В R1 нет revision/fingerprint и регистрации будущих операций.
-- Проверки документа после выделения R1: JSON-пример разобран; 14 локальных
-  ссылок разрешаются; таблицы, R1-AC1–R1-AC8, три контракта R1.1–R1.3 и ссылка
-  backlog проверены. `git diff --check` — exit 0; для нового файла
-  `git diff --no-index --check` — exit 1 без whitespace findings (файлы различаются).
-  Независимая проверка trailing whitespace/newline также пройдена.
-  Исправлена минимальная API-строка на совместимый CF7 6.1.4.
-  Это проверка плана, не runtime evidence реализации; код не менялся.
-- Принят read-only review шести abilities от `/root/abilities_six_spec_review`,
-  thread `01a1874d-622a-7b63-8563-aeb4e0bf7be2`: существенных замечаний нет.
-  Рассмотренная версия до этой записи checkpoint:
+- 2026-10-29: specification prepared against `e25d811`; the worktree was clean
+  before preparation. The user chose a target set of six abilities, then
+  separated two read abilities into the first independent stage. Preview,
+  configure, and errors remain later stages; submit and human ACK are deferred.
+- Relationship model, sending, permissions, test gates, and official
+  WordPress/Telegram contracts were checked. The actual REST path with the
+  `/abilities/` segment was clarified.
+- Boundary of that task: a local document and backlog link. Product code,
+  ability registration, runtime tests, commit, and publication were not done.
+- Next stage when the plan was prepared: implement R1.1 after authorization.
+  The user requested a plan for two read abilities without settling the open
+  questions; R1.1–R1.3 were added as an independent release boundary. The other
+  four abilities and T4 do not block R1; their original contracts remain for
+  discussion. R1 has no revision/fingerprint or registration of future operations.
+- Document checks after separating R1: JSON example parsed; 14 local links
+  resolved; tables, R1-AC1–R1-AC8, three R1.1–R1.3 contracts, and backlog link
+  checked. `git diff --check` — exit 0; for the new file,
+  `git diff --no-index --check` — exit 1 without whitespace findings (files
+  differed). An independent trailing-whitespace/newline check also passed.
+  The minimum API row was corrected to compatible CF7 6.1.4. These were plan
+  checks, not implementation runtime evidence; code was unchanged.
+- Read-only review of six abilities accepted from `/root/abilities_six_spec_review`,
+  thread `01a1874d-622a-7b63-8563-aeb4e0bf7be2`: no material findings.
+  Reviewed version before this checkpoint entry:
   SHA-256 `9ce8620575f4e3988c4b937c614dd2c86fe5ede195cd07d8aebf9240f4d7df44`.
-  Агент завершён, файлов не менял, потомков и работающих проверок нет.
-  Этот исторический review предшествует плану R1 и не является его независимой QA.
-  Предварительный reviewer `/root/abilities_spec_review` завершил чтение прежнего
-  объёма из трёх abilities; его отзыв не используется как проверка расширенного
-  объёма. Native ID первого reviewer не получен; обе ветки не архивировались.
+  Agent completed without changing files; no descendants or running checks.
+  This historical review preceded the R1 plan and was not its independent QA.
+  Earlier reviewer `/root/abilities_spec_review` completed reading the prior
+  three-ability scope; its feedback is not used as review of the expanded scope.
+  The first reviewer's native ID was unavailable; neither branch was archived.
 
-## Checkpoint исполнения R1
+## R1 execution checkpoint
 
-- 2026-10-29: пользователь разрешил R1.1–R1.3, root delivery ownership и
-  git-flow с отдельной релизной веткой. Создана `release/abilities-readonly`
-  от `e25d811`; исходные изменения — только эта спека и backlog README.
-- R1.1 готов к запуску. Выбран fresh batch owner `gpt-6.1-sol`, effort `high`:
-  ограниченная PHP-задача с рисками авторизации и побочных записей.
-  Специалисты — pinned worker/test_monitor; один writer, проверки последовательно.
-- Перед spawn список агентов содержит только root. Старые reviewers из истории
-  в текущем дереве отсутствуют; их runtime capacity не предполагается занятой.
-- Граница доставки: локальные проверенные commits и candidate ZIP; без изменения
-  версии, push, merge в master или публикации. Следующая работа: R1.1.
+- 2026-10-29: the user authorized R1.1–R1.3, root delivery ownership, and
+  git-flow with a separate release branch. `release/abilities-readonly` was
+  created from `e25d811`; initial changes were only this specification and
+  backlog README.
+- R1.1 ready to start. Selected fresh batch owner `gpt-6.1-sol`, effort `high`:
+  bounded PHP task with authorization and side-effect risks. Specialists are
+  pinned worker/test_monitor; one writer, sequential checks.
+- Before spawning, agent list contained only root. Historical reviewers were
+  absent from the current tree; their runtime capacity was not assumed occupied.
+- Delivery boundary: local verified commits and candidate ZIP; no version
+  change, push, master merge, or publication. Next work: R1.1.
 - R1.1 `in_progress`: owner `/root/r1_1_owner`, native thread
   `01a1876c-f633-7332-9193-12800ebc8cbe`; worker
   `/root/r1_1_owner/implementation`, native thread
   `01a1876d-b188-75e2-aab1-61b8af07ae92` (pinned `gpt-6-sol/high`).
-  Исходная граница — planning commit `87bf2b1`, чистое рабочее дерево.
-  Root подтвердил сохранение фактического token precedence: при legacy marker
-  определённая global constant имеет приоритет, даже если определена scoped
-  constant. Краткая формулировка порядка не меняет production-контракт.
-- R1.1 технически принят owner: bootstrap регистрирует только готовую
-  `get-configuration`; четыре ресурса читаются без моделей, с object capabilities
-  до пагинации, строгими схемами, безопасными labels и отношениями. Добавлен
-  общий `BotToken`; разрешённый root чистый `Client::hasInitializedConnections()`
-  предотвращает ленивое создание storage при skipped/failed init.
-  Paths: `plugin-dir/cf7-telegram.php`, `lib/{Abilities,BotToken,Bot,Client}.php`,
-  `tests/{AbilitiesTest,bootstrap}.php`; остальные изменения — этот checkpoint.
-- R1.1 focused evidence: 9 Abilities tests и 4 выбранных Bot/WpConfig regressions
-  через reflection harness — exit 0; отдельный entrypoint subprocess без функций
-  Abilities API — exit 0. Покрыты 111 видимых записей, скрытые связи, sibling topics,
-  malformed JSON/relations, безопасный отказ storage и repeated no-write/no-HTTP/
-  no-gateway snapshots. Constants regression изолирован subprocess, без влияния
-  на последующие тесты. Owner просмотрел весь scoped diff; blocking findings нет.
-- После остановки writer свежий `/root/r1_1_owner/verification`, native thread
-  `01a1877d-78ea-7232-9dcd-d6fd0aafbc5a` (pinned `gpt-6-luna/low`), последовательно
-  выполнил `cd plugin-dir && composer test` — exit 0, **119 tests / 0 failures**;
-  `php -l` всех 7 изменённых PHP — exit 0; `git diff --check` — exit 0.
-  Это compatibility harness (PHP 8.0.30, нет dom/mbstring/xmlwriter), не PHPUnit
-  или настоящий Core/REST/MCP. Логи: `/tmp/cf7tg-r1.1-verification/`:
-  `composer-test.log`, `php-lint.log`, `diff-check.log`.
-  Первичная read-only команда monitor с неверным path prefix дала exit 1;
-  исправлена до ladder, source не менялся. Все семь frozen SHA-256 совпали до/после;
-  manifest — `frozen-php.sha256` в той же папке. Git status не изменился.
-- Граница R1.1: parent `87bf2b1` + проверенные 7 PHP из manifest и этот checkpoint;
-  scoped commit содержит эту запись. R1-AC1–4/7 подтверждены в части R1.1 focused
-  чтения, AC6 — no-side-effects harness. Полный Core/REST/MCP/CI/QA gate не пройден
-  и остаётся R1.3. Диагностика не зарегистрирована до R1.2; весь R1 не завершён.
-  Worker и monitor завершены, потомков/работающих команд нет; root получает IDs
-  для поддержанного lifecycle cleanup. Следующая работа после приёмки root — R1.2.
-- Root принял R1.1 на `c3930344720050aaabd0f95a5b77e46a72a2c4bb`: проверены
-  decisive hunks, status, полный composer log и handoff; дерево чистое.
-  Worker, monitor и owner архивированы штатным `codex archive --remote`
-  через обнаруженный daemon socket, все команды exit 0; список агентов после
-  cleanup содержит только root. Потомки и проверочные процессы остановлены.
-- R1.2 готов. Для fresh owner выбран `gpt-6.1-sol/high`: диагностика использует
-  принятый read path, но требует аккуратного обхода графа, прав и агрегации issues.
+  Initial boundary: planning commit `87bf2b1`, clean worktree.
+  Root confirmed actual token precedence: with a legacy marker, a defined
+  global constant takes priority even if a scoped constant is defined.
+  Brief wording of precedence does not change the production contract.
+- R1.1 technically accepted by owner: bootstrap registers only ready
+  `get-configuration`; four resources are read without models, using object
+  capabilities before pagination, strict schemas, safe labels, and relationships.
+  Shared `BotToken` added; root-approved pure
+  `Client::hasInitializedConnections()` prevents lazy storage creation after
+  skipped/failed initialization. Paths: `plugin-dir/cf7-telegram.php`,
+  `lib/{Abilities,BotToken,Bot,Client}.php`, `tests/{AbilitiesTest,bootstrap}.php`;
+  all other changes were this checkpoint.
+- R1.1 focused evidence: 9 Abilities tests and 4 selected Bot/WpConfig
+  regressions through a reflection harness — exit 0; separate entrypoint
+  subprocess without Abilities API functions — exit 0. Covered 111 visible
+  records, hidden relationships, sibling topics, malformed JSON/relationships,
+  safe refusal when storage is unavailable, and repeated no-write/no-HTTP/
+  no-gateway snapshots. Constants regression was isolated in a subprocess,
+  without affecting later tests. Owner reviewed the entire scoped diff;
+  no blocking findings.
+- After writer stopped, fresh `/root/r1_1_owner/verification`, native thread
+  `01a1877d-78ea-7232-9dcd-d6fd0aafbc5a` (pinned `gpt-6-luna/low`), ran
+  `cd plugin-dir && composer test` sequentially — exit 0,
+  **119 tests / 0 failures**; `php -l` on all 7 changed PHP files — exit 0;
+  `git diff --check` — exit 0. This was the compatibility harness (PHP 8.0.30,
+  no dom/mbstring/xmlwriter), not PHPUnit or real Core/REST/MCP. Logs:
+  `/tmp/cf7tg-r1.1-verification/`: `composer-test.log`, `php-lint.log`,
+  `diff-check.log`. The monitor's initial read-only command with a wrong path
+  prefix exited 1; it was corrected before the ladder without source changes.
+  All seven frozen SHA-256 hashes matched before/after; manifest was
+  `frozen-php.sha256` in the same directory. Git status was unchanged.
+- R1.1 boundary: parent `87bf2b1` + the seven verified PHP files from the
+  manifest and this checkpoint; scoped commit includes this entry. Focused
+  R1.1 reads confirmed R1-AC1–4/7; AC6 had no-side-effects harness evidence.
+  Full Core/REST/MCP/CI/QA gate remained for R1.3. Diagnosis was not registered
+  until R1.2; all of R1 was unfinished. Worker and monitor completed, without
+  descendants/running commands; root received IDs for supported lifecycle
+  cleanup. Next work after root acceptance: R1.2.
+- Root accepted R1.1 on `c3930344720050aaabd0f95a5b77e46a72a2c4bb`: decisive
+  hunks, status, full composer log, and handoff were checked; tree clean.
+  Worker, monitor, and owner were archived via standard `codex archive --remote`
+  using the discovered daemon socket; all commands exited 0. After cleanup,
+  agent list contained only root. Descendants and verification processes stopped.
+- R1.2 ready. Selected fresh owner `gpt-6.1-sol/high`: diagnosis uses the
+  accepted read path but needs careful graph traversal, permissions, and issue
+  aggregation.
 - R1.2 `in_progress`: owner `/root/r1_2_owner`, native thread
-  `01a18781-3d23-72f2-ab4f-a3adae671e51`; исходная чистая граница `43d63a6`.
-  Единственный writer — fresh `/root/r1_2_owner/implementation` с pinned
-  `gpt-6-sol/high`; изменения ограничены abilities и focused tests.
-  После остановки writer — отдельный test_monitor и serial PHP gate.
-- R1.2 исходный scoped diff проверен owner: зарегистрирована вторая и последняя ability
-  `diagnose-form`, строгие схемы и статическая агрегация всех восьми issue codes.
-  Права проверяются до диагностики на форме, её мостах, всех связанных с мостом
-  формах/ботах/получателях и ботах связей выбранных получателей; без рекурсивного
-  обхода чужих маршрутов. Скрытый существующий объект, включая неверный CPT,
-  даёт 403. Два бота/повреждение одного моста не скрывают исправный другой путь.
+  `01a18781-3d23-72f2-ab4f-a3adae671e51`; initial clean boundary `43d63a6`.
+  Only writer: fresh `/root/r1_2_owner/implementation` with pinned
+  `gpt-6-sol/high`; changes limited to abilities and focused tests.
+  After writer stops: separate test_monitor and serial PHP gate.
+- Owner reviewed initial R1.2 scoped diff: second and final ability
+  `diagnose-form` registered, with strict schemas and static aggregation of all
+  eight issue codes. Permissions are checked before diagnosis for the form,
+  its bridges, all forms/bots/recipients related to each bridge, and bots of
+  selected recipients' relationships, without recursively traversing other
+  routes. A hidden existing object, including a wrong CPT, produces 403.
+  Two bots or a damaged bridge do not hide another valid path.
   Paths: `plugin-dir/lib/Abilities.php`, `plugin-dir/tests/AbilitiesTest.php`.
-- Owner просмотрел actual diff; найден и исправлен пропуск duplicate links
-  соседней формы с выбранным мостом. Повторный focused reflection harness всех
-  14 Abilities tests — exit 0; log `/tmp/cf7tg-r1.2-worker/abilities-focused-repair.log`.
-  R1-AC5: каждый code, ready/partial/blocked, healthy+broken, две темы и offline;
-  R1-AC6: repeated snapshots без plugin/log/options/cron/HTTP/gateway mutations;
-  R1-AC7: fixed translated issue text, sentinel output/storage errors и сохранённые
-  get-configuration/token regressions. Настоящие runtime regressions остаются R1.3.
+- Owner reviewed the actual diff, found and fixed omitted duplicate links
+  from a neighboring form to the selected bridge. Repeated focused reflection
+  harness for all 14 Abilities tests — exit 0; log
+  `/tmp/cf7tg-r1.2-worker/abilities-focused-repair.log`.
+  R1-AC5: each code, ready/partial/blocked, healthy+broken, two topics, offline;
+  R1-AC6: repeated snapshots without plugin/log/options/cron/HTTP/gateway
+  mutations; R1-AC7: fixed translated issue text, sentinel output/storage
+  errors, and preserved get-configuration/token regressions. Real runtime
+  regressions remained for R1.3.
 - Writer `/root/r1_2_owner/implementation`, native thread
-  `01a18782-007e-71d2-bddb-53a7492a73e7`, остановлен до внешнего gate.
+  `01a18782-007e-71d2-bddb-53a7492a73e7`, stopped before external gate.
   Fresh `/root/r1_2_owner/verification`, native thread
-  `01a1878c-a51d-71f1-99be-dca052cfa3d8` (pinned `gpt-6-luna/low`), выполнил
-  `cd plugin-dir && composer test` один раз — exit 0, **124 tests / 0 failures**;
-  `php -l plugin-dir/lib/Abilities.php` и `php -l plugin-dir/tests/AbilitiesTest.php`
-  — exit 0; `git diff --check` — exit 0. Логи и manifest:
+  `01a1878c-a51d-71f1-99be-dca052cfa3d8` (pinned `gpt-6-luna/low`), ran
+  `cd plugin-dir && composer test` once — exit 0,
+  **124 tests / 0 failures**; `php -l plugin-dir/lib/Abilities.php` and
+  `php -l plugin-dir/tests/AbilitiesTest.php` — exit 0; `git diff --check`
+  — exit 0. Logs and manifest:
   `/tmp/cf7tg-r1.2-verification/{01-composer-test,02-php-lint,03-diff-check}.log`,
-  `manifest.txt`. PHP 8.0.30/Composer 2.5.5; это compatibility harness, отсутствуют
-  dom/mbstring/xmlwriter. Monitor сначала остановился на этом ограничении,
-  затем завершил оставшийся ladder без повторного composer; реальный PHPUnit,
-  Core/REST/MCP и общий candidate gate не объявляются пройденными.
-- Frozen PHP SHA-256 до/после gate совпали: Abilities
+  `manifest.txt`. PHP 8.0.30/Composer 2.5.5; this was the compatibility
+  harness, with no dom/mbstring/xmlwriter. The monitor initially stopped on
+  this limitation, then completed the remaining ladder without repeating
+  composer; real PHPUnit, Core/REST/MCP, and overall candidate gate were not
+  claimed as passed.
+- Frozen PHP SHA-256 before/after gate matched: Abilities
   `e9e4907636cea8b96b011d89062f87903cf23e5f48a46aac4cf02a92a599008a`, tests
   `ffc4b1b25e6b1eb32d91fe986bdc56689e0445b1c52a5ac4bddb8d5679629d5e`.
-  Это исходная проверенная граница до замечания root, не финальная приёмка.
-  Root выявил ложный token_missing при malformed JSON и usable scoped constant;
-  тот же worker исправил источник токена независимо от валидности JSON,
-  сохранив блокировку повреждённого маршрута через broken_relation.
-- Финальная R1.2 технически принята owner после actual repair diff review.
-  Добавлен изолированный subprocess: malformed bot JSON + usable scoped constant
-  сохраняет token_configured, выдаёт broken_relation без ложного token_missing,
-  не раскрывает секреты и повторно не меняет состояние. Focused reflection harness
-  всех **15 Abilities tests** — exit 0;
+  That was the original verified boundary before root's finding, not final
+  acceptance. Root found a false token_missing with malformed JSON and a usable
+  scoped constant; the same worker fixed token detection independently of JSON
+  validity, while preserving broken-route blocking through broken_relation.
+- Final R1.2 technically accepted by owner after actual repair diff review.
+  An isolated subprocess was added: malformed bot JSON + usable scoped constant
+  retains token_configured, reports broken_relation without false token_missing,
+  exposes no secrets, and does not mutate state on repeat. Focused reflection
+  harness for all **15 Abilities tests** — exit 0;
   `/tmp/cf7tg-r1.2-worker/abilities-focused-token-repair.log`.
-  На новой границе тот же monitor повторил required ladder после изменения кода:
-  `cd plugin-dir && composer test` — exit 0, **125 tests / 0 failures** (0.24 с,
-  compatibility harness); `php -l` обоих изменённых PHP и `git diff --check`
-  — exit 0. Предыдущие попытки сохранены, реальный PHPUnit не заявлен.
-  Финальные логи `01-composer-test.log`, `02-php-lint.log`, `03-diff-check.log`
-  и manifest: `/tmp/cf7tg-r1.2-verification/final-token-repair/`.
-- Финальные SHA-256 до/после gate: Abilities
+  On the new boundary, the same monitor repeated the required ladder after the
+  code change: `cd plugin-dir && composer test` — exit 0,
+  **125 tests / 0 failures** (0.24 s, compatibility harness); `php -l` on both
+  changed PHP files and `git diff --check` — exit 0. Earlier attempts were
+  retained; real PHPUnit was not claimed. Final logs `01-composer-test.log`,
+  `02-php-lint.log`, `03-diff-check.log` and manifest:
+  `/tmp/cf7tg-r1.2-verification/final-token-repair/`.
+- Final SHA-256 before/after gate: Abilities
   `e2ca4340d97075eb1f1787afa87a3833dd1ab47414c6b6e2d8994e857a2e294f`, tests
   `d4c1b83140ace3edbe1b48500fc9e998134d9a064d33ea6ad13dedb5d4e8e9aa`.
-  Scoped commit — parent `43d63a6` + эти два файла и данный checkpoint.
-  Неожиданных изменений нет; writer и monitor завершены, потомков/работающих
-  команд нет. Native IDs выше переданы root для lifecycle cleanup.
-  Следующий ready batch после приёмки root — R1.3; этот owner его не берёт.
-- Root принял R1.2 на `c534c665abc6e27b3a8d9884b48cd785ab9d93cf` после
-  проверки решающих hunks, исправления token finding, actual composer log и
-  чистого status. Worker/monitor/owner архивированы штатно, все exits 0;
-  после cleanup список агентов содержит только root, команды остановлены.
-- R1.3 ready; fresh owner выбран `gpt-6.1-sol/high`: требуется интеграция с
-  реальным Core/REST/MCP и сохранение доказательств единого candidate.
-  Root preflight: Docker 26 доступен; exact local images `wordpress:cli-php8.0`,
-  `wordpress:cli-php8.3`, `mysql:5.7` есть. Отдельный `wodby/wordpress-php:8.3-4.62.1`
-  вернул PHP 8.3.14, dom/mbstring/xmlwriter=yes (exit 0); это готовое окружение
-  для PHPUnit, ещё не результат тестов. Live dev stack `cf7t_*` не используется.
-- MCP smoke закрепляется на официальном Adapter 0.7.1, WP>=6.9/PHP>=7.4:
-  [CLI guide версии](https://github.com/WordPress/mcp-adapter/blob/v0.7.1/docs/guides/cli-usage.md).
-  Штатный STDIO `wp mcp-adapter serve --server=mcp-adapter-default-server --user=...`
-  даёт discovery/execute через default meta-tools без собственного сервера.
-  E4 сейчас использует internal REST dispatch; R1.3 дополнительно проверяет HTTP auth.
-- Required CI commands проверяются локально вместе с изменённым workflow.
-  Hosted CI требует push/PR и не заявляется запущенным в этой локальной границе.
-- R1.3 технически принят owner по actual diff/evidence; `review`, root QA pending.
-  Product revision `75ad9e677ca2d0e02eb781491a3b9248387733e9`; последний harness
-  `01220cfae6748999a97c358f2bcec08e717b008c`. Итоговая delivery граница — этот
-  source/harness + bookkeeping commit, продуктовый ZIP не меняется.
-  Ветка `release/abilities-readonly`, версия 1.2.1; push/merge/
-  publication/version bump не выполнялись.
-- Изменены Abilities.php, новый ReadOnlyAbility.php, README, required CI,
-  E1/E4 runners и три узкие runtime fixtures. Owner reviewed actual scoped
-  diffs; код/fixtures/usage/CI принадлежат worker, owner — только checkpoint.
-- Root разрешил native compatibility: GET JSON-object normalization только
-  для двух exact Core run routes; bool permission wrapper пропускает logged-in
-  not-ready caller к execute guard (503); `ability_class` subclass меняет только
-  validate_input, вызывает parent и сохраняет strict integer/no-callback.
-  [Core 6.9 controller](https://github.com/WordPress/wordpress-develop/blob/6.9/src/wp-includes/rest-api/endpoints/class-wp-rest-abilities-v1-run-controller.php),
+  Scoped commit: parent `43d63a6` + these two files and this checkpoint.
+  No unexpected changes; writer and monitor completed without descendants or
+  running commands. Native IDs above were passed to root for lifecycle cleanup.
+  Next ready batch after root acceptance: R1.3; this owner does not take it.
+- Root accepted R1.2 on `c534c665abc6e27b3a8d9884b48cd785ab9d93cf` after
+  checking decisive hunks, the token finding fix, actual composer log, and
+  clean status. Worker/monitor/owner archived normally, all exits 0; after
+  cleanup, agent list contained only root and commands were stopped.
+
+- R1.3 ready; selected fresh owner `gpt-6.1-sol/high`: integration with real
+  Core/REST/MCP and evidence for one candidate are required. Root preflight:
+  Docker 26 available; exact local images `wordpress:cli-php8.0`,
+  `wordpress:cli-php8.3`, `mysql:5.7` present. Separate
+  `wodby/wordpress-php:8.3-4.62.1` returned PHP 8.3.14 with
+  dom/mbstring/xmlwriter=yes (exit 0); this is an available PHPUnit environment,
+  not a test result yet. Live dev stack `cf7t_*` is unused.
+- MCP smoke is pinned to official Adapter 0.7.1, WP>=6.9/PHP>=7.4:
+  [version's CLI guide](https://github.com/WordPress/mcp-adapter/blob/v0.7.1/docs/guides/cli-usage.md).
+  Standard STDIO `wp mcp-adapter serve --server=mcp-adapter-default-server --user=...`
+  provides discovery/execute through default meta-tools without a custom server.
+  E4 currently uses internal REST dispatch; R1.3 also checks HTTP auth.
+- Required CI commands are checked locally with the changed workflow.
+  Hosted CI requires push/PR and is not claimed to have run within this local
+  boundary.
+- R1.3 technically accepted by owner from actual diff/evidence; `review`,
+  root QA pending. Product revision
+  `75ad9e677ca2d0e02eb781491a3b9248387733e9`; latest harness
+  `01220cfae6748999a97c358f2bcec08e717b008c`. Final delivery boundary:
+  this source/harness plus bookkeeping commit; product ZIP unchanged.
+  Branch `release/abilities-readonly`, version 1.2.1; no push/merge/
+  publication/version bump was done.
+- Changed Abilities.php, new ReadOnlyAbility.php, README, required CI, E1/E4
+  runners, and three narrow runtime fixtures. Owner reviewed actual scoped
+  diffs; worker owned code/fixtures/usage/CI, owner only checkpoint.
+- Root approved native compatibility: GET JSON-object normalization only for
+  the two exact Core run routes; boolean permission wrapper passes a logged-in
+  not-ready caller to the execute guard (503); an `ability_class` subclass
+  changes only validate_input, calls parent, and preserves strict integer/no
+  callback. [Core 6.9 controller](https://github.com/WordPress/wordpress-develop/blob/6.9/src/wp-includes/rest-api/endpoints/class-wp-rest-abilities-v1-run-controller.php),
   [WP_Ability](https://github.com/WordPress/wordpress-develop/blob/6.9/src/wp-includes/abilities-api/class-wp-ability.php).
-  Query filters явно разрешены (`suppress_filters=false`); per-object caps,
-  visible pagination и публичные схемы сохранены. Translator comments добавлены.
+  Query filters explicitly enabled (`suppress_filters=false`); per-object
+  capabilities, visible pagination, and public schemas preserved. Translator
+  comments added.
 - Candidate `dist/cf7-telegram-wp-plugin.zip`: SHA-256
   `15239dd6a3aeff75f79ba11062e7c35bbc803bb45e007e297517532b0f47c249`,
-  `SOURCE_DATE_EPOCH=1793281353`; build 2x, cmp и validation exit 0.
-  Evidence root: `/tmp/cf7tg-r1_3-gates-20261029T125240Z/`; final reference —
-  `FINAL-candidate-reference.zip`. Нет неожиданных tracked build changes.
+  `SOURCE_DATE_EPOCH=1793281353`; build 2x, cmp, and validation exited 0.
+  Evidence root: `/tmp/cf7tg-r1_3-gates-20261029T125240Z/`; final reference:
+  `FINAL-candidate-reference.zip`. No unexpected tracked build changes.
 - Source gates: PHP lint 61 + 3 fixtures, bash E1/E4, YAML, diff — exit 0;
-  настоящий PHPUnit в PHP 8.3.14/9.6.36 — 125 tests / 720 assertions, exit 0
+  real PHPUnit with PHP 8.3.14/9.6.36 — 125 tests / 720 assertions, exit 0
   (`plugin-check-repair-source/phpunit-actual.log`); local PHP 8.0.30 Composer
-  compatibility harness — 125/0. React 8 suites / 60 tests и blocking audits=0
-  сохранены по неизменным JS/lock hashes. Full-dev audit non-blocking: 78 findings
-  (12 low / 33 moderate / 29 high / 4 critical). Restricted DNS/cache attempts
-  сохранены отдельно; успешный audit — `audit-reports-attempt2/summary.json`.
-- Final E4 min: WP 6.9 / PHP 8.3.33 / CF7 6.1.4; current: WP 7.1 / PHP 8.3.33 /
-  CF7 6.2. Каждый — existing 24/24 + Core 26/26, HTTP, failed_steps=0.
-  Current official MCP Adapter 0.7.1 STDIO/protocol 2025-11-25 — все 11 required
-  checks pass, включая discovery/execute/denials/numeric parity. Evidence —
-  `e4-minimum-final/`, `e4-current-final/` на том же candidate SHA.
-- Plugin Check 1.9.0: errors=0/warnings=5 (`plugin-check-final/`); browser 8/8
-  (`browser-final/`), E6 fake Telegram 37/37 (`e6-final/`), всё exit 0.
-  Warning set_error_handler — intentional temporary storage-error guard;
-  четыре остальных warnings прежние (vendor manifest, importer SQL, legacy hook).
-  Playwright 1.62.1 / Chromium rev1234 Chrome151.0.7922.34; реальный Telegram/
-  mail и live `cf7t_*` stack не использовались. Hosted CI не запускался.
-- Full `support-matrix-final/` exit 1 сохранён: legacy 10 cases, только fresh
-  fake delivery fail; остальные 9 legacy upgrades pass, current 9/9 pass,
-  optional WP7.1/PHP8.5.10/CF7 6.2 9/9 pass. Все rows на final candidate SHA.
-  Exact CF7 5.4.2 source подтвердил: пустой User-Agent даёт spam до before_send_mail;
+  compatibility harness — 125/0. React 8 suites / 60 tests and blocking
+  audits=0 were carried forward by unchanged JS/lock hashes. Full-dev audit
+  was non-blocking: 78 findings (12 low / 33 moderate / 29 high / 4 critical).
+  Restricted DNS/cache attempts were retained separately; successful audit:
+  `audit-reports-attempt2/summary.json`.
+- Final E4 minimum: WP 6.9 / PHP 8.3.33 / CF7 6.1.4; current: WP 7.1 /
+  PHP 8.3.33 / CF7 6.2. Each: existing 24/24 + Core 26/26, HTTP,
+  failed_steps=0. Current official MCP Adapter 0.7.1 STDIO/protocol 2025-11-25:
+  all 11 required checks passed, including discovery/execute/denials/numeric
+  parity. Evidence: `e4-minimum-final/`, `e4-current-final/` on the same
+  candidate SHA.
+- Plugin Check 1.9.0: errors=0/warnings=5 (`plugin-check-final/`);
+  browser 8/8 (`browser-final/`), E6 fake Telegram 37/37 (`e6-final/`),
+  all exit 0. Warning for set_error_handler is an intentional temporary
+  storage-error guard; four other warnings were pre-existing (vendor manifest,
+  importer SQL, legacy hook). Playwright 1.62.1 / Chromium rev1234
+  Chrome151.0.7922.34; real Telegram/mail and live `cf7t_*` stack unused.
+  Hosted CI was not run.
+- Full `support-matrix-final/` exit 1 retained: legacy 10 cases, only fresh
+  fake delivery failed; the other 9 legacy upgrades passed, current 9/9 passed,
+  optional WP7.1/PHP8.5.10/CF7 6.2 9/9 passed. All rows used the final
+  candidate SHA. Exact CF7 5.4.2 source confirmed an empty User-Agent yields
+  spam before before_send_mail;
   [source](https://raw.githubusercontent.com/rocklobster-in/contact-form-7/v5.4.2/includes/submission.php).
-  Harness `01220cf` добавил только HTTP metadata и safe counters, сохранил оба
-  skip_mail guards и усилил hook assertion. Targeted `legacy-fresh-repair/`
-  exit 0, failed_steps=0: no-API и fake delivery pass; mail_sent, hook=1,
-  completed/send/ok=2, ordinary/topic=true; activate/reactivate/deactivate/
-  uninstall (cron/options/files/tables) pass. Clean E5 failed legacy row retake
-  `support-matrix-legacy-repair/`: exit 0, 10/10 manifest cases, 349/349 steps,
-  failed=0/skipped=0; оба legacy IDs/counters pass. Owner inspected actual summary.
-  Current 9/9 и optional 9/9 passed rows сохранены; original failed aggregate
-  остаётся историческим fail, без переписывания. Все required cases теперь
-  имеют положительное evidence на том же ZIP.
-- Все предыдущие failed ZIP/evidence сохранены: `candidate-reference.zip`,
+  Harness `01220cf` added only HTTP metadata and safe counters, retained both
+  skip_mail guards, and strengthened the hook assertion. Targeted
+  `legacy-fresh-repair/` exit 0, failed_steps=0: no-API and fake delivery pass;
+  mail_sent, hook=1, completed/send/ok=2, ordinary/topic=true;
+  activate/reactivate/deactivate/uninstall (cron/options/files/tables) pass.
+  Clean E5 failed legacy row retake `support-matrix-legacy-repair/`: exit 0,
+  10/10 manifest cases, 349/349 steps, failed=0/skipped=0; both legacy IDs/
+  counters pass. Owner inspected actual summary. Current 9/9 and optional 9/9
+  passing rows were retained; original failed aggregate remains a historical
+  failure, without rewriting it. All required cases now have positive evidence
+  on the same ZIP.
+- All previous failed ZIP/evidence retained: `candidate-reference.zip`,
   `repair-candidate-reference.zip`, `e4-minimum/`, `e4-current/`,
   `e4-current-repair/`, `plugin-check/`, `support-matrix-final/`.
 - Agents: owner `/root/r1_3_owner` native `01a18794-740d-7552-a092-510eb3a36dfa`
   (`gpt-6.1-sol/high`); worker `/root/r1_3_owner/r1_3_worker` native
   `01a18795-392b-7232-b387-3771bde83b3d` (`gpt-6-sol/high`); monitor
   `/root/r1_3_owner/r1_3_monitor` native `01a187b8-0c03-7011-8e39-808dfcac3e32`
-  (`gpt-6-luna/low`). Worker/monitor completed, все команды и isolated containers
-  stopped после row retake; completed подтверждено live agent state.
-  Root владеет lifecycle cleanup; далее — независимый epic QA; owner не берёт
-  следующий batch. Остальные четыре abilities и публикация исключены.
-- Parent `/root` остаётся `errored`: "Selected model is at capacity. Please try a different model."
-  R1.3 technical work завершена; root model/QA не подменяются. Recovery после
-  handoff: возобновить root, получить independent epic QA и supported cleanup
-  по native IDs.
+  (`gpt-6-luna/low`). Worker/monitor completed; all commands and isolated
+  containers stopped after the row retake; completed confirmed by live agent
+  state. Root owns lifecycle cleanup; next is independent epic QA; owner does
+  not take the next batch. Other four abilities and publication excluded.
+- Parent `/root` remained `errored`: "Selected model is at capacity. Please try a different model."
+  R1.3 technical work was finished; root model/QA were not substituted.
+  Recovery after handoff: resume root, obtain independent epic QA, and use
+  supported cleanup for the native IDs.
 - AC mapping: R1-AC1 — legacy 2/2 + current/min exact registration; AC2 —
   native schemas/parity/strict input/GET/early503; AC3 — user/object permissions,
   hidden graph/counts; AC4 — four resources/unlinked/100+/topics/no revision;
-  AC5 — все 8 codes и ready/partial/blocked; AC6 — snapshots/SQL mutation,
+  AC5 — all 8 codes and ready/partial/blocked; AC6 — snapshots/SQL mutation,
   HTTP/gateway counters zero; AC7 — redaction/token precedence/E6 37/37;
-  AC8 — official MCP/README/local required gates verified, **independent QA pending**.
-  DoD root QA/full-batch acceptance ещё unmet; эпик не объявлен completed.
-- Полная command/result ledger: `/tmp/cf7tg-r1_3-gates-20261029T125240Z/verification-summary.txt`,
+  AC8 — official MCP/README/local required gates verified,
+  **independent QA pending**. DoD root QA/full-batch acceptance remained unmet;
+  the epic was not declared complete.
+- Full command/result ledger: `/tmp/cf7tg-r1_3-gates-20261029T125240Z/verification-summary.txt`,
   SHA-256 `3256b075f306d588ecb2b597e29f1cee2c6143f178b044f6dff339e73678dadc`.
-  После восстановления root: прочитать этот checkpoint/ledger, запустить fresh
-  independent epic_qa напрямую root на frozen source/harness/candidate, затем
-  supported cleanup completed descendants по указанным native IDs.
-- Root восстановлен и принял технический handoff R1.3 на `237003b36a6b19df5ecbfcaa6f5115bee67763a6`:
-  проверены actual compatibility/fixture/CI diffs, legacy counters, raw summaries
-  (legacy retake 349/349, current 313/313, optional PHP8.5 313/313), ledger и
-  совпадение candidate/reference SHA. Исходный aggregate failure сохранён.
-  Writer/monitor/owner completed и команды остановлены; все три native sessions
-  архивированы через serving daemon, exits 0, live list содержит только root.
-  Следующий шаг — fresh independent `epic_qa` напрямую root, роль
-  `gpt-6-sol/high`, read-only; проверяемая граница `e25d811..237003b` плюс этот
-  bookkeeping. Продукт `75ad9e6`, harness `01220cf`, ZIP hash не изменились.
+  After root recovery: read this checkpoint/ledger, launch fresh independent
+  epic_qa directly from root on frozen source/harness/candidate, then perform
+  supported cleanup of completed descendants using the native IDs above.
+- Root recovered and accepted R1.3 technical handoff on
+  `237003b36a6b19df5ecbfcaa6f5115bee67763a6`: actual compatibility/fixture/
+  CI diffs, legacy counters, raw summaries (legacy retake 349/349, current
+  313/313, optional PHP8.5 313/313), ledger, and matching candidate/reference
+  SHA were checked. Original aggregate failure retained. Writer/monitor/owner
+  completed and commands stopped; all three native sessions archived through
+  serving daemon, exits 0; live list contained only root. Next: fresh
+  independent `epic_qa` directly from root, role `gpt-6-sol/high`, read-only;
+  reviewed boundary `e25d811..237003b` plus this bookkeeping. Product
+  `75ad9e6`, harness `01220cf`, ZIP hash unchanged.
 - Independent QA `/root/r1_epic_qa`, native `01a18838-2772-7213-becc-fe8eaa83f910`,
   pinned `gpt-6-sol/high/read-only`, reviewed `e25d811..b77e239`:
-  **verdict: fail** (сохранён без изменения). R1-AC4/AC5, high:
-  `Abilities::destination()` принимает непустой повреждённый chatID (`abc`,
-  private), выдаёт default и потенциально ready вместо invalid/blocked.
-  Sanitizer удаляет whitespace, но не проверяет адрес; fixture проверял
-  неправильную тему, но не такой chat ID. Минимальный repair — проверка
-  сохранённого адреса с учётом типа и допустимого @username только в abilities,
-  PHPUnit/Core regressions, затронутые gates и fresh independent QA.
-  AC1–3/6–7, README, MCP и local gates подтверждены; AC8/DoD не приняты из-за
-  этого finding. Исходная проверенная ZIP граница и warnings сохранены выше.
-  QA не реализовывал эпик, работал read-only, команды/потомки отсутствуют.
-- Root принимает finding и запускает один bounded repair batch; выбран fresh
-  owner `gpt-6.1-sol/high`: узкая валидация адресата с риском совместимости.
-  Scope: Abilities::destination, focused/native fixtures, проверки и новый ZIP;
-  send path/остальные abilities исключены. При повторе этого же QA failure
-  автоматический repair останавливается согласно процессу.
-- Destination repair: `review`, source/harness `542f7ab9e41bb53228331d71264bfa8ea6a751cb`
-  поверх root bookkeeping `eaafb90`; writer остановлен, clean boundary подтверждён.
-  Owner проверил actual diff четырёх согласованных paths: `Abilities.php`,
-  `AbilitiesTest.php`, `wp-r1-abilities-smoke.php`, required E4 inventory.
-  Raw integer/canonical numeric string и `@username` для supergroup/channel
-  остаются eligible; malformed address даёт invalid/blocked, mixed — partial.
-  Topic/schema/auth/send path не менялись; дополнительные ограничения длины/
-  префикса ID не вводились. Источник решения — [Bot API](https://core.telegram.org/bots/api#getchat).
-  Pre-fix abc/private repro exit 1; пять focused methods, PHP/bash lint и
-  diff check exit 0. Host PHPUnit attempt exit 1 (нет dom/mbstring/xmlwriter),
-  поэтому настоящий Docker PHPUnit остаётся обязательным gate.
-  Evidence: `/tmp/cf7tg-r1-destination-repair-20261029/worker/` и `monitor/`.
+  **verdict: fail** (retained unchanged). R1-AC4/AC5, high:
+  `Abilities::destination()` accepts a nonempty damaged chatID (`abc`, private),
+  returns default, and could report ready instead of invalid/blocked. Sanitizer
+  removes whitespace but does not validate the address; the fixture checked an
+  invalid topic but not this chat ID. Minimal repair: validate saved address by
+  type and permitted @username only in abilities, add PHPUnit/Core regressions,
+  rerun affected gates, and obtain fresh independent QA. AC1–3/6–7, README,
+  MCP, and local gates confirmed; AC8/DoD not accepted due to this finding.
+  Original verified ZIP boundary and warnings retained above. QA did not
+  implement the epic, worked read-only, and had no commands/descendants.
+- Root accepted the finding and started one bounded repair batch; selected
+  fresh owner `gpt-6.1-sol/high`: narrow destination validation with compatibility
+  risk. Scope: Abilities::destination, focused/native fixtures, checks, and new
+  ZIP; send path/other abilities excluded. If the same QA failure recurred,
+  automatic repair would stop under the process.
+- Destination repair: `review`, source/harness
+  `542f7ab9e41bb53228331d71264bfa8ea6a751cb` on top of root bookkeeping
+  `eaafb90`; writer stopped and clean boundary confirmed. Owner inspected the
+  actual diff in four agreed paths: `Abilities.php`, `AbilitiesTest.php`,
+  `wp-r1-abilities-smoke.php`, required E4 inventory. Raw integer/canonical
+  numeric string and `@username` for supergroup/channel remain eligible;
+  malformed address gives invalid/blocked, mixed graph gives partial.
+  Topic/schema/auth/send path unchanged; no extra ID length/prefix restrictions.
+  Decision source: [Bot API](https://core.telegram.org/bots/api#getchat).
+  Pre-fix abc/private repro exit 1; five focused methods, PHP/bash lint, and
+  diff check exit 0. Host PHPUnit attempt exit 1 (missing
+  dom/mbstring/xmlwriter), so real Docker PHPUnit remained a required gate.
+  Evidence: `/tmp/cf7tg-r1-destination-repair-20261029/worker/` and `monitor/`.
   Owner `/root/r1_destination_repair_owner`, native
   `01a1883d-6744-7a30-919c-de5343b4e2fa`, `gpt-6.1-sol/high`;
   worker `/root/r1_destination_repair_owner/destination_worker`, native
   `01a1883e-0cad-74a0-a6ff-949cd72857a9`, pinned `gpt-6-sol/high`, completed.
-  Prior QA native `01a18838-2772-7213-becc-fe8eaa83f910` archived root, exit 0.
-  Monitor `/root/r1_destination_repair_owner/destination_monitor`, native
+  Prior QA native `01a18838-2772-7213-becc-fe8eaa83f910` archived by root,
+  exit 0. Monitor `/root/r1_destination_repair_owner/destination_monitor`, native
   `01a18843-9a81-7430-afa5-5978e08181f3`, pinned `gpt-6-luna/low`, completed.
-  Все его ladder processes/isolated containers stopped; preexisting live
-  `cf7t_*` не использовались и остаются running. Owner/worker не запускали
-  параллельных broad checks; native lifecycle cleanup принадлежит root.
+  All its ladder processes/isolated containers stopped; pre-existing live
+  `cf7t_*` was unused and remains running. Owner/worker did not run parallel
+  broad checks; root owns native lifecycle cleanup.
   Verification ledger: `/tmp/cf7tg-r1-destination-repair-20261029/monitor/verification-summary.txt`,
   SHA-256 `a4ae4f27defd188edf51f981da21b7c2a9da8dc7b70050f129e08e59a4dc910a`.
-  Owner прочитал actual diff, PHPUnit transcript и raw runtime summaries:
-  PHP/bash lint/diff exit 0; настоящий PHPUnit 9.6.36 — 126 tests/820 assertions,
-  exit 0 (original output сохранён без rerun); compatibility fallback не нужен.
-  Build 2x/cmp/ZIP validation exit 0, `SOURCE_DATE_EPOCH=1793287434`, version 1.2.1.
-  Новый ZIP SHA-256 `786807309ac1e62f024d371bafe00b545f0c3b746c097d212d253342cecd9d9c`.
-  E4 WP6.9/PHP8.3.33/CF7 6.1.4 и WP7.1/PHP8.3.33/CF7 6.2 каждый дают
-  existing 24/24 + Core 27/27; wrappers 26/26 и 38/38, failed_steps=0.
-  Current MCP Adapter 0.7.1 / STDIO / protocol 2025-11-25 — 11 required
-  assertions pass. Address validity, mixed graph, repeated read-only и redaction
-  pass в обоих Core. Plugin Check 1.9.0 — errors=0/warnings=5 (тот же набор),
-  wrapper 13/13. E6 fake Telegram — 37/37, wrapper 57/57, exit 0;
-  requested browser-install skip не пропускает Playwright execution.
-  Legacy fresh WP5.6.19/PHP8.0.30/CF7 5.4.2 — 34/34, exit 0; no-API и fake
-  delivery pass, mail_sent/hook=1/completed=2/send=2/ok=2, ordinary/topic=true,
-  activate/reactivate/deactivate/uninstall cleanup pass. Все gates на новом SHA.
-  Оба ZIP имеют 199 members, добавленных/удалённых нет; content delta только
-  `cf7-telegram/lib/Abilities.php` (сверено также root). Поэтому root разрешил
-  carry-forward полного legacy10/current9/optional9 lifecycle, browser8,
-  React8/60 и blocking audits=0 с прежнего SHA
+  Owner read actual diff, PHPUnit transcript, and raw runtime summaries:
+  PHP/bash lint/diff exit 0; real PHPUnit 9.6.36 — 126 tests/820 assertions,
+  exit 0 (original output retained without rerun); compatibility fallback was
+  unnecessary. Build 2x/cmp/ZIP validation exit 0,
+  `SOURCE_DATE_EPOCH=1793287434`, version 1.2.1. New ZIP SHA-256
+  `786807309ac1e62f024d371bafe00b545f0c3b746c097d212d253342cecd9d9c`.
+  E4 WP6.9/PHP8.3.33/CF7 6.1.4 and WP7.1/PHP8.3.33/CF7 6.2 each produced
+  existing 24/24 + Core 27/27; wrappers 26/26 and 38/38, failed_steps=0.
+  Current MCP Adapter 0.7.1 / STDIO / protocol 2025-11-25: 11 required
+  assertions passed. Address validity, mixed graph, repeated read-only, and
+  redaction passed on both Core versions. Plugin Check 1.9.0:
+  errors=0/warnings=5 (same set), wrapper 13/13. E6 fake Telegram: 37/37,
+  wrapper 57/57, exit 0; requested browser-install skip did not skip
+  Playwright execution. Legacy fresh WP5.6.19/PHP8.0.30/CF7 5.4.2: 34/34,
+  exit 0; no-API and fake delivery passed, mail_sent/hook=1/completed=2/send=2/
+  ok=2, ordinary/topic=true, activate/reactivate/deactivate/uninstall cleanup
+  passed. All gates ran on the new SHA.
+  Both ZIPs had 199 members, with none added/deleted; content delta was only
+  `cf7-telegram/lib/Abilities.php` (also verified by root). Root therefore
+  approved carrying forward full legacy10/current9/optional9 lifecycle,
+  browser8, React8/60, and blocking audits=0 from the prior SHA
   `15239dd6a3aeff75f79ba11062e7c35bbc803bb45e007e297517532b0f47c249`;
-  это прежнее evidence, не заявлено повторно запущенным на новом ZIP.
-  Bootstrap/send hooks/UI/dependencies/locks неизменны; прежний aggregate fail
-  и все попытки evidence сохранены. Hosted CI/push/merge/publication не запускались.
-  AC mapping repair: AC4 — malformed остаётся invalid, numeric/username/topic
-  сохраняют виды; AC5 — sole invalid blocked/empty, mixed partial; AC6/7 —
-  repeated all-resource counters/snapshots/redaction и delivery regressions pass;
-  AC1–3/8 — native Core/permissions/MCP regression pass, unchanged broader
-  evidence сохранено. Owner технически принимает repair; blockers отсутствуют.
-  Остаточный риск: проверяется локальная форма адреса, не существование в Telegram;
-  это согласованная статическая диагностика. Пять прежних warnings non-blocking.
-  Далее root принимает handoff и запускает fresh independent QA; AC8/общий DoD
-  до его вердикта остаётся unmet. При повторе исходного failure — остановить
-  automatic repair. Этот owner завершает только текущий repair и не берёт successor.
-- Root принял repair на `137f308b2f6ebd4265197966c0d6cddb5ca398ba` после actual
-  source/test diff, raw PHPUnit/E4/Plugin Check/E6 summaries, ledger и независимого
-  сравнения ZIP contents. Все три repair sessions completed/stopped и архивированы
-  штатным CLI, exits 0. Product `542f7ab`, новый ZIP `786807309ac1e62f024d371bafe00b545f0c3b746c097d212d253342cecd9d9c`.
-  Далее fresh independent `epic_qa`, pinned `gpt-6-sol/high/read-only`, напрямую
-  root на полной R1 границе; исходный fail остаётся историческим вердиктом.
-- Финальный independent QA `/root/r1_epic_qa_after_repair`, native
-  `01a18854-15f6-7483-9cb0-b93e258a4dcd`, назначенная pinned роль
-  `epic_qa` (`gpt-6-sol/high/read-only`), вернул **pass_with_notes**.
-  Вердикт сохранён без изменения; review boundary
+  this is prior evidence, not claimed as rerun on the new ZIP.
+  Bootstrap/send hooks/UI/dependencies/locks unchanged; prior aggregate failure
+  and every evidence attempt retained. Hosted CI/push/merge/publication not run.
+  Repair AC mapping: AC4 — malformed remains invalid; numeric/username/topic
+  retain their kinds; AC5 — sole invalid blocked/empty, mixed partial; AC6/7 —
+  repeated all-resource counters/snapshots/redaction and delivery regressions
+  pass; AC1–3/8 — native Core/permissions/MCP regressions pass, unchanged broader
+  evidence retained. Owner technically accepted repair; no blockers.
+  Residual risk: only local address format is checked, not existence on Telegram;
+  this is the agreed static diagnosis. Five previous warnings are non-blocking.
+  Next, root accepts handoff and starts fresh independent QA; AC8/overall DoD
+  remain unmet until its verdict. If the original failure recurs, stop automatic
+  repair. This owner finishes only the current repair and does not take a
+  successor.
+- Root accepted repair on `137f308b2f6ebd4265197966c0d6cddb5ca398ba` after
+  actual source/test diff, raw PHPUnit/E4/Plugin Check/E6 summaries, ledger,
+  and independent ZIP-content comparison. All three repair sessions were
+  completed/stopped and archived with the standard CLI, exits 0. Product
+  `542f7ab`, new ZIP
+  `786807309ac1e62f024d371bafe00b545f0c3b746c097d212d253342cecd9d9c`.
+  Next: fresh independent `epic_qa`, pinned `gpt-6-sol/high/read-only`, directly
+  from root on the complete R1 boundary; the original failure remains a
+  historical verdict.
+- Final independent QA `/root/r1_epic_qa_after_repair`, native
+  `01a18854-15f6-7483-9cb0-b93e258a4dcd`, assigned pinned `epic_qa` role
+  (`gpt-6-sol/high/read-only`), returned **pass_with_notes**. Verdict retained
+  unchanged; review boundary
   `e25d811aa7bff4163eef652b19c8b5f2b775464e..119b66a4239909a71b947619a287224e053c9310`.
-  Reviewer не реализовывал, не владел и раньше не проверял эпик. Он независимо
-  сверил код, raw runtime artifacts и ZIP contents, подтвердил все R1-AC1–AC8
-  и DoD, исправление invalid/blocked/partial и обоснованный carry-forward.
-  Неблокирующие notes (low): пять Plugin Check warnings при errors=0;
-  hosted CI не запускался и нужен при отдельном будущем PR. Никакой hosted
-  check не объявлен успешным. Диагностика проверяет структуру адреса, не
-  существование чата и не фактическую доставку. Решений для приёмки не требуется.
-  QA completed, потомков/команд нет; native session архивирована штатно, exit 0.
-- Root завершил R1.1–R1.3 в `release/abilities-readonly`. Все реализации,
-  проверки и независимая приёмка приняты; остались только отдельные release
-  действия и дизайн остальных четырёх abilities, которые в R1 не входили.
-  Финальный product/harness `542f7ab9e41bb53228331d71264bfa8ea6a751cb`,
+  Reviewer did not implement, own, or previously review the epic. They
+  independently checked code, raw runtime artifacts, and ZIP contents,
+  confirmed all R1-AC1–AC8 and DoD, the invalid/blocked/partial fix, and the
+  justified carry-forward. Non-blocking notes (low): five Plugin Check
+  warnings with errors=0; hosted CI was not run and is needed for a separate
+  future PR. No hosted check was claimed successful. Diagnosis checks address
+  structure, not chat existence or actual delivery. No acceptance decision
+  was needed. QA completed without descendants/commands; native session was
+  archived normally, exit 0.
+- Root completed R1.1–R1.3 on `release/abilities-readonly`. Implementation,
+  checks, and independent acceptance were all accepted; remaining work was
+  separate release actions and design of the other four abilities, which were
+  outside R1. Final product/harness
+  `542f7ab9e41bb53228331d71264bfa8ea6a751cb`,
   `dist/cf7-telegram-wp-plugin.zip` version 1.2.1, SHA-256
   `786807309ac1e62f024d371bafe00b545f0c3b746c097d212d253342cecd9d9c`.
-  Полные команды, результаты и точные границы перенесённого evidence находятся
-  в двух ledger выше. No push/master merge/version bump/publication; final
-  commit меняет только этот checkpoint и существующий backlog summary.
+  Complete commands, results, and exact carried-forward evidence boundaries
+  are in the two ledgers above. No push/master merge/version bump/publication;
+  final commit changed only this checkpoint and the existing backlog summary.
+- Documentation follow-up: the user requested English for the description of
+  [draft PR #72](https://github.com/hokoo/cf7-telegram/pull/72) and all epic docs.
+  Root updated the PR description; worker `/root/abilities_docs_english`, native
+  `01a1886d-c535-7f00-a124-dca5ab9bdc08`, translated this document from baseline
+  `a64b1fa`. Root accepted the translation after checking section/table/fence
+  counts, unchanged hashes/UUIDs/links and executable examples, resolved relative
+  links, no remaining Cyrillic prose, and `git diff --check`. Existing English
+  user documentation needed no translation. The worker stopped and was archived
+  normally, exit 0. This follow-up changes documentation only; product code,
+  contracts, historical evidence, and the independent QA verdict are unchanged.

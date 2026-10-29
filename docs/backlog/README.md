@@ -19,7 +19,9 @@ R1.2 at `c534c66`, and R1.3 with its destination repair at `137f308` (product `5
 Local Core/REST/MCP and compatibility gates passed. Fresh independent QA accepted
 `e25d811..119b66a` with `pass_with_notes`; R1-AC1–R1-AC8 and DoD are met.
 Candidate ZIP and evidence are recorded in the specification checkpoint.
-Version bump, hosted CI, push, merge and publication remain a separate release task.
+Draft PR: [#72](https://github.com/hokoo/cf7-telegram/pull/72); its description and
+epic documentation are in English. Hosted CI is tracked in the PR; version bump,
+merge and publication remain a separate release task.
 The remaining four abilities retain `needs_design` and are outside this delivery.
 
 ## B1. Preserve legacy Telegram chat display names during migration
