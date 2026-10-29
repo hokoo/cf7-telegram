@@ -732,7 +732,7 @@ Handoff: revision/diff boundary, фактические paths, AC evidence, ко
 
 ### R1.2 Статическая diagnose-form
 
-Status: `todo` — R1.1 принят root.
+Status: `completed` — scoped diff технически принят owner; commit передан root.
 Goal: объяснить проблемы маршрута формы без внешних запросов и изменения данных.
 Scope: схема/callback diagnose-form, обход графа одной формы, issue/status
 aggregation, focused regression. Переиспользовать чтение и права R1.1.
@@ -1075,3 +1075,60 @@ fresh batch owner → specialists, отдельный независимый epi
   cleanup содержит только root. Потомки и проверочные процессы остановлены.
 - R1.2 готов. Для fresh owner выбран `gpt-6.1-sol/high`: диагностика использует
   принятый read path, но требует аккуратного обхода графа, прав и агрегации issues.
+- R1.2 `in_progress`: owner `/root/r1_2_owner`, native thread
+  `01a18781-3d23-72f2-ab4f-a3adae671e51`; исходная чистая граница `43d63a6`.
+  Единственный writer — fresh `/root/r1_2_owner/implementation` с pinned
+  `gpt-6-sol/high`; изменения ограничены abilities и focused tests.
+  После остановки writer — отдельный test_monitor и serial PHP gate.
+- R1.2 исходный scoped diff проверен owner: зарегистрирована вторая и последняя ability
+  `diagnose-form`, строгие схемы и статическая агрегация всех восьми issue codes.
+  Права проверяются до диагностики на форме, её мостах, всех связанных с мостом
+  формах/ботах/получателях и ботах связей выбранных получателей; без рекурсивного
+  обхода чужих маршрутов. Скрытый существующий объект, включая неверный CPT,
+  даёт 403. Два бота/повреждение одного моста не скрывают исправный другой путь.
+  Paths: `plugin-dir/lib/Abilities.php`, `plugin-dir/tests/AbilitiesTest.php`.
+- Owner просмотрел actual diff; найден и исправлен пропуск duplicate links
+  соседней формы с выбранным мостом. Повторный focused reflection harness всех
+  14 Abilities tests — exit 0; log `/tmp/cf7tg-r1.2-worker/abilities-focused-repair.log`.
+  R1-AC5: каждый code, ready/partial/blocked, healthy+broken, две темы и offline;
+  R1-AC6: repeated snapshots без plugin/log/options/cron/HTTP/gateway mutations;
+  R1-AC7: fixed translated issue text, sentinel output/storage errors и сохранённые
+  get-configuration/token regressions. Настоящие runtime regressions остаются R1.3.
+- Writer `/root/r1_2_owner/implementation`, native thread
+  `01a18782-007e-71d2-bddb-53a7492a73e7`, остановлен до внешнего gate.
+  Fresh `/root/r1_2_owner/verification`, native thread
+  `01a1878c-a51d-71f1-99be-dca052cfa3d8` (pinned `gpt-6-luna/low`), выполнил
+  `cd plugin-dir && composer test` один раз — exit 0, **124 tests / 0 failures**;
+  `php -l plugin-dir/lib/Abilities.php` и `php -l plugin-dir/tests/AbilitiesTest.php`
+  — exit 0; `git diff --check` — exit 0. Логи и manifest:
+  `/tmp/cf7tg-r1.2-verification/{01-composer-test,02-php-lint,03-diff-check}.log`,
+  `manifest.txt`. PHP 8.0.30/Composer 2.5.5; это compatibility harness, отсутствуют
+  dom/mbstring/xmlwriter. Monitor сначала остановился на этом ограничении,
+  затем завершил оставшийся ladder без повторного composer; реальный PHPUnit,
+  Core/REST/MCP и общий candidate gate не объявляются пройденными.
+- Frozen PHP SHA-256 до/после gate совпали: Abilities
+  `e9e4907636cea8b96b011d89062f87903cf23e5f48a46aac4cf02a92a599008a`, tests
+  `ffc4b1b25e6b1eb32d91fe986bdc56689e0445b1c52a5ac4bddb8d5679629d5e`.
+  Это исходная проверенная граница до замечания root, не финальная приёмка.
+  Root выявил ложный token_missing при malformed JSON и usable scoped constant;
+  тот же worker исправил источник токена независимо от валидности JSON,
+  сохранив блокировку повреждённого маршрута через broken_relation.
+- Финальная R1.2 технически принята owner после actual repair diff review.
+  Добавлен изолированный subprocess: malformed bot JSON + usable scoped constant
+  сохраняет token_configured, выдаёт broken_relation без ложного token_missing,
+  не раскрывает секреты и повторно не меняет состояние. Focused reflection harness
+  всех **15 Abilities tests** — exit 0;
+  `/tmp/cf7tg-r1.2-worker/abilities-focused-token-repair.log`.
+  На новой границе тот же monitor повторил required ladder после изменения кода:
+  `cd plugin-dir && composer test` — exit 0, **125 tests / 0 failures** (0.24 с,
+  compatibility harness); `php -l` обоих изменённых PHP и `git diff --check`
+  — exit 0. Предыдущие попытки сохранены, реальный PHPUnit не заявлен.
+  Финальные логи `01-composer-test.log`, `02-php-lint.log`, `03-diff-check.log`
+  и manifest: `/tmp/cf7tg-r1.2-verification/final-token-repair/`.
+- Финальные SHA-256 до/после gate: Abilities
+  `e2ca4340d97075eb1f1787afa87a3833dd1ab47414c6b6e2d8994e857a2e294f`, tests
+  `d4c1b83140ace3edbe1b48500fc9e998134d9a064d33ea6ad13dedb5d4e8e9aa`.
+  Scoped commit — parent `43d63a6` + эти два файла и данный checkpoint.
+  Неожиданных изменений нет; writer и monitor завершены, потомков/работающих
+  команд нет. Native IDs выше переданы root для lifecycle cleanup.
+  Следующий ready batch после приёмки root — R1.3; этот owner его не берёт.

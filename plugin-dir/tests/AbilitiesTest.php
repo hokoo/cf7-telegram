@@ -35,11 +35,30 @@ final class AbilitiesTest extends Cf7tg_TestCase {
 		return Abilities::getConfiguration( array_merge( [ 'resource' => $resource ], $extra ) );
 	}
 
+	private function route( int $form, array $botParams = [ 'token' => 'saved-token' ], array $chatParams = [ 'chatID' => '-100123456789', 'chatType' => 'supergroup', 'messageThreadID' => 22 ], ?string $status = 'active' ): array {
+		$bridge = $this->post( Client::CPT_CHANNEL, 'Bridge', [ 'name' => 'Bridge' ] );
+		$bot = $this->post( Client::CPT_BOT, 'Bot', $botParams );
+		$recipient = $this->post( Client::CPT_CHAT, 'Recipient', $chatParams );
+		$this->edge( Client::FORM2CHANNEL, $form, $bridge );
+		$this->edge( Client::BOT2CHANNEL, $bot, $bridge );
+		$this->edge( Client::CHAT2CHANNEL, $recipient, $bridge );
+		if ( null !== $status ) $this->edge( Client::BOT2CHAT, $bot, $recipient, $status );
+		return [ $bridge, $bot, $recipient ];
+	}
+
+	private function diagnose( int $form ) {
+		return Abilities::diagnoseForm( [ 'form_id' => $form ] );
+	}
+
+	private function codes( array $diagnosis ): array {
+		return array_column( $diagnosis['issues'], 'code' );
+	}
+
 	public function testRegistrationAndSchemasAreStrict(): void {
 		Abilities::init();
 		do_action( 'wp_abilities_api_categories_init' );
 		do_action( 'wp_abilities_api_init' );
-		$this->assertSame( [ 'cf7-telegram/get-configuration' ], array_keys( $GLOBALS['wp_abilities'] ) );
+		$this->assertSame( [ 'cf7-telegram/get-configuration', 'cf7-telegram/diagnose-form' ], array_keys( $GLOBALS['wp_abilities'] ) );
 		$this->assertArrayHasKey( 'cf7-telegram', $GLOBALS['wp_ability_categories'] );
 		$ability = $GLOBALS['wp_abilities']['cf7-telegram/get-configuration'];
 		$this->assertSame( 'cf7-telegram', $ability['category'] );
@@ -56,6 +75,19 @@ final class AbilitiesTest extends Cf7tg_TestCase {
 			$this->assertSame( false, $variant['additionalProperties'] );
 			$this->assertFalse( isset( $variant['properties']['revision'] ) );
 		}
+		$diagnose = $GLOBALS['wp_abilities']['cf7-telegram/diagnose-form'];
+		$this->assertSame( $ability['meta'], $diagnose['meta'] );
+		$this->assertSame( 'cf7-telegram', $diagnose['category'] );
+		$this->assertSame( [ 'form_id' ], $diagnose['input_schema']['required'] );
+		$this->assertSame( false, $diagnose['input_schema']['additionalProperties'] );
+		$this->assertSame( 1, $diagnose['input_schema']['properties']['form_id']['minimum'] );
+		$this->assertSame( false, $diagnose['output_schema']['additionalProperties'] );
+		$this->assertSame( [ 'schema_version', 'form_id', 'configuration_status', 'delivery_verified', 'bridges', 'issues' ], $diagnose['output_schema']['required'] );
+		$this->assertSame( false, $diagnose['output_schema']['properties']['bridges']['items']['additionalProperties'] );
+		$this->assertSame( false, $diagnose['output_schema']['properties']['issues']['items']['additionalProperties'] );
+		$this->assertSame( [ 'no_bridge', 'broken_relation', 'no_bot', 'token_missing', 'no_recipients', 'recipient_not_active', 'invalid_destination', 'cached_bot_offline' ],
+			$diagnose['output_schema']['properties']['issues']['items']['properties']['code']['enum'] );
+		$this->assertSame( [ false ], $diagnose['output_schema']['properties']['delivery_verified']['enum'] );
 		$this->assertSame( 'cf7tg_invalid_input', $this->read( 'forms', [ 'extra' => 1 ] )->get_error_code() );
 		$this->assertSame( 'cf7tg_invalid_input', Abilities::getConfiguration( [ 'resource' => [] ] )->get_error_code() );
 		$this->assertSame( 'cf7tg_invalid_input', $this->read( 'forms', [ 'page' => '1' ] )->get_error_code() );
@@ -68,9 +100,11 @@ final class AbilitiesTest extends Cf7tg_TestCase {
 		$GLOBALS['wp_did_actions']['init'] = 0;
 		$this->assertSame( 'cf7tg_not_ready', Abilities::permission()->get_error_code() );
 		$this->assertSame( 'cf7tg_not_ready', $this->read( 'forms' )->get_error_code() );
+		$this->assertSame( 'cf7tg_not_ready', Abilities::diagnoseForm( [ 'form_id' => 1 ] )->get_error_code() );
 		$GLOBALS['wp_did_actions']['init'] = 1;
 		$GLOBALS['wp_user_logged_in'] = false;
 		$this->assertSame( 'cf7tg_forbidden', Abilities::permission()->get_error_code() );
+		$this->assertSame( 'cf7tg_forbidden', Abilities::diagnoseForm( [ 'form_id' => 1 ] )->get_error_code() );
 		$GLOBALS['wp_user_logged_in'] = true;
 		$GLOBALS['current_user_can'] = false;
 		$this->assertSame( 'cf7tg_forbidden', $this->read( 'forms' )->get_error_code() );
@@ -209,6 +243,39 @@ final class AbilitiesTest extends Cf7tg_TestCase {
 		$this->assertSame( 0, $status );
 	}
 
+	public function testMalformedBotWithScopedConstantInIsolation(): void {
+		$script = 'require ' . var_export( __DIR__ . '/bootstrap.php', true ) . '; '
+			. '$GLOBALS["wp_registered_post_types"] = ["wpcf7_contact_form", "cf7tg_channel", "cf7tg_bot", "cf7tg_chat"]; '
+			. '\iTRON\cf7Telegram\Controllers\CPT::get_instance()->cf7_orig_capabilities = ["edit_posts" => "edit_posts"]; '
+			. '\iTRON\cf7Telegram\Client::getInstance()->init(); do_action("init"); '
+			. '$make = static fn($type, $json) => wp_insert_post(["post_type" => $type, "post_status" => "publish", "post_title" => "Item", "post_content_filtered" => $json]); '
+			. '$form = $make("wpcf7_contact_form", "{}"); $bridge = $make("cf7tg_channel", "{}"); '
+			. '$bot = $make("cf7tg_bot", "{broken SECRET_JSON_SENTINEL"); '
+			. '$chat = $make("cf7tg_chat", json_encode(["chatID" => "-100123456789", "chatType" => "supergroup", "messageThreadID" => 22])); '
+			. '$secret = "123456789:SCOPEDTOKEN12345678901234567890"; define(sprintf(\iTRON\cf7Telegram\Bot::TOKEN_CONST_MASK, $bot), $secret); '
+			. '$edge = static function($name, $from, $to) { $id = $GLOBALS["wp_next_connection_id"]++; '
+			. '$GLOBALS["wp_connection_rows"][] = (object)["ID" => $id, "relation" => $name, "from" => $from, "to" => $to, "order" => 0, "title" => ""]; return $id; }; '
+			. '$edge("form2channel", $form, $bridge); $edge("bot2channel", $bot, $bridge); $edge("chat2channel", $chat, $bridge); '
+			. '$link = $edge("bot2chat", $bot, $chat); $GLOBALS["wp_connection_meta_rows"][] = (object)["meta_id" => $GLOBALS["wp_next_connection_meta_id"]++, '
+			. '"connection_id" => $link, "meta_key" => "status", "meta_value" => "active"]; '
+			. '$gatewayCalls = 0; add_filter("cf7tg_telegram_gateway", static function($gateway) use (&$gatewayCalls) { $gatewayCalls++; return $gateway; }); '
+			. '$state = static fn() => serialize([$GLOBALS["wp_posts"], $GLOBALS["wp_post_meta"], $GLOBALS["wp_connection_rows"], '
+			. '$GLOBALS["wp_connection_meta_rows"], $GLOBALS["wp_log_rows"], $GLOBALS["wp_options"], $GLOBALS["wpdb_inserts"], '
+			. '$GLOBALS["wp_remote_post_requests"], _get_cron_array()]); $before = $state(); '
+			. '$configuration = \iTRON\cf7Telegram\Abilities::getConfiguration(["resource" => "bots"]); '
+			. '$first = \iTRON\cf7Telegram\Abilities::diagnoseForm(["form_id" => $form]); '
+			. '$second = \iTRON\cf7Telegram\Abilities::diagnoseForm(["form_id" => $form]); '
+			. '$codes = array_column($first["issues"], "code"); $output = json_encode([$configuration, $first, $second]); '
+			. 'exit($configuration["items"][0]["token_configured"] === true '
+			. '&& $first === $second && $first["configuration_status"] === "blocked" '
+			. '&& $first["bridges"][0]["eligible_recipient_ids"] === [] && in_array("broken_relation", $codes, true) '
+			. '&& !in_array("token_missing", $codes, true) && !str_contains($output, $secret) '
+			. '&& !str_contains($output, "SECRET_JSON_SENTINEL") && !str_contains($output, "-100123456789") '
+			. '&& $before === $state() && $gatewayCalls === 0 && $GLOBALS["wp_remote_post_requests"] === [] ? 0 : 1);';
+		exec( escapeshellarg( PHP_BINARY ) . ' -r ' . escapeshellarg( $script ), $output, $status );
+		$this->assertSame( 0, $status );
+	}
+
 	public function testTokenRulesAndReadOnlySecretOutput(): void {
 		$GLOBALS['wp_next_post_id'] = 500000;
 		$token = '123456789:SAVEDTOKEN12345678901234567890';
@@ -259,5 +326,181 @@ final class AbilitiesTest extends Cf7tg_TestCase {
 		$error = $this->read( 'bots' );
 		$this->assertSame( 'cf7tg_storage_unavailable', $error->get_error_code() );
 		$this->assertFalse( str_contains( $error->get_error_message(), 'SECRET_SENTINEL' ) );
+	}
+
+	public function testDiagnosisStatusesAndEveryIssue(): void {
+		$empty = $this->post( Client::CPT_CF7FORM, 'Empty' );
+		$this->assertSame( 'blocked', $this->diagnose( $empty )['configuration_status'] );
+		$this->assertSame( [ 'no_bridge' ], $this->codes( $this->diagnose( $empty ) ) );
+
+		$healthy = $this->post( Client::CPT_CF7FORM, 'Healthy' );
+		[ $bridge, $bot, $topic ] = $this->route( $healthy, [ 'token' => 'saved-token', 'lastStatus' => 'offline' ] );
+		$secondTopic = $this->post( Client::CPT_CHAT, 'Other topic', [ 'chatID' => '-100123456789', 'chatType' => 'supergroup', 'messageThreadID' => 23 ] );
+		$this->edge( Client::CHAT2CHANNEL, $secondTopic, $bridge );
+		$this->edge( Client::BOT2CHAT, $bot, $secondTopic, 'active' );
+		$ready = $this->diagnose( $healthy );
+		$this->assertSame( 'ready', $ready['configuration_status'] );
+		$this->assertSame( false, $ready['delivery_verified'] );
+		$this->assertSame( [ $topic, $secondTopic ], $ready['bridges'][0]['eligible_recipient_ids'] );
+		$this->assertSame( [ 'cached_bot_offline' ], $this->codes( $ready ) );
+		$this->assertSame( 'warning', $ready['issues'][0]['severity'] );
+		$pending = $this->post( Client::CPT_CHAT, 'Pending', [ 'chatID' => '12345678', 'chatType' => 'private' ] );
+		$this->edge( Client::CHAT2CHANNEL, $pending, $bridge );
+		$this->edge( Client::BOT2CHAT, $bot, $pending, 'pending' );
+		$muted = $this->post( Client::CPT_CHAT, 'Muted', [ 'chatID' => '12345679', 'chatType' => 'private' ] );
+		$this->edge( Client::CHAT2CHANNEL, $muted, $bridge );
+		$this->edge( Client::BOT2CHAT, $bot, $muted, 'muted' );
+		$unknown = $this->post( Client::CPT_CHAT, 'Unknown', [ 'chatID' => '12345680', 'chatType' => 'private' ] );
+		$this->edge( Client::CHAT2CHANNEL, $unknown, $bridge );
+		$this->edge( Client::BOT2CHAT, $bot, $unknown, 'odd' );
+		$missingLink = $this->post( Client::CPT_CHAT, 'Unlinked', [ 'chatID' => '12345681', 'chatType' => 'private' ] );
+		$this->edge( Client::CHAT2CHANNEL, $missingLink, $bridge );
+		$badTopic = $this->post( Client::CPT_CHAT, 'Bad topic', [ 'chatID' => '12345682', 'chatType' => 'private', 'messageThreadID' => 22 ] );
+		$this->edge( Client::CHAT2CHANNEL, $badTopic, $bridge );
+		$this->edge( Client::BOT2CHAT, $bot, $badTopic, 'active' );
+		$partial = $this->diagnose( $healthy );
+		$this->assertSame( 'partial', $partial['configuration_status'] );
+		$this->assertSame( [ $topic, $secondTopic ], $partial['bridges'][0]['eligible_recipient_ids'] );
+		$this->assertSame( 4, count( array_filter( $this->codes( $partial ), static fn( string $code ): bool => 'recipient_not_active' === $code ) ) );
+		$this->assertTrue( in_array( 'invalid_destination', $this->codes( $partial ), true ) );
+
+		$noBot = $this->post( Client::CPT_CF7FORM, 'No bot' );
+		$botlessBridge = $this->post( Client::CPT_CHANNEL, 'Botless', [ 'name' => 'Botless' ] );
+		$this->edge( Client::FORM2CHANNEL, $noBot, $botlessBridge );
+		$this->assertSame( [ 'no_bot', 'no_recipients' ], $this->codes( $this->diagnose( $noBot ) ) );
+		$noToken = $this->post( Client::CPT_CF7FORM, 'No token' );
+		$this->route( $noToken, [ 'token' => '[empty]' ] );
+		$this->assertSame( 'blocked', $this->diagnose( $noToken )['configuration_status'] );
+		$this->assertTrue( in_array( 'token_missing', $this->codes( $this->diagnose( $noToken ) ), true ) );
+	}
+
+	public function testDiagnosisBrokenRoutesDoNotMaskHealthyRoute(): void {
+		$form = $this->post( Client::CPT_CF7FORM, 'Form' );
+		[ $goodBridge, $goodBot, $goodRecipient ] = $this->route( $form );
+		[ $brokenBridge ] = $this->route( $form );
+		$secondBot = $this->post( Client::CPT_BOT, 'Second bot', [ 'token' => 'saved-token' ] );
+		$this->edge( Client::BOT2CHANNEL, $secondBot, $brokenBridge );
+		$diagnosis = $this->diagnose( $form );
+		$this->assertSame( 'partial', $diagnosis['configuration_status'] );
+		$this->assertSame( [ $goodRecipient ], $diagnosis['bridges'][0]['eligible_recipient_ids'] );
+		$this->assertSame( [], $diagnosis['bridges'][1]['eligible_recipient_ids'] );
+		$this->assertTrue( in_array( 'broken_relation', $this->codes( $diagnosis ), true ) );
+		$this->assertSame( $goodBridge, $diagnosis['bridges'][0]['bridge_id'] );
+		$this->assertSame( $brokenBridge, $diagnosis['bridges'][1]['bridge_id'] );
+		$GLOBALS['wp_posts'][ $secondBot ]->post_type = Client::CPT_CHAT;
+		$this->assertSame( 'partial', $this->diagnose( $form )['configuration_status'] );
+		$GLOBALS['wp_posts'][ $goodRecipient ]->post_type = Client::CPT_BOT;
+		$this->assertSame( 'blocked', $this->diagnose( $form )['configuration_status'] );
+		$GLOBALS['wp_posts'][ $goodRecipient ]->post_type = Client::CPT_CHAT;
+		$this->edge( Client::CHAT2CHANNEL, $goodRecipient, $goodBridge );
+		$this->assertSame( 'blocked', $this->diagnose( $form )['configuration_status'] );
+		array_pop( $GLOBALS['wp_connection_rows'] );
+		$this->edge( Client::FORM2CHANNEL, $form, $goodBridge );
+		$this->assertSame( 'blocked', $this->diagnose( $form )['configuration_status'] );
+		array_pop( $GLOBALS['wp_connection_rows'] );
+		$siblingForm = $this->post( Client::CPT_CF7FORM, 'Sibling' );
+		$this->edge( Client::FORM2CHANNEL, $siblingForm, $goodBridge );
+		$this->edge( Client::FORM2CHANNEL, $siblingForm, $goodBridge );
+		$siblingDuplicate = $this->diagnose( $form );
+		$this->assertSame( 'blocked', $siblingDuplicate['configuration_status'] );
+		$this->assertSame( [], $siblingDuplicate['bridges'][0]['eligible_recipient_ids'] );
+		$this->assertTrue( in_array( 'broken_relation', $this->codes( $siblingDuplicate ), true ) );
+		array_pop( $GLOBALS['wp_connection_rows'] );
+		array_pop( $GLOBALS['wp_connection_rows'] );
+		$this->edge( Client::BOT2CHAT, $goodBot, $goodRecipient, 'active' );
+		$this->assertSame( 'blocked', $this->diagnose( $form )['configuration_status'] );
+		$this->assertTrue( in_array( 'broken_relation', $this->codes( $this->diagnose( $form ) ), true ) );
+		array_pop( $GLOBALS['wp_connection_rows'] );
+		array_pop( $GLOBALS['wp_connection_meta_rows'] );
+		$deleted = $this->post( Client::CPT_CF7FORM, 'Deleted' );
+		unset( $GLOBALS['wp_posts'][ $deleted ] );
+		$this->edge( Client::FORM2CHANNEL, $deleted, $goodBridge );
+		$this->assertTrue( in_array( 'broken_relation', $this->codes( $this->diagnose( $form ) ), true ) );
+	}
+
+	public function testDiagnosisAuthorizationPreflightsExistingGraph(): void {
+		$form = $this->post( Client::CPT_CF7FORM, 'Form' );
+		[ $bridge, $bot, $recipient ] = $this->route( $form );
+		$otherForm = $this->post( Client::CPT_CF7FORM, 'Other' );
+		$this->edge( Client::FORM2CHANNEL, $otherForm, $bridge );
+		$otherBot = $this->post( Client::CPT_BOT, 'Other bot' );
+		$this->edge( Client::BOT2CHAT, $otherBot, $recipient, 'pending' );
+		foreach ( [ $form, $bridge, $bot, $recipient, $otherForm, $otherBot ] as $hidden ) {
+			$GLOBALS['current_user_can_callback'] = static fn( string $capability, ...$args ): bool => 'read_post' !== $capability || ( $args[0] ?? 0 ) !== $hidden;
+			$this->assertSame( 'cf7tg_forbidden', $this->diagnose( $form )->get_error_code() );
+		}
+		$GLOBALS['wp_posts'][ $otherBot ]->post_type = Client::CPT_CHAT;
+		$hidden = $otherBot;
+		$this->assertSame( 'cf7tg_forbidden', $this->diagnose( $form )->get_error_code() );
+		$GLOBALS['current_user_can_callback'] = null;
+		$this->assertSame( 'partial', $this->diagnose( $form )['configuration_status'] );
+		$this->assertTrue( in_array( 'broken_relation', $this->codes( $this->diagnose( $form ) ), true ) );
+		$GLOBALS['current_user_can'] = false;
+		$this->assertSame( 'cf7tg_forbidden', Abilities::diagnoseForm( [ 'form_id' => 999999 ] )->get_error_code() );
+		$GLOBALS['current_user_can'] = true;
+		$this->assertSame( 'cf7tg_not_found', Abilities::diagnoseForm( [ 'form_id' => 999999 ] )->get_error_code() );
+		$GLOBALS['wp_posts'][ $form ]->post_type = Client::CPT_CHAT;
+		$GLOBALS['current_user_can_callback'] = static fn( string $capability, ...$args ): bool => 'read_post' !== $capability || ( $args[0] ?? 0 ) !== $form;
+		$this->assertSame( 'cf7tg_forbidden', $this->diagnose( $form )->get_error_code() );
+		$GLOBALS['current_user_can_callback'] = null;
+		$this->assertSame( 'cf7tg_not_found', $this->diagnose( $form )->get_error_code() );
+	}
+
+	public function testDiagnosisStrictInputFailuresAndNoEffects(): void {
+		$form = $this->post( Client::CPT_CF7FORM, 'Form' );
+		[ , $bot, $recipient ] = $this->route( $form, [ 'token' => 'SECRET_TOKEN_SENTINEL' ], [ 'chatID' => '-100123456789', 'chatType' => 'supergroup', 'messageThreadID' => 22 ] );
+		$GLOBALS['wp_posts'][ $bot ]->post_content_filtered = '{SECRET_BAD_JSON';
+		$GLOBALS['wp_posts'][ $recipient ]->post_title = 'contact@example.com -100123456789';
+		$gatewayCalls = 0;
+		add_filter( 'cf7tg_telegram_gateway', static function ( $gateway ) use ( &$gatewayCalls ) { $gatewayCalls++; return $gateway; } );
+		$snapshot = serialize( [ $GLOBALS['wp_posts'], $GLOBALS['wp_post_meta'], $GLOBALS['wp_deleted_posts'], $GLOBALS['wp_connection_rows'], $GLOBALS['wp_connection_meta_rows'],
+			$GLOBALS['wp_log_rows'], $GLOBALS['wp_options'], $GLOBALS['wpdb_inserts'], $GLOBALS['wp_remote_post_requests'], _get_cron_array() ] );
+		foreach ( [ [], [ 'form_id' => 0 ], [ 'form_id' => '1' ], [ 'form_id' => $form, 'extra' => true ], [ 'form_id' => true ] ] as $input ) {
+			$this->assertSame( 'cf7tg_invalid_input', Abilities::diagnoseForm( $input )->get_error_code() );
+		}
+		for ( $i = 0; $i < 2; $i++ ) {
+			$output = $this->diagnose( $form );
+			$this->assertSame( 'blocked', $output['configuration_status'] );
+			$this->assertTrue( in_array( 'broken_relation', $this->codes( $output ), true ) );
+			$this->assertFalse( in_array( 'token_missing', $this->codes( $output ), true ) );
+			$this->assertFalse( str_contains( json_encode( $output ), 'SECRET_TOKEN_SENTINEL' ) );
+			$this->assertFalse( str_contains( json_encode( $output ), 'SECRET_BAD_JSON' ) );
+			$this->assertFalse( str_contains( json_encode( $output ), '-100123456789' ) );
+			$this->assertFalse( str_contains( json_encode( $output ), 'contact@example.com' ) );
+		}
+		$this->assertSame( 0, $gatewayCalls );
+		$this->assertSame( $snapshot, serialize( [ $GLOBALS['wp_posts'], $GLOBALS['wp_post_meta'], $GLOBALS['wp_deleted_posts'], $GLOBALS['wp_connection_rows'], $GLOBALS['wp_connection_meta_rows'],
+			$GLOBALS['wp_log_rows'], $GLOBALS['wp_options'], $GLOBALS['wpdb_inserts'], $GLOBALS['wp_remote_post_requests'], _get_cron_array() ] ) );
+		$GLOBALS['wp_get_results_handler'] = static function ( string $query, Cf7tg_Test_Wpdb $db ): array {
+			$db->last_error = 'SECRET_STORAGE_SENTINEL';
+			return [];
+		};
+		$error = $this->diagnose( $form );
+		$this->assertSame( 'cf7tg_storage_unavailable', $error->get_error_code() );
+		$this->assertFalse( str_contains( $error->get_error_message(), 'SECRET_STORAGE_SENTINEL' ) );
+	}
+
+	public function testDiagnosisMalformedParamsAndNoBridgeStorageFailure(): void {
+		$form = $this->post( Client::CPT_CF7FORM, 'Form' );
+		[ $bridge, $bot, $recipient ] = $this->route( $form );
+		$this->assertSame( 'ready', $this->diagnose( $form )['configuration_status'] );
+		foreach ( [
+			[ $bridge, 'broken_relation' ], [ $bot, 'broken_relation' ], [ $recipient, 'invalid_destination' ],
+		] as [ $postID, $code ] ) {
+			$old = $GLOBALS['wp_posts'][ $postID ]->post_content_filtered;
+			$GLOBALS['wp_posts'][ $postID ]->post_content_filtered = '{broken';
+			$result = $this->diagnose( $form );
+			$this->assertSame( 'blocked', $result['configuration_status'] );
+			$this->assertTrue( in_array( $code, $this->codes( $result ), true ) );
+			$GLOBALS['wp_posts'][ $postID ]->post_content_filtered = $old;
+		}
+		$empty = $this->post( Client::CPT_CF7FORM, 'Empty' );
+		$GLOBALS['wp_get_results_handler'] = static function ( string $query, Cf7tg_Test_Wpdb $db ): array {
+			$db->last_error = 'SECRET_STORAGE_SENTINEL';
+			return [];
+		};
+		$error = $this->diagnose( $empty );
+		$this->assertSame( 'cf7tg_storage_unavailable', $error->get_error_code() );
+		$this->assertFalse( str_contains( $error->get_error_message(), 'SECRET_STORAGE_SENTINEL' ) );
 	}
 }

@@ -47,6 +47,46 @@ class Abilities {
 				'annotations'  => [ 'readonly' => true, 'destructive' => false, 'idempotent' => true ],
 			],
 		] );
+		wp_register_ability( 'cf7-telegram/diagnose-form', [
+			'label'               => __( 'Diagnose CF7 Telegram form', 'cf7-telegram' ),
+			'description'         => __( 'Inspect saved delivery routes for one form without contacting Telegram or changing configuration.', 'cf7-telegram' ),
+			'category'            => 'cf7-telegram',
+			'input_schema'        => [ 'type' => 'object', 'additionalProperties' => false, 'required' => [ 'form_id' ],
+				'properties' => [ 'form_id' => [ 'type' => 'integer', 'minimum' => 1 ] ] ],
+			'output_schema'       => self::diagnosisSchema(),
+			'permission_callback' => [ self::class, 'permission' ],
+			'execute_callback'    => [ self::class, 'diagnoseForm' ],
+			'meta'                => [
+				'public'       => true,
+				'show_in_rest' => true,
+				'mcp'          => [ 'public' => true ],
+				'annotations'  => [ 'readonly' => true, 'destructive' => false, 'idempotent' => true ],
+			],
+		] );
+	}
+
+	private static function diagnosisSchema(): array {
+		$id = [ 'type' => 'integer', 'minimum' => 1 ];
+		$nullableID = [ 'type' => [ 'integer', 'null' ], 'minimum' => 1 ];
+		$bridge = [ 'bridge_id' => $id, 'eligible_recipient_ids' => [ 'type' => 'array', 'items' => $id ] ];
+		$issue = [
+			'code' => [ 'type' => 'string', 'enum' => [ 'no_bridge', 'broken_relation', 'no_bot', 'token_missing', 'no_recipients', 'recipient_not_active', 'invalid_destination', 'cached_bot_offline' ] ],
+			'severity' => [ 'type' => 'string', 'enum' => [ 'warning', 'error' ] ],
+			'bridge_id' => $nullableID, 'recipient_id' => $nullableID,
+			'message' => [ 'type' => 'string' ], 'suggested_action' => [ 'type' => 'string' ],
+		];
+		return [ 'type' => 'object', 'additionalProperties' => false,
+			'required' => [ 'schema_version', 'form_id', 'configuration_status', 'delivery_verified', 'bridges', 'issues' ],
+			'properties' => [
+				'schema_version' => [ 'type' => 'integer', 'enum' => [ 1 ] ], 'form_id' => $id,
+				'configuration_status' => [ 'type' => 'string', 'enum' => [ 'ready', 'partial', 'blocked' ] ],
+				'delivery_verified' => [ 'type' => 'boolean', 'enum' => [ false ] ],
+				'bridges' => [ 'type' => 'array', 'items' => [ 'type' => 'object', 'additionalProperties' => false,
+					'required' => array_keys( $bridge ), 'properties' => $bridge ] ],
+				'issues' => [ 'type' => 'array', 'items' => [ 'type' => 'object', 'additionalProperties' => false,
+					'required' => array_keys( $issue ), 'properties' => $issue ] ],
+			],
+		];
 	}
 
 	private static function inputSchema(): array {
@@ -160,6 +200,164 @@ class Abilities {
 		} catch ( \Throwable $error ) {
 			return self::error( 'cf7tg_storage_unavailable', __( 'Configuration storage is unavailable.', 'cf7-telegram' ), 503 );
 		}
+	}
+
+	public static function diagnoseForm( $input ) {
+		$permission = self::permission();
+		if ( true !== $permission ) return $permission;
+		if ( ! is_array( $input ) || array_keys( $input ) !== [ 'form_id' ] || ! is_int( $input['form_id'] ) || $input['form_id'] < 1 ) {
+			return self::error( 'cf7tg_invalid_input', __( 'Invalid diagnosis request.', 'cf7-telegram' ), 400 );
+		}
+		$formID = $input['form_id'];
+		try {
+			$posts = [];
+			$form = self::graphPost( $formID, $posts );
+			if ( ! self::validGraphPost( $form, Client::CPT_CF7FORM ) ) {
+				return self::error( 'cf7tg_not_found', __( 'Form not found.', 'cf7-telegram' ), 404 );
+			}
+			$relations = self::relations();
+			$bridgeIDs = [];
+			foreach ( $relations[ Client::FORM2CHANNEL ] as $edge ) if ( $edge->from === $formID ) $bridgeIDs[] = $edge->to;
+			$bridgeIDs = array_values( array_unique( $bridgeIDs ) );
+			$recipientIDs = [];
+			foreach ( $bridgeIDs as $bridgeID ) self::graphPost( $bridgeID, $posts );
+			foreach ( [ Client::FORM2CHANNEL, Client::BOT2CHANNEL, Client::CHAT2CHANNEL ] as $name ) {
+				foreach ( $relations[ $name ] as $edge ) {
+					if ( ! in_array( $edge->to, $bridgeIDs, true ) ) continue;
+					self::graphPost( $edge->from, $posts );
+					if ( Client::CHAT2CHANNEL === $name ) $recipientIDs[] = $edge->from;
+				}
+			}
+			foreach ( $relations[ Client::BOT2CHAT ] as $edge ) {
+				if ( in_array( $edge->to, $recipientIDs, true ) ) self::graphPost( $edge->from, $posts );
+			}
+
+			$issues = [];
+			$bridges = [];
+			if ( ! $bridgeIDs ) self::issue( $issues, 'no_bridge' );
+			foreach ( $bridgeIDs as $bridgeID ) {
+				$eligible = [];
+				$bridgeRef = $bridgeID > 0 ? $bridgeID : null;
+				$bridge = $posts[ $bridgeID ] ?? null;
+				if ( ! self::validGraphPost( $bridge, Client::CPT_CHANNEL ) ) {
+					self::issue( $issues, 'broken_relation', $bridgeRef );
+					if ( $bridgeRef ) $bridges[] = [ 'bridge_id' => $bridgeRef, 'eligible_recipient_ids' => [] ];
+					continue;
+				}
+				$routeValid = true;
+				$validBridgeParams = true;
+				self::params( $bridge, $validBridgeParams );
+				if ( ! $validBridgeParams ) {
+					self::issue( $issues, 'broken_relation', $bridgeID );
+					$routeValid = false;
+				}
+				$formCounts = [];
+				foreach ( $relations[ Client::FORM2CHANNEL ] as $edge ) {
+					if ( $edge->to !== $bridgeID ) continue;
+					$formCounts[ $edge->from ] = ( $formCounts[ $edge->from ] ?? 0 ) + 1;
+					if ( ! self::validGraphPost( $posts[ $edge->from ] ?? null, Client::CPT_CF7FORM ) ) {
+						self::issue( $issues, 'broken_relation', $bridgeID );
+						$routeValid = false;
+					}
+				}
+				foreach ( $formCounts as $count ) {
+					if ( $count > 1 ) {
+						self::issue( $issues, 'broken_relation', $bridgeID );
+						$routeValid = false;
+					}
+				}
+				$botEdges = array_values( array_filter( $relations[ Client::BOT2CHANNEL ], static fn( $edge ): bool => $edge->to === $bridgeID ) );
+				$bot = null;
+				if ( ! $botEdges ) self::issue( $issues, 'no_bot', $bridgeID );
+				elseif ( count( $botEdges ) !== 1 || ! self::validGraphPost( $posts[ $botEdges[0]->from ] ?? null, Client::CPT_BOT ) ) {
+					self::issue( $issues, 'broken_relation', $bridgeID );
+				} else $bot = $posts[ $botEdges[0]->from ];
+				$tokenReady = false;
+				if ( $bot ) {
+					$validParams = true;
+					$params = self::params( $bot, $validParams );
+					$tokenReady = ! BotToken::isEmpty( BotToken::value( $bot->ID, $params[ Bot::TOKEN_SOURCE_PARAM ] ?? null, $params['token'] ?? null ) );
+					if ( ! $validParams ) {
+						self::issue( $issues, 'broken_relation', $bridgeID );
+						$routeValid = false;
+					} elseif ( ! $tokenReady ) self::issue( $issues, 'token_missing', $bridgeID );
+					if ( 'offline' === ( $params['lastStatus'] ?? null ) ) self::issue( $issues, 'cached_bot_offline', $bridgeID );
+				}
+				$chatEdges = array_values( array_filter( $relations[ Client::CHAT2CHANNEL ], static fn( $edge ): bool => $edge->to === $bridgeID ) );
+				if ( ! $chatEdges ) self::issue( $issues, 'no_recipients', $bridgeID );
+				$recipientCounts = array_count_values( array_map( static fn( $edge ): int => $edge->from, $chatEdges ) );
+				foreach ( $chatEdges as $edge ) {
+					$recipientID = $edge->from;
+					$recipientRef = $recipientID > 0 ? $recipientID : null;
+					$recipient = $posts[ $recipientID ] ?? null;
+					if ( $recipientCounts[ $recipientID ] !== 1 || ! self::validGraphPost( $recipient, Client::CPT_CHAT ) ) {
+						self::issue( $issues, 'broken_relation', $bridgeID, $recipientRef );
+						continue;
+					}
+					$validParams = true;
+					$params = self::params( $recipient, $validParams );
+					[ $kind ] = self::destination( $params );
+					$destinationReady = $validParams && 'invalid' !== $kind;
+					if ( ! $destinationReady ) self::issue( $issues, 'invalid_destination', $bridgeID, $recipientID );
+					foreach ( $relations[ Client::BOT2CHAT ] as $link ) {
+						if ( $link->to === $recipientID && ! self::validGraphPost( $posts[ $link->from ] ?? null, Client::CPT_BOT ) ) {
+							self::issue( $issues, 'broken_relation', $bridgeID, $recipientID );
+						}
+					}
+					if ( ! $bot ) continue;
+					$links = array_values( array_filter( $relations[ Client::BOT2CHAT ], static fn( $link ): bool => $link->from === $bot->ID && $link->to === $recipientID ) );
+					if ( count( $links ) > 1 ) self::issue( $issues, 'broken_relation', $bridgeID, $recipientID );
+					$statusMeta = count( $links ) === 1 ? $links[0]->meta->where( 'key', Chat::STATUS_KEY ) : null;
+					$status = $statusMeta && count( $statusMeta ) === 1 ? $statusMeta->first()->value : null;
+					if ( 'active' !== $status ) self::issue( $issues, 'recipient_not_active', $bridgeID, $recipientID );
+					if ( $routeValid && $tokenReady && $destinationReady && 'active' === $status && count( $links ) === 1 ) $eligible[] = $recipientID;
+				}
+				sort( $eligible, SORT_NUMERIC );
+				$bridges[] = [ 'bridge_id' => $bridgeID, 'eligible_recipient_ids' => $eligible ];
+			}
+			usort( $bridges, static fn( array $a, array $b ): int => $a['bridge_id'] <=> $b['bridge_id'] );
+			$hasEligible = false;
+			$hasError = false;
+			foreach ( $bridges as $bridge ) if ( $bridge['eligible_recipient_ids'] ) $hasEligible = true;
+			foreach ( $issues as $issue ) if ( 'error' === $issue['severity'] ) $hasError = true;
+			return [ 'schema_version' => 1, 'form_id' => $formID,
+				'configuration_status' => ! $hasEligible ? 'blocked' : ( $hasError ? 'partial' : 'ready' ),
+				'delivery_verified' => false, 'bridges' => $bridges, 'issues' => $issues ];
+		} catch ( \DomainException $error ) {
+			return self::error( 'cf7tg_forbidden', __( 'You cannot read CF7 Telegram configuration.', 'cf7-telegram' ), 403 );
+		} catch ( \Throwable $error ) {
+			return self::error( 'cf7tg_storage_unavailable', __( 'Configuration storage is unavailable.', 'cf7-telegram' ), 503 );
+		}
+	}
+
+	private static function graphPost( int $id, array &$posts ): ?WP_Post {
+		if ( $id < 1 ) return null;
+		if ( ! array_key_exists( $id, $posts ) ) {
+			$post = self::storageRead( static fn() => get_post( $id ) );
+			if ( $post instanceof WP_Post && ! current_user_can( 'read_post', $id ) ) throw new \DomainException();
+			$posts[ $id ] = $post instanceof WP_Post ? $post : null;
+		}
+		return $posts[ $id ];
+	}
+
+	private static function validGraphPost( ?WP_Post $post, string $type ): bool {
+		return $post && $post->post_type === $type && 'publish' === $post->post_status;
+	}
+
+	private static function issue( array &$issues, string $code, ?int $bridgeID = null, ?int $recipientID = null ): void {
+		$text = [
+			'no_bridge' => [ __( 'No bridge is connected to this form.', 'cf7-telegram' ), __( 'Connect a bridge to the form.', 'cf7-telegram' ) ],
+			'broken_relation' => [ __( 'A saved relation is broken.', 'cf7-telegram' ), __( 'Review the related objects and reconnect them.', 'cf7-telegram' ) ],
+			'no_bot' => [ __( 'The bridge has no bot.', 'cf7-telegram' ), __( 'Select a bot for the bridge.', 'cf7-telegram' ) ],
+			'token_missing' => [ __( 'The bot has no usable token.', 'cf7-telegram' ), __( 'Configure a bot token.', 'cf7-telegram' ) ],
+			'no_recipients' => [ __( 'The bridge has no recipients.', 'cf7-telegram' ), __( 'Select recipients for the bridge.', 'cf7-telegram' ) ],
+			'recipient_not_active' => [ __( 'The recipient is not active for this bot.', 'cf7-telegram' ), __( 'Activate the recipient connection.', 'cf7-telegram' ) ],
+			'invalid_destination' => [ __( 'The recipient destination is invalid.', 'cf7-telegram' ), __( 'Check the saved chat and topic.', 'cf7-telegram' ) ],
+			'cached_bot_offline' => [ __( 'The bot was last saved as offline.', 'cf7-telegram' ), __( 'Check the bot status separately.', 'cf7-telegram' ) ],
+		];
+		$issues[] = [ 'code' => $code, 'severity' => 'cached_bot_offline' === $code ? 'warning' : 'error',
+			'bridge_id' => $bridgeID, 'recipient_id' => $recipientID,
+			'message' => $text[ $code ][0], 'suggested_action' => $text[ $code ][1] ];
 	}
 
 	private static function relations(): array {
