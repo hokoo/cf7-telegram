@@ -4,6 +4,19 @@ This directory records accepted follow-up work that is not part of an active
 implementation batch. Tasks use the repository status model and are not
 commitments to a release.
 
+## B2. WordPress Abilities API adaptation
+
+Status: needs_design
+
+Specification: [Abilities API](abilities-api.md), drafted 2026-10-29.
+User-selected target scope: configuration discovery, static form diagnostics, bridge
+test delivery, message preview, bridge configuration, and recent errors.
+First independent stage: `get-configuration` and `diagnose-form`; implementation
+plan R1.1–R1.3 is in the specification. It does not depend on unresolved questions
+for the other abilities. R1 implementation was authorized on 2026-10-29 and is
+being coordinated by root in `release/abilities-readonly`; R1.1 is ready to start.
+The remaining four abilities retain `needs_design` and are outside this delivery.
+
 ## B1. Preserve legacy Telegram chat display names during migration
 
 Status: needs_design
