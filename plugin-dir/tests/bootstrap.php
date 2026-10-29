@@ -424,6 +424,7 @@ class Cf7tg_Test_Wpdb extends wpdb {
 	}
 
 	public function get_results( string $query ): array {
+		if ( isset( $GLOBALS['wp_get_results_handler'] ) ) return ( $GLOBALS['wp_get_results_handler'] )( $query, $this );
 		if ( preg_match( '/FROM `?([^`\s]+)`?/i', $query, $matches ) && $this->isConnectionsTable( $matches[1] ) ) {
 			return $this->hydrateConnectionRows( $this->filterConnectionRows( $query ) );
 		}
@@ -755,6 +756,7 @@ if ( ! function_exists( 'apply_filters' ) ) {
 
 if ( ! function_exists( 'do_action' ) ) {
 	function do_action( string $hook_name, ...$args ): void {
+		$GLOBALS['wp_did_actions'][ $hook_name ] = ( $GLOBALS['wp_did_actions'][ $hook_name ] ?? 0 ) + 1;
 		if ( empty( $GLOBALS['wp_filter'][ $hook_name ] ) ) {
 			return;
 		}
@@ -767,6 +769,38 @@ if ( ! function_exists( 'do_action' ) ) {
 				call_user_func_array( $callback['function'], $call_args );
 			}
 		}
+	}
+}
+
+if ( ! function_exists( 'did_action' ) ) {
+	function did_action( string $hook_name ): int {
+		return $GLOBALS['wp_did_actions'][ $hook_name ] ?? 0;
+	}
+}
+
+if ( ! function_exists( 'post_type_exists' ) ) {
+	function post_type_exists( string $post_type ): bool {
+		return in_array( $post_type, $GLOBALS['wp_registered_post_types'] ?? [], true );
+	}
+}
+
+if ( ! function_exists( 'is_user_logged_in' ) ) {
+	function is_user_logged_in(): bool {
+		return $GLOBALS['wp_user_logged_in'] ?? true;
+	}
+}
+
+if ( ! function_exists( 'wp_register_ability_category' ) ) {
+	function wp_register_ability_category( string $slug, array $args ) {
+		$GLOBALS['wp_ability_categories'][ $slug ] = $args;
+		return $args;
+	}
+}
+
+if ( ! function_exists( 'wp_register_ability' ) ) {
+	function wp_register_ability( string $name, array $args ) {
+		$GLOBALS['wp_abilities'][ $name ] = $args;
+		return $args;
 	}
 }
 
@@ -844,7 +878,8 @@ if ( ! function_exists( 'wp_strip_all_tags' ) ) {
 }
 
 if ( ! function_exists( 'current_user_can' ) ) {
-	function current_user_can( string $capability ): bool {
+	function current_user_can( string $capability, ...$args ): bool {
+		if ( isset( $GLOBALS['current_user_can_callback'] ) ) return (bool) ( $GLOBALS['current_user_can_callback'] )( $capability, ...$args );
 		return $GLOBALS['current_user_can'] ?? true;
 	}
 }
@@ -1437,6 +1472,12 @@ if ( ! function_exists( 'wp_delete_post' ) ) {
 
 function cf7tg_test_reset_environment(): void {
 	$GLOBALS['wp_filter'] = [];
+	$GLOBALS['wp_did_actions'] = [];
+	$GLOBALS['wp_registered_post_types'] = [];
+	$GLOBALS['wp_ability_categories'] = [];
+	$GLOBALS['wp_abilities'] = [];
+	$GLOBALS['wp_user_logged_in'] = true;
+	unset( $GLOBALS['current_user_can_callback'] );
 	$GLOBALS['admin_page_hooks'] = [];
 	$GLOBALS['wp_submenu_pages'] = [];
 	$GLOBALS['wp_options'] = [];
@@ -1454,6 +1495,7 @@ function cf7tg_test_reset_environment(): void {
 	$GLOBALS['wpdb_queries'] = [];
 	$GLOBALS['wp_remote_post_requests'] = [];
 	$GLOBALS['wp_remote_post_handler'] = null;
+	unset( $GLOBALS['wp_get_results_handler'] );
 	$GLOBALS['wp_schedule_errors'] = [];
 	$GLOBALS['wp_next_post_id'] = 1;
 	$GLOBALS['wp_next_connection_id'] = 1;

@@ -706,7 +706,7 @@ SQL-страницу, удалить из неё запрещённые запи
 
 ### R1.1 Регистрация и get-configuration
 
-Status: `todo` — исполнение разрешено, зависимости удовлетворены.
+Status: `review` — owner принял код и локальные проверки; ожидается приёмка root.
 Goal: авторизованный клиент получает полный безопасный список конфигурации.
 Scope: bootstrap/category, схема и callback get-configuration, общие чистые
 read/permission helpers, focused tests. В этой задаче регистрируется только
@@ -1031,3 +1031,40 @@ fresh batch owner → specialists, отдельный независимый epi
   в текущем дереве отсутствуют; их runtime capacity не предполагается занятой.
 - Граница доставки: локальные проверенные commits и candidate ZIP; без изменения
   версии, push, merge в master или публикации. Следующая работа: R1.1.
+- R1.1 `in_progress`: owner `/root/r1_1_owner`, native thread
+  `01a1876c-f633-7332-9193-12800ebc8cbe`; worker
+  `/root/r1_1_owner/implementation`, native thread
+  `01a1876d-b188-75e2-aab1-61b8af07ae92` (pinned `gpt-6-sol/high`).
+  Исходная граница — planning commit `87bf2b1`, чистое рабочее дерево.
+  Root подтвердил сохранение фактического token precedence: при legacy marker
+  определённая global constant имеет приоритет, даже если определена scoped
+  constant. Краткая формулировка порядка не меняет production-контракт.
+- R1.1 технически принят owner: bootstrap регистрирует только готовую
+  `get-configuration`; четыре ресурса читаются без моделей, с object capabilities
+  до пагинации, строгими схемами, безопасными labels и отношениями. Добавлен
+  общий `BotToken`; разрешённый root чистый `Client::hasInitializedConnections()`
+  предотвращает ленивое создание storage при skipped/failed init.
+  Paths: `plugin-dir/cf7-telegram.php`, `lib/{Abilities,BotToken,Bot,Client}.php`,
+  `tests/{AbilitiesTest,bootstrap}.php`; остальные изменения — этот checkpoint.
+- R1.1 focused evidence: 9 Abilities tests и 4 выбранных Bot/WpConfig regressions
+  через reflection harness — exit 0; отдельный entrypoint subprocess без функций
+  Abilities API — exit 0. Покрыты 111 видимых записей, скрытые связи, sibling topics,
+  malformed JSON/relations, безопасный отказ storage и repeated no-write/no-HTTP/
+  no-gateway snapshots. Constants regression изолирован subprocess, без влияния
+  на последующие тесты. Owner просмотрел весь scoped diff; blocking findings нет.
+- После остановки writer свежий `/root/r1_1_owner/verification`, native thread
+  `01a1877d-78ea-7232-9dcd-d6fd0aafbc5a` (pinned `gpt-6-luna/low`), последовательно
+  выполнил `cd plugin-dir && composer test` — exit 0, **119 tests / 0 failures**;
+  `php -l` всех 7 изменённых PHP — exit 0; `git diff --check` — exit 0.
+  Это compatibility harness (PHP 8.0.30, нет dom/mbstring/xmlwriter), не PHPUnit
+  или настоящий Core/REST/MCP. Логи: `/tmp/cf7tg-r1.1-verification/`:
+  `composer-test.log`, `php-lint.log`, `diff-check.log`.
+  Первичная read-only команда monitor с неверным path prefix дала exit 1;
+  исправлена до ladder, source не менялся. Все семь frozen SHA-256 совпали до/после;
+  manifest — `frozen-php.sha256` в той же папке. Git status не изменился.
+- Граница R1.1: parent `87bf2b1` + проверенные 7 PHP из manifest и этот checkpoint;
+  scoped commit содержит эту запись. R1-AC1–4/7 подтверждены в части R1.1 focused
+  чтения, AC6 — no-side-effects harness. Полный Core/REST/MCP/CI/QA gate не пройден
+  и остаётся R1.3. Диагностика не зарегистрирована до R1.2; весь R1 не завершён.
+  Worker и monitor завершены, потомков/работающих команд нет; root получает IDs
+  для поддержанного lifecycle cleanup. Следующая работа после приёмки root — R1.2.

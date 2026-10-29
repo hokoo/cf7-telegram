@@ -157,6 +157,11 @@ class Client {
 		return self::$connectionsClient;
 	}
 
+	/** Read-only guard for callbacks that must not initialize storage. */
+	public static function hasInitializedConnections(): bool {
+		return isset( self::$connectionsClient );
+	}
+
     /**
      * @throws RelationNotFound
      */
