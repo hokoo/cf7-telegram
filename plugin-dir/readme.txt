@@ -5,7 +5,7 @@ Tags: contact form telegram,contact form 7,telegram
 Requires at least: 5.6
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.2.0
+Stable tag: 1.2.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -59,6 +59,13 @@ This plugin uses [API Telegram](https://core.telegram.org/api "Telegram docs") a
 2. Multiple Telegram recipients and multiple bridges connected to different Contact Form 7 forms.
 
 == Changelog ==
+
+= 1.2.1 =
+- Send Contact Form 7 notifications to selected Telegram forum topics, with separate topic approval, bridge assignment, and delivery; preserve ordinary chat and General topic behavior.
+- Show the bot-qualified discovery command and explain how to register a topic and assign it to bridges.
+- Track Telegram topic names and let administrators set local recipient names or restore Telegram-provided names.
+- Send notifications only to active recipients, and continue with other recipients when a topic delivery fails.
+- Improve recipient actions with accessible icon buttons and keep bridge form choices in a top-aligned four-column layout.
 
 = 1.2.0 =
 - Restore the CF7 Telegram settings submenu in Contact Form 7 6.2 and later, while keeping it available with older Contact Form 7 versions.
