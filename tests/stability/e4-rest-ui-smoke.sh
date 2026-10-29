@@ -390,6 +390,10 @@ wp_run() {
 	dc run --rm cli php -d memory_limit=512M /usr/local/bin/wp --allow-root "$@"
 }
 
+hidden_cap_denied() {
+	wp_run --user=admin eval 'exit(current_user_can("read_post", (int) get_option("cf7tg_r1_hidden_post_id")) ? 1 : 0);'
+}
+
 wp_mcp() {
 	dc run -T --rm cli php -d memory_limit=512M /usr/local/bin/wp --allow-root mcp-adapter serve --server=mcp-adapter-default-server --user="$1"
 }
@@ -537,18 +541,21 @@ run_http() {
 	if [ "${status}" = 200 ] && jq -e --slurpfile expected "${ABILITY_JSON}" '. == $expected[0].expected["diagnose-form"]' "${diagnosis_out}" >/dev/null; then
 		emit "r1" "http-diagnose" "pass" "Authenticated real HTTP GET executes diagnosis."
 	else fail_step "r1" "http-diagnose" "Authenticated real HTTP diagnosis failed."; fi
-	local numeric_page_out="${RESULTS_DIR}/r1-http-numeric-page.json" numeric_form_out="${RESULTS_DIR}/r1-http-numeric-form-id.json"
-	local numeric_page_status numeric_form_status numeric_page_code numeric_form_code php_page_code php_form_code numeric_extra
+	local numeric_page_out="${RESULTS_DIR}/r1-http-numeric-page.json" numeric_per_page_out="${RESULTS_DIR}/r1-http-numeric-per-page.json" numeric_form_out="${RESULTS_DIR}/r1-http-numeric-form-id.json"
+	local numeric_page_status numeric_per_page_status numeric_form_status numeric_page_code numeric_per_page_code numeric_form_code php_page_code php_per_page_code php_form_code numeric_extra
 	numeric_page_status="$(http_request "admin:${password}" '{"resource":"forms","page":"1"}' get-configuration GET "${numeric_page_out}")"
+	numeric_per_page_status="$(http_request "admin:${password}" '{"resource":"forms","per_page":"1"}' get-configuration GET "${numeric_per_page_out}")"
 	numeric_form_status="$(http_request "admin:${password}" "$(jq -nc --arg id "${form_id}" '{form_id:$id}')" diagnose-form GET "${numeric_form_out}")"
 	numeric_page_code="$(jq -r '.code // ""' "${numeric_page_out}")"
+	numeric_per_page_code="$(jq -r '.code // ""' "${numeric_per_page_out}")"
 	numeric_form_code="$(jq -r '.code // ""' "${numeric_form_out}")"
 	php_page_code="$(jq -r '.numeric_input.page.php_code // ""' "${ABILITY_JSON}")"
+	php_per_page_code="$(jq -r '.numeric_input.per_page.php_code // ""' "${ABILITY_JSON}")"
 	php_form_code="$(jq -r '.numeric_input.form_id.php_code // ""' "${ABILITY_JSON}")"
-	numeric_extra="$(jq -nc --arg page_status "${numeric_page_status}" --arg page_code "${numeric_page_code}" --arg php_page_code "${php_page_code}" --arg form_status "${numeric_form_status}" --arg form_code "${numeric_form_code}" --arg php_form_code "${php_form_code}" '{page:{http_status:$page_status,http_code:$page_code,php_code:$php_page_code},form_id:{http_status:$form_status,http_code:$form_code,php_code:$php_form_code}}')"
-	if [ "${numeric_page_status}" = 400 ] && [ "${numeric_form_status}" = 400 ] &&
-		[ -n "${php_page_code}" ] && [ -n "${php_form_code}" ] &&
-		[ "${numeric_page_code}" = "${php_page_code}" ] && [ "${numeric_form_code}" = "${php_form_code}" ]; then
+	numeric_extra="$(jq -nc --arg page_status "${numeric_page_status}" --arg page_code "${numeric_page_code}" --arg php_page_code "${php_page_code}" --arg per_page_status "${numeric_per_page_status}" --arg per_page_code "${numeric_per_page_code}" --arg php_per_page_code "${php_per_page_code}" --arg form_status "${numeric_form_status}" --arg form_code "${numeric_form_code}" --arg php_form_code "${php_form_code}" '{page:{http_status:$page_status,http_code:$page_code,php_code:$php_page_code},per_page:{http_status:$per_page_status,http_code:$per_page_code,php_code:$php_per_page_code},form_id:{http_status:$form_status,http_code:$form_code,php_code:$php_form_code}}')"
+	if [ "${numeric_page_status}" = 400 ] && [ "${numeric_per_page_status}" = 400 ] && [ "${numeric_form_status}" = 400 ] &&
+		[ -n "${php_page_code}" ] && [ -n "${php_per_page_code}" ] && [ -n "${php_form_code}" ] &&
+		[ "${numeric_page_code}" = "${php_page_code}" ] && [ "${numeric_per_page_code}" = "${php_per_page_code}" ] && [ "${numeric_form_code}" = "${php_form_code}" ]; then
 		emit "r1" "http-numeric-string-input" "pass" "Real HTTP rejects numeric strings with the same codes as PHP." "${numeric_extra}"
 	else fail_step "r1" "http-numeric-string-input" "Real HTTP numeric-string input differs from PHP or was accepted." "${numeric_extra}"; fi
 	status="$(http_request "admin:${password}" '{"resource":"forms"}' get-configuration POST "${bad_method_out}")"
@@ -584,6 +591,11 @@ run_http() {
 	local hidden_id hidden_out="${RESULTS_DIR}/r1-http-hidden.json"
 	hidden_id="$(jq -r '.fixture.hidden_recipient_id' "${ABILITY_JSON}")"
 	if ! wp_run option update cf7tg_r1_hidden_post_id "${hidden_id}" >"${LOG_DIR}/r1-http-hide.log" 2>&1; then fail_step "r1" "http-hidden-graph" "Could not set isolated object capability probe."; return 1; fi
+	if ! hidden_cap_denied >"${LOG_DIR}/r1-http-hidden-cap.log" 2>&1; then
+		fail_step "r1" "http-hidden-graph" "Isolated object capability filter did not deny read_post."
+		wp_run option delete cf7tg_r1_hidden_post_id >/dev/null 2>&1 || true
+		return 1
+	fi
 	status="$(http_request "admin:${password}" "$(jq -nc --argjson id "${form_id}" '{form_id:$id}')" diagnose-form GET "${hidden_out}")"
 	if [ "${status}" = 403 ] && jq -e '.code == "cf7tg_forbidden"' "${hidden_out}" >/dev/null; then
 		emit "r1" "http-hidden-graph" "pass" "Admin diagnosis rejects a hidden graph object over real HTTP."
@@ -603,7 +615,8 @@ mcp_call() {
 }
 
 mcp_permission_denied() {
-	jq -e --slurpfile denied "${RESULTS_DIR}/r1-http-subscriber.json" '(.error.message // "" | test("permission|forbidden|capability"; "i")) or
+	jq -e --slurpfile denied "${RESULTS_DIR}/r1-http-subscriber.json" '(.result.isError == true and [.result.content[]? | select(.type == "text") | .text] == ["Permission denied"]) or
+		(.error.message // "" | test("permission|forbidden|capability"; "i")) or
 		([.result.structuredContent, (.result.content[]?.text | fromjson?)] |
 			any(.success == false and ((.error | tostring | test("permission|forbidden|capability"; "i")) or .error == $denied[0].message)))' "$1" >/dev/null
 }
@@ -647,11 +660,36 @@ run_mcp() {
 			emit "r1" "mcp-denied-${name}" "pass" "Official MCP STDIO denies subscriber execution."
 		else fail_step "r1" "mcp-denied-${name}" "Official MCP subscriber execution was not denied."; fi
 	done
+	local numeric_case numeric_parameters numeric_message numeric_failures=""
+	for numeric_case in page per_page form_id; do
+		case "${numeric_case}" in
+			page) numeric_parameters='{"resource":"forms","page":"1"}'; name=get-configuration ;;
+			per_page) numeric_parameters='{"resource":"forms","per_page":"1"}'; name=get-configuration ;;
+			form_id) numeric_parameters="$(jq -nc --arg id "${form_id}" '{form_id:$id}')"; name=diagnose-form ;;
+		esac
+		numeric_message="$(jq -r --arg case "${numeric_case}" '.numeric_input[$case].php_message // ""' "${ABILITY_JSON}")"
+		request="$(jq -nc --arg name "cf7-telegram/${name}" --argjson input "${numeric_parameters}" '{jsonrpc:"2.0",id:1,method:"tools/call",params:{name:"mcp-adapter-execute-ability",arguments:{ability_name:$name,parameters:$input}}}')"
+		output="${prefix}-numeric-${numeric_case}.json"
+		if [ -n "${numeric_message}" ] && mcp_call admin "${request}" "${output}" &&
+			jq -e --arg message "${numeric_message}" '(.result.structuredContent.success == false and .result.structuredContent.error == $message) or
+				(.result.isError == true and [.result.content[]? | select(.type == "text") | .text] == [$message]) or
+				([.result.content[]?.text | fromjson?] | any(.success == false and .error == $message))' "${output}" >/dev/null; then
+			:
+		else numeric_failures="${numeric_failures} ${numeric_case}"; fi
+	done
+	if [ -z "${numeric_failures}" ]; then
+		emit "r1" "mcp-numeric-string-input" "pass" "Official MCP rejects all three numeric strings with the same safe PHP error."
+	else fail_step "r1" "mcp-numeric-string-input" "Official MCP numeric-string input differs from native PHP." "$(jq -nc --arg cases "${numeric_failures# }" --arg result_prefix "${prefix}-numeric" '{failed_cases:$cases,result_prefix:$result_prefix}')"; fi
 	local hidden_id
 	hidden_id="$(jq -r '.fixture.hidden_recipient_id' "${ABILITY_JSON}")"
 	if ! wp_run option update cf7tg_r1_hidden_post_id "${hidden_id}" >"${LOG_DIR}/r1-mcp-hide.log" 2>&1; then fail_step "r1" "mcp-hidden-graph" "Could not set isolated object capability probe."; return 1; fi
+	if ! hidden_cap_denied >"${LOG_DIR}/r1-mcp-hidden-cap.log" 2>&1; then
+		fail_step "r1" "mcp-hidden-graph" "Isolated object capability filter did not deny read_post."
+		wp_run option delete cf7tg_r1_hidden_post_id >/dev/null 2>&1 || true
+		return 1
+	fi
 	request="$(jq -nc --argjson id "${form_id}" '{jsonrpc:"2.0",id:1,method:"tools/call",params:{name:"mcp-adapter-execute-ability",arguments:{ability_name:"cf7-telegram/diagnose-form",parameters:{form_id:$id}}}}')"
-	if mcp_call admin "${request}" "${prefix}-hidden.json" && jq -e --slurpfile denied "${RESULTS_DIR}/r1-http-hidden.json" '(.error.message // "" | test("forbidden"; "i")) or ([.result.structuredContent, (.result.content[]?.text | fromjson?)] | any(.success == false and ((.error // .code // "" | tostring | test("cf7tg_forbidden|forbidden"; "i")) or .error == $denied[0].message)))' "${prefix}-hidden.json" >/dev/null; then
+	if mcp_call admin "${request}" "${prefix}-hidden.json" && jq -e --slurpfile denied "${RESULTS_DIR}/r1-http-hidden.json" '(.result.isError == true and [.result.content[]? | select(.type == "text") | .text] == ["Permission denied"]) or (.error.message // "" | test("forbidden"; "i")) or ([.result.structuredContent, (.result.content[]?.text | fromjson?)] | any(.success == false and ((.error // .code // "" | tostring | test("cf7tg_forbidden|forbidden"; "i")) or .error == $denied[0].message)))' "${prefix}-hidden.json" >/dev/null; then
 		emit "r1" "mcp-hidden-graph" "pass" "Official MCP execution rejects the same hidden object graph."
 	else fail_step "r1" "mcp-hidden-graph" "Official MCP execution exposed a hidden graph."; fi
 	wp_run option delete cf7tg_r1_hidden_post_id >"${LOG_DIR}/r1-mcp-unhide.log" 2>&1 || fail_step "r1" "mcp-unhide" "Could not clear isolated capability probe."
@@ -676,7 +714,7 @@ for required in versions core-abilities early-not-ready http-admin http-diagnose
 	fi
 done
 if [ "${MCP_REQUIRED}" = 1 ]; then
-	for required in mcp-version mcp-tools mcp-discover mcp-info-get-configuration mcp-info-diagnose-form mcp-execute-get-configuration mcp-execute-diagnose-form mcp-denied-get-configuration mcp-denied-diagnose-form mcp-hidden-graph; do
+	for required in mcp-version mcp-tools mcp-discover mcp-info-get-configuration mcp-info-diagnose-form mcp-execute-get-configuration mcp-execute-diagnose-form mcp-denied-get-configuration mcp-denied-diagnose-form mcp-numeric-string-input mcp-hidden-graph; do
 		if ! jq -s -e --arg id "${required}" '[.[] | select(.case == "r1" and .step == $id)] | length == 1 and .[0].status == "pass"' "${EVIDENCE_JSONL}" >/dev/null; then
 			fail_step "r1" "required-${required}" "Required MCP check missing, skipped, duplicated, or failed."
 		fi

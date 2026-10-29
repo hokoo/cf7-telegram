@@ -1,8 +1,8 @@
 <?php
 /** Isolated E4 probes loaded by WordPress before ordinary plugins finish booting. */
 if ( '1' === getenv( 'CF7TG_R1_EARLY_PROBE' ) ) {
-	add_action( 'plugins_loaded', static function (): void {
-		$before_init = 0 === did_action( 'init' );
+	add_action( 'init', static function (): void {
+		$before_ready = doing_action( 'init' ) && ! \iTRON\cf7Telegram\Client::hasInitializedConnections();
 		$previous_user = get_current_user_id();
 		$admin = get_user_by( 'login', 'admin' );
 		wp_set_current_user( $admin ? (int) $admin->ID : 0 );
@@ -28,7 +28,7 @@ if ( '1' === getenv( 'CF7TG_R1_EARLY_PROBE' ) ) {
 		remove_filter( 'pre_http_request', $count_http, 1 );
 		remove_filter( 'cf7tg_telegram_gateway', $count_gateway, 1 );
 		remove_filter( 'query', $count_sql, PHP_INT_MAX );
-		$GLOBALS['cf7tg_r1_early_probe'] = $before_init && is_wp_error( $list ) && is_wp_error( $diagnosis ) &&
+		$GLOBALS['cf7tg_r1_early_probe'] = $before_ready && is_wp_error( $list ) && is_wp_error( $diagnosis ) &&
 			'cf7tg_not_ready' === $list->get_error_code() && 'cf7tg_not_ready' === $diagnosis->get_error_code() &&
 			503 === ( $list->get_error_data()['status'] ?? null ) && 503 === ( $diagnosis->get_error_data()['status'] ?? null ) &&
 			is_wp_error( $native_list ) && is_wp_error( $native_diagnosis ) &&
@@ -39,7 +39,7 @@ if ( '1' === getenv( 'CF7TG_R1_EARLY_PROBE' ) ) {
 			'ability_invalid_permissions' === $anonymous_diagnosis->get_error_code() &&
 			0 === $http && 0 === $gateway && 0 === $mutations;
 		wp_set_current_user( $previous_user );
-	}, PHP_INT_MAX );
+	}, 0 );
 }
 
 add_filter( 'rest_pre_dispatch', static function ( $result, $server, $request ) {
@@ -52,5 +52,8 @@ add_filter( 'rest_pre_dispatch', static function ( $result, $server, $request ) 
 
 add_filter( 'map_meta_cap', static function ( array $caps, string $cap, int $user_id, array $args ): array {
 	$hidden = (int) get_option( 'cf7tg_r1_hidden_post_id', 0 );
-	return 'read_post' === $cap && $hidden > 0 && $hidden === (int) ( $args[0] ?? 0 ) ? [ 'do_not_allow' ] : $caps;
-}, 10, 4 );
+	if ( $hidden < 1 || $hidden !== (int) ( $args[0] ?? 0 ) ) return $caps;
+	$type_name = get_post_type( $hidden );
+	$type = $type_name ? get_post_type_object( $type_name ) : null;
+	return $type && in_array( $cap, [ 'read_post', $type->cap->read_post ], true ) ? [ 'do_not_allow' ] : $caps;
+}, PHP_INT_MAX, 4 );

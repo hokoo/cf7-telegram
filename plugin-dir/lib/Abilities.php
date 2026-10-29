@@ -52,6 +52,7 @@ class Abilities {
 	public static function register(): void {
 		if ( ! function_exists( 'wp_register_ability' ) ) return;
 		wp_register_ability( 'cf7-telegram/get-configuration', [
+			'ability_class'       => ReadOnlyAbility::class,
 			'label'               => __( 'Get CF7 Telegram configuration', 'cf7-telegram' ),
 			'description'         => __( 'List visible forms, bridges, bots, or recipients without sending messages or changing configuration.', 'cf7-telegram' ),
 			'category'            => 'cf7-telegram',
@@ -67,6 +68,7 @@ class Abilities {
 			],
 		] );
 		wp_register_ability( 'cf7-telegram/diagnose-form', [
+			'ability_class'       => ReadOnlyAbility::class,
 			'label'               => __( 'Diagnose CF7 Telegram form', 'cf7-telegram' ),
 			'description'         => __( 'Inspect saved delivery routes for one form without contacting Telegram or changing configuration.', 'cf7-telegram' ),
 			'category'            => 'cf7-telegram',

@@ -13,6 +13,7 @@ $record = static function ( string $id, bool $pass ) use ( &$checks ): void {
 	$checks[] = [ 'id' => $id, 'status' => $pass ? 'pass' : 'fail' ];
 };
 $record( 'r1-legacy-no-api', ! function_exists( 'wp_register_ability' ) &&
+	! class_exists( \iTRON\cf7Telegram\ReadOnlyAbility::class, false ) &&
 	has_action( 'wpcf7_before_send_mail', [ CF7::class, 'handleSubscribe' ] ) !== false );
 $requests = [];
 add_filter( 'pre_http_request', static function ( $pre, $args, $url ) use ( &$requests ) {

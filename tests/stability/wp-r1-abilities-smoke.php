@@ -4,6 +4,7 @@ if ( ! defined( 'ABSPATH' ) ) exit( 1 );
 
 use iTRON\cf7Telegram\Abilities;
 use iTRON\cf7Telegram\Client;
+use iTRON\cf7Telegram\ReadOnlyAbility;
 use iTRON\wpConnections\Query;
 
 $checks = [];
@@ -27,7 +28,7 @@ $record( 'r1-registered-two', $registered === [ 'cf7-telegram/diagnose-form', 'c
 	null !== wp_get_ability_category( 'cf7-telegram' ) );
 $list = wp_get_ability( $names[0] );
 $diagnose = wp_get_ability( $names[1] );
-$record( 'r1-core-schema', $list instanceof WP_Ability && $diagnose instanceof WP_Ability &&
+$record( 'r1-core-schema', $list instanceof ReadOnlyAbility && $diagnose instanceof ReadOnlyAbility &&
 	false === ( $list->get_input_schema()['additionalProperties'] ?? null ) &&
 	false === ( $list->get_output_schema()['additionalProperties'] ?? null ) &&
 	false === ( $diagnose->get_input_schema()['additionalProperties'] ?? null ) &&
@@ -119,9 +120,14 @@ $padding = [];
 for ( $i = 0; $i < 111; $i++ ) $padding[] = $post( Client::CPT_CF7FORM, 'R1 page form ' . $i );
 $hidden = array_values( array_filter( $padding, static fn( int $id, int $index ): bool => 0 === $index % 9, ARRAY_FILTER_USE_BOTH ) );
 $hide = static function ( array $caps, string $cap, int $user_id, array $args ) use ( &$hidden ): array {
-	return 'read_post' === $cap && in_array( (int) ( $args[0] ?? 0 ), $hidden, true ) ? [ 'do_not_allow' ] : $caps;
+	$id = (int) ( $args[0] ?? 0 );
+	if ( ! in_array( $id, $hidden, true ) ) return $caps;
+	$type_name = get_post_type( $id );
+	$type = $type_name ? get_post_type_object( $type_name ) : null;
+	return $type && in_array( $cap, [ 'read_post', $type->cap->read_post ], true ) ? [ 'do_not_allow' ] : $caps;
 };
-add_filter( 'map_meta_cap', $hide, 10, 4 );
+add_filter( 'map_meta_cap', $hide, PHP_INT_MAX, 4 );
+$hidden_form_denied = ! current_user_can( 'read_post', $hidden[0] );
 
 $call = static fn( string $name, array $input ) => wp_get_ability( $name )->execute( $input );
 $request = static function ( string $method, string $name, array $input ): WP_REST_Response {
@@ -143,7 +149,7 @@ $visible = array_values( array_diff( array_merge( $preexisting_forms,
 sort( $visible, SORT_NUMERIC );
 $all_ids = [];
 foreach ( $pages as $page ) if ( is_array( $page ) ) $all_ids = array_merge( $all_ids, array_column( $page['items'], 'id' ) );
-$record( 'r1-visible-pagination', is_array( $first ) && count( $visible ) > 100 && $first['total'] === count( $visible ) &&
+$record( 'r1-visible-pagination', $hidden_form_denied && is_array( $first ) && count( $visible ) > 100 && $first['total'] === count( $visible ) &&
 	$all_ids === $visible && is_array( $pages[3] ) && $pages[3]['items'] === [] );
 $rest = $request( 'GET', $names[0], [ 'resource' => 'forms', 'page' => 1, 'per_page' => 50 ] );
 $record( 'r1-php-rest-parity', 200 === $rest->get_status() && $rest->get_data() === $first );
@@ -199,12 +205,14 @@ $record( 'r1-rest-normalization-scope', 400 === $unfixed_response->get_status() 
 	[ 'input' => [ 'resource' => 'forms' ], 'keep' => 'untouched' ] === $trailing->get_query_params() );
 $numeric_input = [];
 foreach ( [ 'page' => [ $names[0], [ 'resource' => 'forms', 'page' => '1' ] ],
+	'per_page' => [ $names[0], [ 'resource' => 'forms', 'per_page' => '1' ] ],
 	'form_id' => [ $names[1], [ 'form_id' => (string) $form ] ] ] as $case => [ $name, $input ] ) {
 	$before_numeric = $executions;
 	$php_numeric = $call( $name, $input );
 	$after_php_numeric = $executions;
 	$rest_numeric = $request( 'GET', $name, $input );
 	$numeric_input[ $case ] = [ 'php_code' => $error_code( $php_numeric ),
+		'php_message' => is_wp_error( $php_numeric ) ? $php_numeric->get_error_message() : '',
 		'php_status' => is_wp_error( $php_numeric ) ? ( $php_numeric->get_error_data()['status'] ?? null ) : null,
 		'php_callback_count' => $after_php_numeric - $before_numeric,
 		'rest_status' => $rest_numeric->get_status(), 'rest_code' => $rest_numeric->get_data()['code'] ?? '',
@@ -215,7 +223,7 @@ foreach ( $numeric_input as $result ) {
 	if ( '' === $result['php_code'] || 400 !== $result['rest_status'] || $result['php_code'] !== $result['rest_code'] ||
 		0 !== $result['php_callback_count'] || 0 !== $result['rest_callback_count'] ) $numeric_valid = false;
 }
-$record( 'r1-numeric-string-input-parity', $numeric_valid && 2 === count( $numeric_input ), $numeric_input );
+$record( 'r1-numeric-string-input-parity', $numeric_valid && 3 === count( $numeric_input ), $numeric_input );
 $resources = [];
 foreach ( [ 'forms', 'bridges', 'bots', 'recipients' ] as $resource ) $resources[ $resource ] = $call( $names[0], [ 'resource' => $resource ] );
 $recipients = $resources['recipients']['items'] ?? [];
@@ -349,12 +357,13 @@ $record( 'r1-subscriber-denied', '' !== $error_code( $call( $names[0], [ 'resour
 	'' !== $error_code( $call( $names[1], [ 'form_id' => $form ] ) ) );
 wp_set_current_user( $admin ? (int) $admin->ID : 0 );
 $hidden[] = $topic;
-$record( 'r1-diagnose-hidden-graph', 'cf7tg_forbidden' === $error_code( $call( $names[1], [ 'form_id' => $form ] ) ) );
+$hidden_topic_denied = ! current_user_can( 'read_post', $topic );
+$record( 'r1-diagnose-hidden-graph', $hidden_topic_denied && 'cf7tg_forbidden' === $error_code( $call( $names[1], [ 'form_id' => $form ] ) ) );
 $limited_bridge = $call( $names[0], [ 'resource' => 'bridges' ] );
 $first_bridge = array_values( array_filter( $limited_bridge['items'] ?? [], static fn( array $item ): bool => $item['id'] === $bridge ) );
 $record( 'r1-hidden-relation', count( $first_bridge ) === 1 && ! in_array( $topic, $first_bridge[0]['recipient_ids'], true ) &&
 	false === $first_bridge[0]['relations_complete'] );
-remove_filter( 'map_meta_cap', $hide, 10 );
+remove_filter( 'map_meta_cap', $hide, PHP_INT_MAX );
 $expected = [ 'get-configuration' => $call( $names[0], [ 'resource' => 'forms', 'per_page' => 1 ] ),
 	'diagnose-form' => $call( $names[1], [ 'form_id' => $form ] ) ];
 
