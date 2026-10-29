@@ -143,6 +143,38 @@ describe('BotView copyable bot name', () => {
         expect(screen.getByTestId('cf7tg-bot-1-chat-14').querySelector('.topic-identity')).toHaveTextContent('Topic #25');
     });
 
+    it('shows compact chat actions with hints and accessible names', () => {
+        const handleToggleChatStatus = jest.fn();
+        const handleStartRenameChat = jest.fn();
+        const handleDisconnectChat = jest.fn();
+
+        render(<BotView
+            bot={{id: 1}}
+            nameValue="current_bot"
+            isTokenEmpty
+            tokenValue=""
+            online
+            chatsForBot={[{id: 10, title: {rendered: 'Active chat'}}]}
+            bot2ChatConnections={[{data: {from: 1, to: 10, meta: {status: ['active']}}}]}
+            handleToggleChatStatus={handleToggleChatStatus}
+            handleStartRenameChat={handleStartRenameChat}
+            handleDisconnectChat={handleDisconnectChat}
+        />);
+
+        const pause = screen.getByRole('button', {name: 'Mute'});
+        expect(pause).toHaveAttribute('title', 'Mute');
+        expect(pause.querySelector('.dashicons')).toHaveClass('dashicons-controls-pause');
+        expect(screen.getByRole('button', {name: 'Rename'})).toHaveAttribute('title', 'Rename');
+        expect(screen.getByRole('button', {name: 'Remove'})).toHaveAttribute('title', 'Remove');
+
+        fireEvent.click(pause);
+        fireEvent.click(screen.getByRole('button', {name: 'Rename'}));
+        fireEvent.click(screen.getByRole('button', {name: 'Remove'}));
+        expect(handleToggleChatStatus).toHaveBeenCalledWith(10, 'active');
+        expect(handleStartRenameChat).toHaveBeenCalledWith(expect.objectContaining({id: 10}));
+        expect(handleDisconnectChat).toHaveBeenCalledWith(10, 1);
+    });
+
     it('does not mutate token state while rendering edit mode', () => {
         const setTokenValue = jest.fn();
         const originalToWellFormed = String.prototype.toWellFormed;
@@ -227,9 +259,12 @@ describe('BotView copyable bot name', () => {
         fireEvent.keyDown(input, {key: 'Enter'});
         expect(handleRenameChatKeyDown).toHaveBeenCalledWith(10, expect.objectContaining({key: 'Enter'}));
 
-        fireEvent.click(screen.getByText('Save'));
-        fireEvent.click(screen.getByText('Restore'));
-        fireEvent.click(screen.getByText('Cancel'));
+        expect(screen.getByRole('button', {name: 'Save'})).toHaveAttribute('title', 'Save');
+        expect(screen.getByRole('button', {name: 'Restore'})).toHaveAttribute('title', 'Restore');
+        expect(screen.getByRole('button', {name: 'Cancel'})).toHaveAttribute('title', 'Cancel');
+        fireEvent.click(screen.getByRole('button', {name: 'Save'}));
+        fireEvent.click(screen.getByRole('button', {name: 'Restore'}));
+        fireEvent.click(screen.getByRole('button', {name: 'Cancel'}));
 
         expect(handleSaveChatName).toHaveBeenCalledWith(10);
         expect(handleRestoreChatName).toHaveBeenCalledWith(10);
@@ -260,8 +295,26 @@ describe('BotView copyable bot name', () => {
             />
         );
 
-        expect(screen.queryByText('Rename')).not.toBeInTheDocument();
-        expect(screen.getByText('Activate')).toBeInTheDocument();
-        expect(screen.getByText('Remove')).toBeInTheDocument();
+        expect(screen.queryByRole('button', {name: 'Rename'})).not.toBeInTheDocument();
+        expect(screen.getByRole('button', {name: 'Activate'})).toHaveAttribute('title', 'Activate');
+        expect(screen.getByRole('button', {name: 'Activate'}).querySelector('.dashicons')).toHaveClass('dashicons-controls-play');
+        expect(screen.getByRole('button', {name: 'Remove'})).toBeInTheDocument();
+    });
+
+    it('shows the resume icon for a muted chat', () => {
+        render(<BotView
+            bot={{id: 1}}
+            nameValue="current_bot"
+            isTokenEmpty
+            tokenValue=""
+            online
+            chatsForBot={[{id: 10, title: {rendered: 'Muted chat'}}]}
+            bot2ChatConnections={[{data: {from: 1, to: 10, meta: {status: ['muted']}}}]}
+        />);
+
+        const activate = screen.getByRole('button', {name: 'Activate'});
+        expect(activate).toHaveAttribute('title', 'Activate');
+        expect(activate.querySelector('.dashicons')).toHaveClass('dashicons-controls-play');
+        expect(screen.getByRole('button', {name: 'Rename'})).toBeInTheDocument();
     });
 });

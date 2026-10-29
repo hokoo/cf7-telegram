@@ -325,6 +325,7 @@ body[class*="page_wpcf7_tg"] ul#adminmenu > li.current > a.current:after {
               box-sizing: border-box;
               width: 120px;
               overflow-wrap: anywhere;
+              padding: 0 5px;
               text-align: right;
             }
 
@@ -344,6 +345,7 @@ body[class*="page_wpcf7_tg"] ul#adminmenu > li.current > a.current:after {
               line-height: inherit;
               min-height: 24px;
               padding: 0 5px;
+              width: 120px;
             }
 
             &.active {
@@ -358,17 +360,38 @@ body[class*="page_wpcf7_tg"] ul#adminmenu > li.current > a.current:after {
               color: #893535;
             }
 
-            span {
-              cursor: pointer;
-              padding: 0 5px;
+            .chat-actions {
+              display: flex;
+              flex: 0 0 auto;
+              gap: 2px;
+              margin-left: auto;
 
-              &.action {
+              .action {
+                align-items: center;
+                background: none;
+                border: 0;
                 color: #656565;
-                text-align: center;
-                text-transform: uppercase;
+                cursor: pointer;
+                display: inline-flex;
+                height: 24px;
+                justify-content: center;
+                opacity: 0.25;
+                padding: 0;
+                width: 24px;
 
-                &:hover {
+                &:hover:not(:disabled) {
                   color: #873d3d;
+                  opacity: 1;
+                }
+
+                &:focus-visible {
+                  opacity: 1;
+                  outline: 2px solid #0c88b4;
+                  outline-offset: 1px;
+                }
+
+                &:disabled {
+                  cursor: default;
                 }
               }
             }
