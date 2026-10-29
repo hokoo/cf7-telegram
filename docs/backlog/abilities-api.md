@@ -756,7 +756,8 @@ revision boundary и подтверждение остановки writer для
 
 ### R1.3 Настоящий Core API и приёмка отдельного выпуска
 
-Status: `review` — source/candidate/runtime gates прошли; независимый QA pending.
+Status: `completed` — root принял этап; fresh independent QA `pass_with_notes`
+на `119b66a`, product `542f7ab`; итоговая передача и evidence в checkpoint ниже.
 Goal: доказать, что обе команды работают через реальные PHP/REST/MCP и
 сохраняют обычную работу плагина, включая WordPress без Abilities API.
 Scope: расширить существующие runtime fixtures/evidence, README usage,
@@ -1320,3 +1321,25 @@ fresh batch owner → specialists, отдельный независимый epi
   штатным CLI, exits 0. Product `542f7ab`, новый ZIP `786807309ac1e62f024d371bafe00b545f0c3b746c097d212d253342cecd9d9c`.
   Далее fresh independent `epic_qa`, pinned `gpt-6-sol/high/read-only`, напрямую
   root на полной R1 границе; исходный fail остаётся историческим вердиктом.
+- Финальный independent QA `/root/r1_epic_qa_after_repair`, native
+  `01a18854-15f6-7483-9cb0-b93e258a4dcd`, назначенная pinned роль
+  `epic_qa` (`gpt-6-sol/high/read-only`), вернул **pass_with_notes**.
+  Вердикт сохранён без изменения; review boundary
+  `e25d811aa7bff4163eef652b19c8b5f2b775464e..119b66a4239909a71b947619a287224e053c9310`.
+  Reviewer не реализовывал, не владел и раньше не проверял эпик. Он независимо
+  сверил код, raw runtime artifacts и ZIP contents, подтвердил все R1-AC1–AC8
+  и DoD, исправление invalid/blocked/partial и обоснованный carry-forward.
+  Неблокирующие notes (low): пять Plugin Check warnings при errors=0;
+  hosted CI не запускался и нужен при отдельном будущем PR. Никакой hosted
+  check не объявлен успешным. Диагностика проверяет структуру адреса, не
+  существование чата и не фактическую доставку. Решений для приёмки не требуется.
+  QA completed, потомков/команд нет; native session архивирована штатно, exit 0.
+- Root завершил R1.1–R1.3 в `release/abilities-readonly`. Все реализации,
+  проверки и независимая приёмка приняты; остались только отдельные release
+  действия и дизайн остальных четырёх abilities, которые в R1 не входили.
+  Финальный product/harness `542f7ab9e41bb53228331d71264bfa8ea6a751cb`,
+  `dist/cf7-telegram-wp-plugin.zip` version 1.2.1, SHA-256
+  `786807309ac1e62f024d371bafe00b545f0c3b746c097d212d253342cecd9d9c`.
+  Полные команды, результаты и точные границы перенесённого evidence находятся
+  в двух ledger выше. No push/master merge/version bump/publication; final
+  commit меняет только этот checkpoint и существующий backlog summary.
