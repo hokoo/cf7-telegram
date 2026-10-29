@@ -1257,3 +1257,60 @@ fresh batch owner → specialists, отдельный независимый epi
   Scope: Abilities::destination, focused/native fixtures, проверки и новый ZIP;
   send path/остальные abilities исключены. При повторе этого же QA failure
   автоматический repair останавливается согласно процессу.
+- Destination repair: `review`, source/harness `542f7ab9e41bb53228331d71264bfa8ea6a751cb`
+  поверх root bookkeeping `eaafb90`; writer остановлен, clean boundary подтверждён.
+  Owner проверил actual diff четырёх согласованных paths: `Abilities.php`,
+  `AbilitiesTest.php`, `wp-r1-abilities-smoke.php`, required E4 inventory.
+  Raw integer/canonical numeric string и `@username` для supergroup/channel
+  остаются eligible; malformed address даёт invalid/blocked, mixed — partial.
+  Topic/schema/auth/send path не менялись; дополнительные ограничения длины/
+  префикса ID не вводились. Источник решения — [Bot API](https://core.telegram.org/bots/api#getchat).
+  Pre-fix abc/private repro exit 1; пять focused methods, PHP/bash lint и
+  diff check exit 0. Host PHPUnit attempt exit 1 (нет dom/mbstring/xmlwriter),
+  поэтому настоящий Docker PHPUnit остаётся обязательным gate.
+  Evidence: `/tmp/cf7tg-r1-destination-repair-20261029/worker/` и `monitor/`.
+  Owner `/root/r1_destination_repair_owner`, native
+  `01a1883d-6744-7a30-919c-de5343b4e2fa`, `gpt-6.1-sol/high`;
+  worker `/root/r1_destination_repair_owner/destination_worker`, native
+  `01a1883e-0cad-74a0-a6ff-949cd72857a9`, pinned `gpt-6-sol/high`, completed.
+  Prior QA native `01a18838-2772-7213-becc-fe8eaa83f910` archived root, exit 0.
+  Monitor `/root/r1_destination_repair_owner/destination_monitor`, native
+  `01a18843-9a81-7430-afa5-5978e08181f3`, pinned `gpt-6-luna/low`, completed.
+  Все его ladder processes/isolated containers stopped; preexisting live
+  `cf7t_*` не использовались и остаются running. Owner/worker не запускали
+  параллельных broad checks; native lifecycle cleanup принадлежит root.
+  Verification ledger: `/tmp/cf7tg-r1-destination-repair-20261029/monitor/verification-summary.txt`,
+  SHA-256 `a4ae4f27defd188edf51f981da21b7c2a9da8dc7b70050f129e08e59a4dc910a`.
+  Owner прочитал actual diff, PHPUnit transcript и raw runtime summaries:
+  PHP/bash lint/diff exit 0; настоящий PHPUnit 9.6.36 — 126 tests/820 assertions,
+  exit 0 (original output сохранён без rerun); compatibility fallback не нужен.
+  Build 2x/cmp/ZIP validation exit 0, `SOURCE_DATE_EPOCH=1793287434`, version 1.2.1.
+  Новый ZIP SHA-256 `786807309ac1e62f024d371bafe00b545f0c3b746c097d212d253342cecd9d9c`.
+  E4 WP6.9/PHP8.3.33/CF7 6.1.4 и WP7.1/PHP8.3.33/CF7 6.2 каждый дают
+  existing 24/24 + Core 27/27; wrappers 26/26 и 38/38, failed_steps=0.
+  Current MCP Adapter 0.7.1 / STDIO / protocol 2025-11-25 — 11 required
+  assertions pass. Address validity, mixed graph, repeated read-only и redaction
+  pass в обоих Core. Plugin Check 1.9.0 — errors=0/warnings=5 (тот же набор),
+  wrapper 13/13. E6 fake Telegram — 37/37, wrapper 57/57, exit 0;
+  requested browser-install skip не пропускает Playwright execution.
+  Legacy fresh WP5.6.19/PHP8.0.30/CF7 5.4.2 — 34/34, exit 0; no-API и fake
+  delivery pass, mail_sent/hook=1/completed=2/send=2/ok=2, ordinary/topic=true,
+  activate/reactivate/deactivate/uninstall cleanup pass. Все gates на новом SHA.
+  Оба ZIP имеют 199 members, добавленных/удалённых нет; content delta только
+  `cf7-telegram/lib/Abilities.php` (сверено также root). Поэтому root разрешил
+  carry-forward полного legacy10/current9/optional9 lifecycle, browser8,
+  React8/60 и blocking audits=0 с прежнего SHA
+  `15239dd6a3aeff75f79ba11062e7c35bbc803bb45e007e297517532b0f47c249`;
+  это прежнее evidence, не заявлено повторно запущенным на новом ZIP.
+  Bootstrap/send hooks/UI/dependencies/locks неизменны; прежний aggregate fail
+  и все попытки evidence сохранены. Hosted CI/push/merge/publication не запускались.
+  AC mapping repair: AC4 — malformed остаётся invalid, numeric/username/topic
+  сохраняют виды; AC5 — sole invalid blocked/empty, mixed partial; AC6/7 —
+  repeated all-resource counters/snapshots/redaction и delivery regressions pass;
+  AC1–3/8 — native Core/permissions/MCP regression pass, unchanged broader
+  evidence сохранено. Owner технически принимает repair; blockers отсутствуют.
+  Остаточный риск: проверяется локальная форма адреса, не существование в Telegram;
+  это согласованная статическая диагностика. Пять прежних warnings non-blocking.
+  Далее root принимает handoff и запускает fresh independent QA; AC8/общий DoD
+  до его вердикта остаётся unmet. При повторе исходного failure — остановить
+  automatic repair. Этот owner завершает только текущий repair и не берёт successor.
