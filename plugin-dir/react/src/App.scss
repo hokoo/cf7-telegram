@@ -691,9 +691,11 @@ body[class*="page_wpcf7_tg"] ul#adminmenu > li.current > a.current:after {
           }
 
           .form-list {
-            display: inline-flex;
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
             gap: 8px;
-            align-items: center;
+            align-items: start;
+            max-width: 624px;
 
             &.show-selector {
               opacity: .1;
@@ -702,7 +704,11 @@ body[class*="page_wpcf7_tg"] ul#adminmenu > li.current > a.current:after {
             li {
               display: inline-flex;
               gap: 8px;
-              align-items: center;
+              align-items: flex-start;
+              box-sizing: border-box;
+              max-width: 150px;
+              min-width: 0;
+              overflow-wrap: anywhere;
 
               padding: 5px 10px;
               border-radius: 5px;
@@ -711,6 +717,10 @@ body[class*="page_wpcf7_tg"] ul#adminmenu > li.current > a.current:after {
               border-color: #2f4f37;
 
               color: #487d44;
+
+              .detach-button {
+                flex-shrink: 0;
+              }
             }
           }
 
