@@ -5,7 +5,7 @@ Tags: contact form telegram,contact form 7,telegram
 Requires at least: 5.6
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.2.0
+Stable tag: 1.2.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -19,9 +19,9 @@ This plugin lets you send Contact Form 7 messages to Telegram chats via a bot. S
 2. Create a bot in the plugin UI.
 3. Paste the bot token into the bot form (PHP constants also available).
 4. Create a bridge in the plugin UI. A bridge links Contact Form 7 forms, a Telegram bot, and one or more Telegram recipients.
-5. Add users to the subscriber list by sending the <code>/cf7tg_start</code> command to your bot. To add a group, first add the bot to the group, then send <code>/cf7tg_start</code> in that group.
-6. Approve or decline subscription requests on the Contact Form 7 → CF7 Telegram settings page.
-7. Configure the bridge: choose which forms it handles and which Telegram recipients should receive those messages. Create at least one bridge to run the integration, and add more when different forms should send messages to different sets of Telegram recipients.
+5. Keep the Contact Form 7 → CF7 Telegram settings page open while sending the bot's displayed <code>/cf7tg_start@BotName</code> command as a new standalone message. The page checks Telegram for new recipients. To add a group, first add the bot to the group, then send the command there. To add a forum topic, send it inside that topic. The <code>@BotName</code> suffix addresses the correct bot when Telegram group privacy mode is enabled. The short <code>/cf7tg_start</code> command is still supported when Telegram delivers it to the bot; editing an existing message does not register a recipient.
+6. Approve or decline the subscription requests that appear on the settings page.
+7. Configure the bridge: choose which forms it handles and which Telegram recipients should receive those messages. After approving a topic, select it in each desired bridge; approving it alone does not assign it to bridges. Create at least one bridge to run the integration, and add more when different forms should send messages to different sets of Telegram recipients.
 
 **The integration is configured correctly when the bot panel is highlighted in blue and the bridge panel is highlighted in green.**
 
@@ -59,6 +59,13 @@ This plugin uses [API Telegram](https://core.telegram.org/api "Telegram docs") a
 2. Multiple Telegram recipients and multiple bridges connected to different Contact Form 7 forms.
 
 == Changelog ==
+
+= 1.2.1 =
+- Send Contact Form 7 notifications to selected Telegram forum topics, with separate topic approval, bridge assignment, and delivery; preserve ordinary chat and General topic behavior.
+- Show the bot-qualified discovery command and explain how to register a topic and assign it to bridges.
+- Track Telegram topic names and let administrators set local recipient names or restore Telegram-provided names.
+- Send notifications only to active recipients, and continue with other recipients when a topic delivery fails.
+- Improve recipient actions with accessible icon buttons and keep bridge form choices in a top-aligned four-column layout.
 
 = 1.2.0 =
 - Restore the CF7 Telegram settings submenu in Contact Form 7 6.2 and later, while keeping it available with older Contact Form 7 versions.
