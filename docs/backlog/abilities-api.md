@@ -756,7 +756,7 @@ revision boundary и подтверждение остановки writer для
 
 ### R1.3 Настоящий Core API и приёмка отдельного выпуска
 
-Status: `todo` — R1.1/R1.2 приняты; runtime preflight выполнен.
+Status: `review` — source/candidate/runtime gates прошли; независимый QA pending.
 Goal: доказать, что обе команды работают через реальные PHP/REST/MCP и
 сохраняют обычную работу плагина, включая WordPress без Abilities API.
 Scope: расширить существующие runtime fixtures/evidence, README usage,
@@ -1149,3 +1149,85 @@ fresh batch owner → specialists, отдельный независимый epi
   E4 сейчас использует internal REST dispatch; R1.3 дополнительно проверяет HTTP auth.
 - Required CI commands проверяются локально вместе с изменённым workflow.
   Hosted CI требует push/PR и не заявляется запущенным в этой локальной границе.
+- R1.3 технически принят owner по actual diff/evidence; `review`, root QA pending.
+  Product revision `75ad9e677ca2d0e02eb781491a3b9248387733e9`; последний harness
+  `01220cfae6748999a97c358f2bcec08e717b008c`. Итоговая delivery граница — этот
+  source/harness + bookkeeping commit, продуктовый ZIP не меняется.
+  Ветка `release/abilities-readonly`, версия 1.2.1; push/merge/
+  publication/version bump не выполнялись.
+- Изменены Abilities.php, новый ReadOnlyAbility.php, README, required CI,
+  E1/E4 runners и три узкие runtime fixtures. Owner reviewed actual scoped
+  diffs; код/fixtures/usage/CI принадлежат worker, owner — только checkpoint.
+- Root разрешил native compatibility: GET JSON-object normalization только
+  для двух exact Core run routes; bool permission wrapper пропускает logged-in
+  not-ready caller к execute guard (503); `ability_class` subclass меняет только
+  validate_input, вызывает parent и сохраняет strict integer/no-callback.
+  [Core 6.9 controller](https://github.com/WordPress/wordpress-develop/blob/6.9/src/wp-includes/rest-api/endpoints/class-wp-rest-abilities-v1-run-controller.php),
+  [WP_Ability](https://github.com/WordPress/wordpress-develop/blob/6.9/src/wp-includes/abilities-api/class-wp-ability.php).
+  Query filters явно разрешены (`suppress_filters=false`); per-object caps,
+  visible pagination и публичные схемы сохранены. Translator comments добавлены.
+- Candidate `dist/cf7-telegram-wp-plugin.zip`: SHA-256
+  `15239dd6a3aeff75f79ba11062e7c35bbc803bb45e007e297517532b0f47c249`,
+  `SOURCE_DATE_EPOCH=1793281353`; build 2x, cmp и validation exit 0.
+  Evidence root: `/tmp/cf7tg-r1_3-gates-20261029T125240Z/`; final reference —
+  `FINAL-candidate-reference.zip`. Нет неожиданных tracked build changes.
+- Source gates: PHP lint 61 + 3 fixtures, bash E1/E4, YAML, diff — exit 0;
+  настоящий PHPUnit в PHP 8.3.14/9.6.36 — 125 tests / 720 assertions, exit 0
+  (`plugin-check-repair-source/phpunit-actual.log`); local PHP 8.0.30 Composer
+  compatibility harness — 125/0. React 8 suites / 60 tests и blocking audits=0
+  сохранены по неизменным JS/lock hashes. Full-dev audit non-blocking: 78 findings
+  (12 low / 33 moderate / 29 high / 4 critical). Restricted DNS/cache attempts
+  сохранены отдельно; успешный audit — `audit-reports-attempt2/summary.json`.
+- Final E4 min: WP 6.9 / PHP 8.3.33 / CF7 6.1.4; current: WP 7.1 / PHP 8.3.33 /
+  CF7 6.2. Каждый — existing 24/24 + Core 26/26, HTTP, failed_steps=0.
+  Current official MCP Adapter 0.7.1 STDIO/protocol 2025-11-25 — все 11 required
+  checks pass, включая discovery/execute/denials/numeric parity. Evidence —
+  `e4-minimum-final/`, `e4-current-final/` на том же candidate SHA.
+- Plugin Check 1.9.0: errors=0/warnings=5 (`plugin-check-final/`); browser 8/8
+  (`browser-final/`), E6 fake Telegram 37/37 (`e6-final/`), всё exit 0.
+  Warning set_error_handler — intentional temporary storage-error guard;
+  четыре остальных warnings прежние (vendor manifest, importer SQL, legacy hook).
+  Playwright 1.62.1 / Chromium rev1234 Chrome151.0.7922.34; реальный Telegram/
+  mail и live `cf7t_*` stack не использовались. Hosted CI не запускался.
+- Full `support-matrix-final/` exit 1 сохранён: legacy 10 cases, только fresh
+  fake delivery fail; остальные 9 legacy upgrades pass, current 9/9 pass,
+  optional WP7.1/PHP8.5.10/CF7 6.2 9/9 pass. Все rows на final candidate SHA.
+  Exact CF7 5.4.2 source подтвердил: пустой User-Agent даёт spam до before_send_mail;
+  [source](https://raw.githubusercontent.com/rocklobster-in/contact-form-7/v5.4.2/includes/submission.php).
+  Harness `01220cf` добавил только HTTP metadata и safe counters, сохранил оба
+  skip_mail guards и усилил hook assertion. Targeted `legacy-fresh-repair/`
+  exit 0, failed_steps=0: no-API и fake delivery pass; mail_sent, hook=1,
+  completed/send/ok=2, ordinary/topic=true; activate/reactivate/deactivate/
+  uninstall (cron/options/files/tables) pass. Clean E5 failed legacy row retake
+  `support-matrix-legacy-repair/`: exit 0, 10/10 manifest cases, 349/349 steps,
+  failed=0/skipped=0; оба legacy IDs/counters pass. Owner inspected actual summary.
+  Current 9/9 и optional 9/9 passed rows сохранены; original failed aggregate
+  остаётся историческим fail, без переписывания. Все required cases теперь
+  имеют положительное evidence на том же ZIP.
+- Все предыдущие failed ZIP/evidence сохранены: `candidate-reference.zip`,
+  `repair-candidate-reference.zip`, `e4-minimum/`, `e4-current/`,
+  `e4-current-repair/`, `plugin-check/`, `support-matrix-final/`.
+- Agents: owner `/root/r1_3_owner` native `01a18794-740d-7552-a092-510eb3a36dfa`
+  (`gpt-6.1-sol/high`); worker `/root/r1_3_owner/r1_3_worker` native
+  `01a18795-392b-7232-b387-3771bde83b3d` (`gpt-6-sol/high`); monitor
+  `/root/r1_3_owner/r1_3_monitor` native `01a187b8-0c03-7011-8e39-808dfcac3e32`
+  (`gpt-6-luna/low`). Worker/monitor completed, все команды и isolated containers
+  stopped после row retake; completed подтверждено live agent state.
+  Root владеет lifecycle cleanup; далее — независимый epic QA; owner не берёт
+  следующий batch. Остальные четыре abilities и публикация исключены.
+- Parent `/root` остаётся `errored`: "Selected model is at capacity. Please try a different model."
+  R1.3 technical work завершена; root model/QA не подменяются. Recovery после
+  handoff: возобновить root, получить independent epic QA и supported cleanup
+  по native IDs.
+- AC mapping: R1-AC1 — legacy 2/2 + current/min exact registration; AC2 —
+  native schemas/parity/strict input/GET/early503; AC3 — user/object permissions,
+  hidden graph/counts; AC4 — four resources/unlinked/100+/topics/no revision;
+  AC5 — все 8 codes и ready/partial/blocked; AC6 — snapshots/SQL mutation,
+  HTTP/gateway counters zero; AC7 — redaction/token precedence/E6 37/37;
+  AC8 — official MCP/README/local required gates verified, **independent QA pending**.
+  DoD root QA/full-batch acceptance ещё unmet; эпик не объявлен completed.
+- Полная command/result ledger: `/tmp/cf7tg-r1_3-gates-20261029T125240Z/verification-summary.txt`,
+  SHA-256 `3256b075f306d588ecb2b597e29f1cee2c6143f178b044f6dff339e73678dadc`.
+  После восстановления root: прочитать этот checkpoint/ledger, запустить fresh
+  independent epic_qa напрямую root на frozen source/harness/candidate, затем
+  supported cleanup completed descendants по указанным native IDs.
