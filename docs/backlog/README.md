@@ -15,7 +15,7 @@ First independent stage: `get-configuration` and `diagnose-form`; implementation
 plan R1.1–R1.3 is in the specification. It does not depend on unresolved questions
 for the other abilities. R1 implementation was authorized on 2026-10-29 and is
 being coordinated by root in `release/abilities-readonly`; R1.1 is accepted at
-`c393034`, and R1.2 is ready to start. Core/REST/MCP acceptance remains R1.3.
+`c393034`, R1.2 at `c534c66`. Core/REST/MCP acceptance is the next ready batch R1.3.
 The remaining four abilities retain `needs_design` and are outside this delivery.
 
 ## B1. Preserve legacy Telegram chat display names during migration

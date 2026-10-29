@@ -732,7 +732,7 @@ Handoff: revision/diff boundary, фактические paths, AC evidence, ко
 
 ### R1.2 Статическая diagnose-form
 
-Status: `completed` — scoped diff технически принят owner; commit передан root.
+Status: `completed` — root принял код, проверки и commit `c534c66`.
 Goal: объяснить проблемы маршрута формы без внешних запросов и изменения данных.
 Scope: схема/callback diagnose-form, обход графа одной формы, issue/status
 aggregation, focused regression. Переиспользовать чтение и права R1.1.
@@ -756,7 +756,7 @@ revision boundary и подтверждение остановки writer для
 
 ### R1.3 Настоящий Core API и приёмка отдельного выпуска
 
-Status: `waiting_dependency`.
+Status: `todo` — R1.1/R1.2 приняты; runtime preflight выполнен.
 Goal: доказать, что обе команды работают через реальные PHP/REST/MCP и
 сохраняют обычную работу плагина, включая WordPress без Abilities API.
 Scope: расширить существующие runtime fixtures/evidence, README usage,
@@ -1132,3 +1132,20 @@ fresh batch owner → specialists, отдельный независимый epi
   Неожиданных изменений нет; writer и monitor завершены, потомков/работающих
   команд нет. Native IDs выше переданы root для lifecycle cleanup.
   Следующий ready batch после приёмки root — R1.3; этот owner его не берёт.
+- Root принял R1.2 на `c534c665abc6e27b3a8d9884b48cd785ab9d93cf` после
+  проверки решающих hunks, исправления token finding, actual composer log и
+  чистого status. Worker/monitor/owner архивированы штатно, все exits 0;
+  после cleanup список агентов содержит только root, команды остановлены.
+- R1.3 ready; fresh owner выбран `gpt-6.1-sol/high`: требуется интеграция с
+  реальным Core/REST/MCP и сохранение доказательств единого candidate.
+  Root preflight: Docker 26 доступен; exact local images `wordpress:cli-php8.0`,
+  `wordpress:cli-php8.3`, `mysql:5.7` есть. Отдельный `wodby/wordpress-php:8.3-4.62.1`
+  вернул PHP 8.3.14, dom/mbstring/xmlwriter=yes (exit 0); это готовое окружение
+  для PHPUnit, ещё не результат тестов. Live dev stack `cf7t_*` не используется.
+- MCP smoke закрепляется на официальном Adapter 0.7.1, WP>=6.9/PHP>=7.4:
+  [CLI guide версии](https://github.com/WordPress/mcp-adapter/blob/v0.7.1/docs/guides/cli-usage.md).
+  Штатный STDIO `wp mcp-adapter serve --server=mcp-adapter-default-server --user=...`
+  даёт discovery/execute через default meta-tools без собственного сервера.
+  E4 сейчас использует internal REST dispatch; R1.3 дополнительно проверяет HTTP auth.
+- Required CI commands проверяются локально вместе с изменённым workflow.
+  Hosted CI требует push/PR и не заявляется запущенным в этой локальной границе.
