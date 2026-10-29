@@ -15,6 +15,13 @@ $record = static function ( string $id, bool $pass ) use ( &$checks ): void {
 $record( 'r1-legacy-no-api', ! function_exists( 'wp_register_ability' ) &&
 	! class_exists( \iTRON\cf7Telegram\ReadOnlyAbility::class, false ) &&
 	has_action( 'wpcf7_before_send_mail', [ CF7::class, 'handleSubscribe' ] ) !== false );
+$host = (string) wp_parse_url( home_url( '/' ), PHP_URL_HOST );
+$_SERVER['SERVER_NAME'] = $host;
+$_SERVER['HTTP_HOST'] = $host;
+$_SERVER['HTTP_USER_AGENT'] = 'CF7 Telegram R1 legacy smoke';
+$_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+$_SERVER['REQUEST_URI'] = '/';
+$_SERVER['REQUEST_METHOD'] = 'POST';
 $requests = [];
 add_filter( 'pre_http_request', static function ( $pre, $args, $url ) use ( &$requests ) {
 	if ( ! str_starts_with( $url, 'https://api.telegram.org/' ) ) return $pre;
@@ -56,20 +63,26 @@ $form_id = $cf ? (int) $cf->id() : 0;
 if ( $form_id > 0 ) ( new Form( $form_id ) )->connectChannel( $bridge );
 $deliveries = [];
 add_action( 'cf7tg_telegram_deliveries_completed', static function ( $list ) use ( &$deliveries ) { $deliveries = $list; }, 10, 1 );
-$_SERVER['REQUEST_METHOD'] = 'POST';
 $_POST = [ '_wpcf7' => (string) $form_id, '_wpcf7_version' => WPCF7_VERSION,
 	'_wpcf7_locale' => 'en_US', '_wpcf7_unit_tag' => 'wpcf7-f' . $form_id . '-p0-o1',
 	'your-name' => 'R1 Legacy' ];
+$before_send_mail_start = did_action( 'wpcf7_before_send_mail' );
 $submission = $form_id > 0 ? WPCF7_Submission::get_instance( $cf, [ 'skip_mail' => true ] ) : null;
+$before_send_mail_count = did_action( 'wpcf7_before_send_mail' ) - $before_send_mail_start;
 $send_calls = array_values( array_filter( $requests, static fn( array $request ): bool => 'sendMessage' === $request['method'] ) );
+$delivery_ok_count = count( array_filter( $deliveries, static function ( array $delivery ): bool {
+	return ! empty( $delivery['results'] ) && ! array_filter( $delivery['results'], static fn( $result ): bool => ! $result->ok );
+} ) );
+$ordinary_destination_matches = isset( $send_calls[0] ) && (string) $send_calls[0]['chat_id'] === '700001' && null === $send_calls[0]['thread_id'];
+$topic_destination_matches = isset( $send_calls[1] ) && (string) $send_calls[1]['chat_id'] === '-100700001' && 22 === (int) $send_calls[1]['thread_id'];
 $record( 'r1-legacy-fake-delivery', $form_id > 0 && $submission && 'mail_sent' === $submission->get_status() &&
-	count( $deliveries ) === 2 && count( $send_calls ) === 2 &&
-	count( array_filter( $deliveries, static function ( array $delivery ): bool {
-		return ! empty( $delivery['results'] ) && ! array_filter( $delivery['results'], static fn( $result ): bool => ! $result->ok );
-	} ) ) === 2 &&
-	(string) $send_calls[0]['chat_id'] === '700001' && null === $send_calls[0]['thread_id'] &&
-	(string) $send_calls[1]['chat_id'] === '-100700001' && 22 === (int) $send_calls[1]['thread_id'] );
+	$before_send_mail_count === 1 && count( $deliveries ) === 2 && count( $send_calls ) === 2 &&
+	$delivery_ok_count === 2 && $ordinary_destination_matches && $topic_destination_matches );
 $failed = count( array_filter( $checks, static fn( array $check ): bool => 'fail' === $check['status'] ) );
 echo wp_json_encode( [ 'schema' => 1, 'wordpress' => get_bloginfo( 'version' ), 'php' => PHP_VERSION,
-	'contact_form_7' => WPCF7_VERSION, 'summary' => [ 'failed' => $failed ], 'checks' => $checks ] ) . "\n";
+	'contact_form_7' => WPCF7_VERSION, 'summary' => [ 'failed' => $failed ], 'checks' => $checks,
+	'extra' => [ 'form_created' => $form_id > 0, 'submission_status' => $submission ? $submission->get_status() : null,
+		'before_send_mail_count' => $before_send_mail_count, 'completed_count' => count( $deliveries ),
+		'send_call_count' => count( $send_calls ), 'delivery_ok_count' => $delivery_ok_count,
+		'ordinary_destination_matches' => $ordinary_destination_matches, 'topic_destination_matches' => $topic_destination_matches ] ] ) . "\n";
 exit( $failed ? 1 : 0 );
