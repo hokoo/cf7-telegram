@@ -1240,3 +1240,20 @@ fresh batch owner → specialists, отдельный независимый epi
   Следующий шаг — fresh independent `epic_qa` напрямую root, роль
   `gpt-6-sol/high`, read-only; проверяемая граница `e25d811..237003b` плюс этот
   bookkeeping. Продукт `75ad9e6`, harness `01220cf`, ZIP hash не изменились.
+- Independent QA `/root/r1_epic_qa`, native `01a18838-2772-7213-becc-fe8eaa83f910`,
+  pinned `gpt-6-sol/high/read-only`, reviewed `e25d811..b77e239`:
+  **verdict: fail** (сохранён без изменения). R1-AC4/AC5, high:
+  `Abilities::destination()` принимает непустой повреждённый chatID (`abc`,
+  private), выдаёт default и потенциально ready вместо invalid/blocked.
+  Sanitizer удаляет whitespace, но не проверяет адрес; fixture проверял
+  неправильную тему, но не такой chat ID. Минимальный repair — проверка
+  сохранённого адреса с учётом типа и допустимого @username только в abilities,
+  PHPUnit/Core regressions, затронутые gates и fresh independent QA.
+  AC1–3/6–7, README, MCP и local gates подтверждены; AC8/DoD не приняты из-за
+  этого finding. Исходная проверенная ZIP граница и warnings сохранены выше.
+  QA не реализовывал эпик, работал read-only, команды/потомки отсутствуют.
+- Root принимает finding и запускает один bounded repair batch; выбран fresh
+  owner `gpt-6.1-sol/high`: узкая валидация адресата с риском совместимости.
+  Scope: Abilities::destination, focused/native fixtures, проверки и новый ZIP;
+  send path/остальные abilities исключены. При повторе этого же QA failure
+  автоматический repair останавливается согласно процессу.
