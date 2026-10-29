@@ -3,6 +3,7 @@
 import React from 'react';
 import {copyWithTooltip} from '../utils/main';
 import {getChatStatus, getToggleButtonLabel} from '../utils/chatStatus';
+import {getTopicLabel} from '../utils/topicLabel';
 
 const BotView = ({
     bot,
@@ -61,10 +62,10 @@ const BotView = ({
 
                         <div
                             className={`bot-command copyable`}
-                            onClick={(e) => copyWithTooltip(e.currentTarget)}
+                            onClick={(e) => copyWithTooltip(e.currentTarget, `/cf7tg_start@${nameValue}`)}
                             title={wp.i18n.__( 'Click to copy bot command', 'cf7-telegram' )}
                             >
-                            /cf7tg_start
+                            /cf7tg_start@{nameValue}
                         </div>
                     </div>
 
@@ -124,14 +125,16 @@ const BotView = ({
                                 const isUpdating = updatingStatusIds.includes(chat.id);
                                 const isRenaming = renamingChatId === chat.id;
                                 const isUpdatingName = updatingNameIds.includes(chat.id);
-                                const canRename = status.toLowerCase() !== 'pending';
+                                const isTopic = chat.messageThreadID != null;
+                                const canRename = isTopic || status.toLowerCase() !== 'pending';
+                                const toggleLabel = isUpdating ? wp.i18n.__( 'Updating...', 'cf7-telegram' ) : getToggleButtonLabel(status);
                                 return (
                                     <li
                                         key={chat.id}
                                         className={`chat-item ${status.toLowerCase()}`}
                                         data-testid={`cf7tg-bot-${bot.id}-chat-${chat.id}`}
                                     >
-                                        {isRenaming ? (
+                                        {isRenaming && !isTopic ? (
                                             <input
                                                 className="chat-name edit-chat-name"
                                                 data-testid={`cf7tg-bot-${bot.id}-chat-${chat.id}-name-input`}
@@ -145,51 +148,67 @@ const BotView = ({
                                         ) : (
                                             <span className="chat-name"
                                                   title={String(status)}
-                                            >{chat.title.rendered}</span>
+                                            >{isTopic ? (chat.telegramName || chat.title.rendered) : chat.title.rendered}</span>
                                         )}
-
-                                        {isRenaming ? (
-                                            <>
-                                                <span
-                                                    className="action save-chat-name"
-                                                    onClick={() => handleSaveChatName(chat.id)}
-                                                    aria-disabled={isUpdatingName}
-                                                >{isUpdatingName ? wp.i18n.__( 'Saving...', 'cf7-telegram' ) : wp.i18n.__( 'Save', 'cf7-telegram' )}</span>
-
-                                                <span
-                                                    className="action restore-chat-name"
-                                                    onClick={() => handleRestoreChatName(chat.id)}
-                                                    aria-disabled={isUpdatingName}
-                                                >{wp.i18n.__( 'Restore', 'cf7-telegram' )}</span>
-
-                                                <span
-                                                    className="action cancel-chat-name"
-                                                    onClick={handleCancelRenameChat}
-                                                    aria-disabled={isUpdatingName}
-                                                >{wp.i18n.__( 'Cancel', 'cf7-telegram' )}</span>
-                                            </>
+                                        {isTopic && (isRenaming ? (
+                                            <input
+                                                className="topic-identity edit-chat-name"
+                                                data-testid={`cf7tg-bot-${bot.id}-chat-${chat.id}-name-input`}
+                                                type="text"
+                                                value={chatNameValue}
+                                                onChange={handleRenameChatChange}
+                                                onKeyDown={(event) => handleRenameChatKeyDown(chat.id, event)}
+                                                disabled={isUpdatingName}
+                                                autoFocus
+                                            />
                                         ) : (
-                                            <>
-                                                <span
-                                                    className="action toggle-status"
-                                                    onClick={() => handleToggleChatStatus(chat.id, status.toLowerCase())}
-                                                    aria-disabled={isUpdating}
-                                                >{isUpdating ? wp.i18n.__( 'Updating...', 'cf7-telegram' ) : getToggleButtonLabel(status)}</span>
+                                            <small className="topic-identity" title={`${wp.i18n.__( 'Topic', 'cf7-telegram' )} #${chat.messageThreadID}`}>
+                                                {getTopicLabel(chat)}
+                                            </small>
+                                        ))}
 
-                                                {canRename && (
-                                                    <span
-                                                        className="action rename-chat"
-                                                        onClick={() => handleStartRenameChat(chat)}
-                                                        aria-disabled={isUpdatingName}
-                                                    >{wp.i18n.__( 'Rename', 'cf7-telegram' )}</span>
-                                                )}
-
-                                                <span
-                                                    className="action remove-chat"
-                                                    onClick={() => handleDisconnectChat(chat.id, bot.id)}
-                                                >{wp.i18n.__( 'Remove', 'cf7-telegram' )}</span>
-                                            </>
-                                        )}
+                                        <div className="chat-actions">
+                                            {isRenaming ? (
+                                                <>
+                                                    <button type="button" className="action save-chat-name"
+                                                        onClick={() => handleSaveChatName(chat.id)} disabled={isUpdatingName}
+                                                        title={isUpdatingName ? wp.i18n.__( 'Saving...', 'cf7-telegram' ) : wp.i18n.__( 'Save', 'cf7-telegram' )}
+                                                        aria-label={isUpdatingName ? wp.i18n.__( 'Saving...', 'cf7-telegram' ) : wp.i18n.__( 'Save', 'cf7-telegram' )}>
+                                                        <span className="dashicons dashicons-yes" aria-hidden="true" />
+                                                    </button>
+                                                    <button type="button" className="action restore-chat-name"
+                                                        onClick={() => handleRestoreChatName(chat.id)} disabled={isUpdatingName}
+                                                        title={wp.i18n.__( 'Restore', 'cf7-telegram' )} aria-label={wp.i18n.__( 'Restore', 'cf7-telegram' )}>
+                                                        <span className="dashicons dashicons-undo" aria-hidden="true" />
+                                                    </button>
+                                                    <button type="button" className="action cancel-chat-name"
+                                                        onClick={handleCancelRenameChat} disabled={isUpdatingName}
+                                                        title={wp.i18n.__( 'Cancel', 'cf7-telegram' )} aria-label={wp.i18n.__( 'Cancel', 'cf7-telegram' )}>
+                                                        <span className="dashicons dashicons-no" aria-hidden="true" />
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <button type="button" className="action toggle-status"
+                                                        onClick={() => handleToggleChatStatus(chat.id, status.toLowerCase())} disabled={isUpdating}
+                                                        title={toggleLabel} aria-label={toggleLabel}>
+                                                        <span className={`dashicons ${status === 'Active' ? 'dashicons-controls-pause' : 'dashicons-controls-play'}`} aria-hidden="true" />
+                                                    </button>
+                                                    {canRename && (
+                                                        <button type="button" className="action rename-chat"
+                                                            onClick={() => handleStartRenameChat(chat)} disabled={isUpdatingName}
+                                                            title={wp.i18n.__( 'Rename', 'cf7-telegram' )} aria-label={wp.i18n.__( 'Rename', 'cf7-telegram' )}>
+                                                            <span className="dashicons dashicons-edit" aria-hidden="true" />
+                                                        </button>
+                                                    )}
+                                                    <button type="button" className="action remove-chat"
+                                                        onClick={() => handleDisconnectChat(chat.id, bot.id)} disabled={isUpdating}
+                                                        title={wp.i18n.__( 'Remove', 'cf7-telegram' )} aria-label={wp.i18n.__( 'Remove', 'cf7-telegram' )}>
+                                                        <span className="dashicons dashicons-trash" aria-hidden="true" />
+                                                    </button>
+                                                </>
+                                            )}
+                                        </div>
                                     </li>
                                 );
                             })}

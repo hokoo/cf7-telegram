@@ -95,11 +95,46 @@ class Util {
 		return in_array( $chatType, self::TELEGRAM_CHAT_TYPES, true ) ? $chatType : '';
 	}
 
+	static function normalizeMessageThreadID( $threadID ): ?int {
+		if ( null === $threadID ) {
+			return null;
+		}
+
+		if ( ! is_int( $threadID ) && ! is_string( $threadID ) ) {
+			throw new \InvalidArgumentException( 'Invalid Telegram topic ID.' );
+		}
+
+		$value = (string) $threadID;
+		if ( ! preg_match( '/^[1-9][0-9]*$/', $value ) || (string) (int) $value !== $value ) {
+			throw new \InvalidArgumentException( 'Invalid Telegram topic ID.' );
+		}
+
+		return 1 === (int) $value ? null : (int) $value;
+	}
+
+	static function messageThreadIDFromUpdate( array $message ): ?int {
+		$isTopic = $message['is_topic_message'] ?? false;
+		if ( ! is_bool( $isTopic ) ) {
+			throw new \InvalidArgumentException( 'Invalid Telegram topic flag.' );
+		}
+
+		if ( ! $isTopic ) {
+			return null;
+		}
+
+		if ( 'supergroup' !== ( $message['chat']['type'] ?? null ) || ! array_key_exists( 'message_thread_id', $message ) || null === $message['message_thread_id'] ) {
+			throw new \InvalidArgumentException( 'Unsupported Telegram topic message.' );
+		}
+
+		return self::normalizeMessageThreadID( $message['message_thread_id'] );
+	}
+
 	/**
 	 * @throws wppaLoadPostException
 	 * @throws wppaCreatePostException
 	 */
-	static function getChatByTelegramID( $chatID ): ?Chat {
+	static function getChatByTelegramID( $chatID, ?int $messageThreadID = null ): ?Chat {
+		$messageThreadID = self::normalizeMessageThreadID( $messageThreadID );
 		$chats = get_posts( [
 			'post_type'      => Client::CPT_CHAT,
 			'posts_per_page' => - 1,
@@ -109,7 +144,7 @@ class Util {
 
 		foreach ( $chats as $postID ) {
 			$chat = new Chat( $postID );
-			if ( $chat->getChatID() == $chatID ) {
+			if ( (string) $chat->getChatID() === (string) $chatID && $chat->getMessageThreadID() === $messageThreadID ) {
 				return $chat;
 			}
 		}
@@ -120,9 +155,9 @@ class Util {
 	/**
 	 * @throws wppaSavePostException
 	 */
-	static function createChat( $tg_chat ): Chat {
+	static function createChat( $tg_chat, ?int $messageThreadID = null ): Chat {
 		$chat = new Chat();
-		$chat->setTelegramData( $tg_chat )->publish();
+		$chat->setTelegramData( $tg_chat )->setMessageThreadID( $messageThreadID )->publish();
 
 		return $chat;
 	}
@@ -130,8 +165,8 @@ class Util {
 	/**
 	 * @throws wppaSavePostException
 	 */
-	static function createChatFromArray( array $tg_chat ): Chat {
-		return self::createChat( $tg_chat );
+	static function createChatFromArray( array $tg_chat, ?int $messageThreadID = null ): Chat {
+		return self::createChat( $tg_chat, $messageThreadID );
 	}
 
 	public static function telegramValue( $data, string $key, $default = null ) {

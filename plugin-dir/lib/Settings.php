@@ -65,7 +65,7 @@ class Settings {
 
 		$asset = self::getReactBuildAsset();
 
-		wp_enqueue_style( 'cf7-telegram-admin-styles', self::pluginUrl() . '/react/build/static/css/main.css', [], $asset['version'] );
+		wp_enqueue_style( 'cf7-telegram-admin-styles', self::pluginUrl() . '/react/build/static/css/main.css', [ 'dashicons' ], $asset['version'] );
 		wp_enqueue_style( 'gf-styles', 'https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap', null, WPCF7TG_VERSION );
 		wp_enqueue_script( 'cf7-telegram-admin', self::pluginUrl() . '/react/build/static/js/main.js', $asset['dependencies'], $asset['version'], true );
 		wp_set_script_translations( 'cf7-telegram-admin', 'cf7-telegram' );

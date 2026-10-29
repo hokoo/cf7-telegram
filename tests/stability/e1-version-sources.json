@@ -4,9 +4,9 @@
   "release_assumptions": {
     "published_1_0_11": true,
     "github_canary_1_0_12": true,
-    "wordpress_org_production_baseline": "1.1.0",
+    "wordpress_org_production_baseline": "1.2.0",
     "github_canary_baseline": "1.0.12",
-    "note": "WordPress.org published 1.1.0; 1.0.12 remains a historical GitHub-only canary/upgrade baseline because its SVN publish failed. Release gates validate the local candidate as version 1.2.0."
+    "note": "WordPress.org published 1.2.0; 1.0.12 remains a historical GitHub-only canary/upgrade baseline because its SVN publish failed. Release gates validate the local candidate as version 1.2.1."
   },
   "candidate": {
     "source_priority": [
@@ -16,13 +16,13 @@
     ],
     "override_env": "CF7TG_CANDIDATE_ZIP",
     "expected_version_env": "CF7TG_EXPECTED_CANDIDATE_VERSION",
-    "expected_version": "1.2.0",
+    "expected_version": "1.2.1",
     "header_path_in_zip": "cf7-telegram/cf7-telegram.php"
   },
   "support_contract": {
     "requires_wordpress": "5.6",
     "requires_php": ">=8.0",
-    "candidate_expected_version": "1.2.0",
+    "candidate_expected_version": "1.2.1",
     "lifecycle_cases": [
       "fresh",
       "upgrade-0.10",
@@ -31,7 +31,8 @@
       "upgrade-1.0.10",
       "upgrade-1.0.11",
       "upgrade-1.0.12",
-      "upgrade-1.1.0"
+      "upgrade-1.1.0",
+      "upgrade-1.2.0"
     ],
     "notes": [
       "Required support rows must run with the exact WordPress, PHP, and Contact Form 7 versions listed in support_matrix.",
@@ -56,7 +57,8 @@
         "upgrade-1.0.10",
         "upgrade-1.0.11",
         "upgrade-1.0.12",
-        "upgrade-1.1.0"
+        "upgrade-1.1.0",
+        "upgrade-1.2.0"
       ]
     },
     {
@@ -75,7 +77,8 @@
         "upgrade-1.0.10",
         "upgrade-1.0.11",
         "upgrade-1.0.12",
-        "upgrade-1.1.0"
+        "upgrade-1.1.0",
+        "upgrade-1.2.0"
       ]
     },
     {
@@ -95,7 +98,8 @@
         "upgrade-1.0.10",
         "upgrade-1.0.11",
         "upgrade-1.0.12",
-        "upgrade-1.1.0"
+        "upgrade-1.1.0",
+        "upgrade-1.2.0"
       ],
       "skip_when_unavailable": true
     }
@@ -154,6 +158,13 @@
       "url": "https://downloads.wordpress.org/plugin/cf7-telegram.1.1.0.zip",
       "sha256": "a45c410bc1605b763be7615a3c156f8c5bc1367410873cc26230fc8813e19d82",
       "note": "Published WordPress.org production baseline before the 1.2.0 candidate."
+    },
+    {
+      "matrix_id": "1.2.0",
+      "version": "1.2.0",
+      "url": "https://downloads.wordpress.org/plugin/cf7-telegram.1.2.0.zip",
+      "sha256": "0661546af993df5f7facefcb18a65d2aec1f55dadc98b14ecd668c4c7bcaaf96",
+      "note": "Published WordPress.org production baseline before the 1.2.1 candidate."
     }
   ],
   "wordpress": {

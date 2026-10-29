@@ -25,6 +25,7 @@ class Chat extends Entity implements WPPostAble{
 	public const STATUS_MUTED = 'muted';
 	public const CUSTOM_NAME_PARAM = 'customName';
 	public const TELEGRAM_TITLE_PARAM = 'telegramTitle';
+	public const TELEGRAM_TOPIC_NAME_PARAM = 'telegramTopicName';
 
 	/**
 	 * @throws wppaLoadPostException
@@ -43,6 +44,19 @@ class Chat extends Entity implements WPPostAble{
 
 	public function getChatID() {
 		return $this->getParam( 'chatID' );
+	}
+
+	public function setMessageThreadID( $threadID ): Chat {
+		$this->setParam( 'messageThreadID', Util::normalizeMessageThreadID( $threadID ) );
+		return $this;
+	}
+
+	public function getMessageThreadID(): ?int {
+		$threadID = Util::normalizeMessageThreadID( $this->getParam( 'messageThreadID' ) );
+		if ( null !== $threadID && 'supergroup' !== $this->getChatType() ) {
+			throw new \InvalidArgumentException( 'Unsupported Telegram topic destination.' );
+		}
+		return $threadID;
 	}
 
 	public function setChatType( string $chatType ): Chat {
@@ -88,6 +102,15 @@ class Chat extends Entity implements WPPostAble{
 
 	public function getTelegramTitle(): string {
 		return Util::sanitizeTelegramText( $this->getParam( self::TELEGRAM_TITLE_PARAM ) );
+	}
+
+	public function setTelegramTopicName( string $name ): Chat {
+		$this->setParam( self::TELEGRAM_TOPIC_NAME_PARAM, Util::sanitizeTelegramText( $name ) );
+		return $this;
+	}
+
+	public function getTelegramTopicName(): string {
+		return Util::sanitizeTelegramText( $this->getParam( self::TELEGRAM_TOPIC_NAME_PARAM ) );
 	}
 
 	public function setCustomName( string $name ): Chat {
@@ -229,7 +252,7 @@ class Chat extends Entity implements WPPostAble{
 	 */
 	private function setChannelConnectionStatus( Channel $channel, string $status ): Chat {
 		$connection = $this->getChannelConnection( $channel );
-		$connection->meta->where( 'key', self::STATUS_KEY )->clear();
+		$connection->meta = $connection->meta->filter( static fn( Meta $meta ): bool => self::STATUS_KEY !== $meta->getKey() );
 		$connection->meta->add( new Meta( self::STATUS_KEY, $status ) );
 		$connection->update();
 		return $this;
@@ -242,7 +265,7 @@ class Chat extends Entity implements WPPostAble{
 	 */
 	private function setBotConnectionStatus( Bot $bot, string $status ): Chat {
 		$connection = $this->getBotConnection( $bot );
-		$connection->meta->where( 'key', self::STATUS_KEY )->clear();
+		$connection->meta = $connection->meta->filter( static fn( Meta $meta ): bool => self::STATUS_KEY !== $meta->getKey() );
 		$connection->meta->add( new Meta( self::STATUS_KEY, $status ) );
 		$connection->update();
 		return $this;

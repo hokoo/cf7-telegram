@@ -7,7 +7,7 @@ const resultPath = process.env.CF7TG_E6_RESULT_JSON || path.join(
 	process.env.CF7TG_E6_RESULTS_DIR || process.cwd(),
 	'browser-result.json'
 );
-const expectedCandidateVersion = process.env.CF7TG_EXPECTED_CANDIDATE_VERSION || '1.2.0';
+const expectedCandidateVersion = process.env.CF7TG_EXPECTED_CANDIDATE_VERSION || '1.2.1';
 const expectedCandidateSha256 = process.env.CF7TG_CANDIDATE_SHA256 || '';
 const controlAction = 'cf7tg_e6_fake_telegram_control';
 const fullTokenCanary = '660001:E6_FAKE_TOKEN_CANARY';
@@ -41,6 +41,18 @@ const requiredCheckIds = [
 	'admin-deletion-safety',
 	'admin-no-page-errors',
 	'admin-no-console-errors',
+	'topic-qualified-command-layout-copy',
+	'topic-two-destinations-discovered',
+	'topic-repeat-discovery-idempotent',
+	'topic-approval-explicit-assignment',
+	'topic-custom-labels-readable',
+	'topic-toggle-isolated',
+	'topic-two-form-delivery-isolated',
+	'topic-ordinary-recipient-delivery',
+	'topic-failure-continuity-no-reroute',
+	'topic-evidence-redacted',
+	'topic-no-page-errors',
+	'topic-no-console-errors',
 ];
 
 const checks = new Map();
@@ -144,6 +156,7 @@ const privateChatEvidenceCanaries = [
 	'E6 Unrelated Chat',
 	'E6 Safety Chat',
 	'E6 Admin Chat',
+	'E6 Ordinary Chat',
 	'e6_delivery_chat_1',
 	'e6_delivery_chat_2',
 	'e6_unrelated_chat',
@@ -869,5 +882,283 @@ test('admin setup builds and removes the delivery graph through the plugin UI', 
 	await expectCheck('admin-no-console-errors', 'No unexpected console errors occurred during the E6 admin setup flow.', async () => {
 		expect(unexpectedConsoleErrors).toEqual([]);
 		return {console_errors: unexpectedConsoleErrors};
+	});
+});
+
+test('forum topics use distinct bridges and retain destinations after a failed send', async ({baseURL, page, context}) => {
+	test.setTimeout(240000);
+	const pageErrors = [];
+	const consoleErrors = [];
+	page.on('pageerror', (error) => pageErrors.push(error.message));
+	page.on('console', (message) => {
+		if (message.type() === 'error') consoleErrors.push(message.text());
+	});
+
+	const reset = await control(page, baseURL, 'admin-reset');
+	const fixture = reset.fixture;
+	await login(page, baseURL);
+	await openAdmin(page, baseURL);
+	await page.getByTestId('cf7tg-create-bot').click();
+	const bots = await waitForValue(
+		() => restCollection(page, 'bots'),
+		async (items) => expect(items).toHaveLength(1),
+		'Expected one topic-flow bot.'
+	);
+	const botId = Number(bots[0].id);
+	const bot = page.getByTestId(`cf7tg-bot-${botId}`);
+
+	for (let index = 0; index < 2; index += 1) {
+		await page.getByTestId('cf7tg-create-channel').click();
+		await waitForValue(
+			() => restCollection(page, 'channels'),
+			async (items) => expect(items).toHaveLength(index + 1),
+			`Expected ${index + 1} topic-flow bridges.`
+		);
+	}
+	const channels = await restCollection(page, 'channels');
+	const channelIds = channels.map((item) => Number(item.id));
+	const formIds = [fixture.form_id, fixture.second_form_id];
+	for (const [index, channelId] of channelIds.entries()) {
+		const channel = page.getByTestId(`cf7tg-channel-${channelId}`);
+		await selectReactOption(page, channel.locator('.bot-picker'), 'Bot Name');
+		await expect(channel.getByTestId(`cf7tg-channel-${channelId}-bot-${botId}`)).toBeVisible();
+		await channel.getByTestId(`cf7tg-channel-${channelId}-add-form`).click();
+		await selectReactOption(page, channel.locator('.form-picker'), index === 0 ? 'CF7TG E6 Delivery Form' : 'CF7TG E6 Topic Form');
+		await expect(channel.getByTestId(`cf7tg-channel-${channelId}-form-${formIds[index]}`)).toBeVisible();
+	}
+
+	const scripted = await control(page, baseURL, 'script-topic-updates');
+	const {group_chat_id: groupChatId, thread_ids: threadIds, ordinary_chat_id: ordinaryChatId, bot_username: botUsername} = scripted.fixture.topic_flow;
+	await bot.getByTestId(`cf7tg-bot-token-display-${botId}`).click();
+	await bot.getByTestId(`cf7tg-bot-token-input-${botId}`).fill(adminFullTokenCanary);
+	await bot.getByTestId(`cf7tg-bot-token-input-${botId}`).press('Enter');
+	await expect(bot).toHaveClass(/online/, {timeout: 30000});
+
+	await expectCheck('topic-qualified-command-layout-copy', 'A maximum-length qualified bot command fits beside the token and copies in full.', async () => {
+		const command = bot.getByTitle('Click to copy bot command');
+		const token = bot.getByTestId(`cf7tg-bot-token-display-${botId}`);
+		const expected = `/cf7tg_start@${botUsername}`;
+		expect(botUsername).toHaveLength(32);
+		await expect(command).toHaveText(expected);
+		await expect(command).toBeVisible();
+		await expect(token).toBeVisible();
+		const geometry = await bot.locator('.bot-summary').evaluate((summary) => {
+			const command = summary.querySelector('.bot-command');
+			const token = summary.querySelector('.bot-token');
+			const card = summary.getBoundingClientRect();
+			const commandBox = command.getBoundingClientRect();
+			const tokenBox = token.getBoundingClientRect();
+			return {
+				card: {left: card.left, right: card.right},
+				command: {left: commandBox.left, right: commandBox.right, width: commandBox.width},
+				token: {left: tokenBox.left, right: tokenBox.right},
+				overflow: command.scrollWidth - command.clientWidth,
+			};
+		});
+		expect(geometry.command.width).toBeGreaterThan(0);
+		expect(geometry.command.left).toBeGreaterThanOrEqual(geometry.card.left - 1);
+		expect(geometry.command.right).toBeLessThanOrEqual(geometry.token.left + 1);
+		expect(geometry.token.right).toBeLessThanOrEqual(geometry.card.right + 1);
+		expect(geometry.overflow).toBeLessThanOrEqual(1);
+		await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+		await command.click();
+		await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe(expected);
+		return {username_length: botUsername.length, command_length: expected.length, geometry, copied_in_full: true};
+	});
+
+	let topicChats;
+	await expectCheck('topic-two-destinations-discovered', 'Qualified topic updates discover two distinct topics, General, and one ordinary chat.', async () => {
+		const chats = await waitForValue(
+			() => restCollection(page, 'chats'),
+			async (items) => {
+				const topics = items.filter((item) => String(item.chatID) === String(groupChatId) && item.messageThreadID != null);
+				expect(topics).toHaveLength(2);
+				expect(topics.map((item) => Number(item.messageThreadID)).sort()).toEqual([...threadIds].sort());
+				expect(items.some((item) => String(item.chatID) === String(groupChatId) && item.messageThreadID == null)).toBe(true);
+				expect(items.some((item) => String(item.chatID) === String(ordinaryChatId) && item.messageThreadID == null)).toBe(true);
+			},
+			'Expected both forum topics and the ordinary recipient.'
+		);
+		topicChats = threadIds.map((threadId) => chats.find((item) => String(item.chatID) === String(groupChatId) && Number(item.messageThreadID) === threadId));
+		for (const chat of topicChats) {
+			await expect(bot.getByTestId(`cf7tg-bot-${botId}-chat-${chat.id}`)).toBeVisible();
+		}
+		return {group_chat_id: groupChatId, topics: topicChats.map((item) => ({post_id: item.id, thread_id: item.messageThreadID})), general: true, ordinary_chat_id: ordinaryChatId};
+	});
+
+	await expectCheck('topic-repeat-discovery-idempotent', 'A repeated command leaves recipient records and delivery graph unchanged.', async () => {
+		const beforeChats = await restCollection(page, 'chats');
+		const beforeRelations = await restCollection(page, 'bot2chat');
+		const beforeCalls = sendMessageCalls(await telegramEvidence(page, baseURL));
+		await control(page, baseURL, 'script-topic-updates', {repeat: '1'});
+		const settings = await adminData(page);
+		await restRequest(page, `${settings.routes.bots}${botId}/fetch_updates`, 'POST');
+		const afterChats = await restCollection(page, 'chats');
+		const afterRelations = await restCollection(page, 'bot2chat');
+		expect(afterChats.map((item) => item.id).sort()).toEqual(beforeChats.map((item) => item.id).sort());
+		expect(afterRelations.map((item) => item.data.id).sort()).toEqual(beforeRelations.map((item) => item.data.id).sort());
+		expect(sendMessageCalls(await telegramEvidence(page, baseURL))).toHaveLength(beforeCalls.length);
+		return {chat_count: afterChats.length, relation_count: afterRelations.length, delivery_count: beforeCalls.length};
+	});
+
+	const ordinaryChat = (await restCollection(page, 'chats')).find((item) => String(item.chatID) === String(ordinaryChatId));
+	const generalChat = (await restCollection(page, 'chats')).find((item) => String(item.chatID) === String(groupChatId) && item.messageThreadID == null);
+	await expectCheck('topic-approval-explicit-assignment', 'Topic approval makes both topics selectable without autoattaching; ordinary approval autoattaches.', async () => {
+		for (const chat of [...topicChats, generalChat, ordinaryChat]) {
+			await bot.getByTestId(`cf7tg-bot-${botId}-chat-${chat.id}`).locator('.toggle-status').click();
+		}
+		await waitForValue(
+			() => restCollection(page, 'bot2chat'),
+			async (items) => {
+				for (const chat of [...topicChats, generalChat, ordinaryChat]) {
+					expect(items.find((item) => Number(item.data.to) === Number(chat.id))?.data?.meta?.status).toContain('active');
+				}
+			},
+			'Expected all recipients to be approved.'
+		);
+		const links = await waitForValue(
+			() => restCollection(page, 'chat2channel'),
+			async (items) => {
+				expect(items.filter((item) => Number(item.data.from) === Number(ordinaryChat.id))).toHaveLength(2);
+				expect(items.filter((item) => Number(item.data.from) === Number(generalChat.id))).toHaveLength(2);
+			},
+			'Expected ordinary recipient to autoattach to both bridges.'
+		);
+		for (const chat of topicChats) {
+			expect(links.some((item) => Number(item.data.from) === Number(chat.id))).toBe(false);
+		}
+		for (const channelId of channelIds) {
+			for (const chat of topicChats) {
+				await expect(page.getByTestId(`cf7tg-channel-${channelId}-chat-${chat.id}`)).toBeVisible();
+			}
+		}
+		return {ordinary_bridge_count: 2, general_bridge_count: 2, topic_bridge_count: 0};
+	});
+
+	await expectCheck('topic-custom-labels-readable', 'Custom topic names retain readable group and topic identity in bot and bridge cards.', async () => {
+		const labels = ['Operations desk', 'Support desk'];
+		for (const [index, chat] of topicChats.entries()) {
+			const row = bot.getByTestId(`cf7tg-bot-${botId}-chat-${chat.id}`);
+			await row.locator('.rename-chat').click();
+			await row.getByTestId(`cf7tg-bot-${botId}-chat-${chat.id}-name-input`).fill(labels[index]);
+			await row.getByTestId(`cf7tg-bot-${botId}-chat-${chat.id}-name-input`).press('Enter');
+			await expect(row.locator('.chat-name')).toHaveText('E6 Forum Group');
+			await expect(row.locator('.topic-identity')).toHaveText(labels[index]);
+			await expect(row.locator('.topic-identity')).toHaveAttribute('title', `Topic #${threadIds[index]}`);
+			await expect(row.locator('.topic-identity')).toBeVisible();
+			const bridgeRow = page.getByTestId(`cf7tg-channel-${channelIds[index]}-chat-${chat.id}`);
+			await expect(bridgeRow.locator('.chat-username')).toHaveText('E6 Forum Group');
+			await expect(bridgeRow.locator('.topic-identity')).toHaveText(labels[index]);
+			await expect(bridgeRow.locator('.topic-identity')).toHaveAttribute('title', `Topic #${threadIds[index]}`);
+			await expect(bridgeRow.locator('.topic-identity')).toBeVisible();
+			const labelBounds = await bridgeRow.locator('.topic-identity').boundingBox();
+			const cardBounds = await page.getByTestId(`cf7tg-channel-${channelIds[index]}`).boundingBox();
+			expect(labelBounds?.width).toBeGreaterThan(0);
+			expect(labelBounds.x).toBeGreaterThanOrEqual(cardBounds.x - 1);
+			expect(labelBounds.x + labelBounds.width).toBeLessThanOrEqual(cardBounds.x + cardBounds.width + 1);
+		}
+		return {labels, thread_ids: threadIds, group: 'E6 Forum Group'};
+	});
+
+	await expectCheck('topic-toggle-isolated', 'Selecting one topic in a bridge leaves the neighboring topic unchanged.', async () => {
+		const first = page.getByTestId(`cf7tg-channel-${channelIds[0]}-chat-${topicChats[0].id}`);
+		const neighboring = page.getByTestId(`cf7tg-channel-${channelIds[0]}-chat-${topicChats[1].id}`);
+		const second = page.getByTestId(`cf7tg-channel-${channelIds[1]}-chat-${topicChats[1].id}`);
+		await expect(first).toHaveClass(/paused/);
+		await expect(neighboring).toHaveClass(/paused/);
+		await first.click();
+		await expect(first).toHaveClass(/active/);
+		await expect(neighboring).toHaveClass(/paused/);
+		await expect(second).toHaveClass(/paused/);
+		await second.click();
+		await expect(second).toHaveClass(/active/);
+		await expect(neighboring).toHaveClass(/paused/);
+		const links = await restCollection(page, 'chat2channel');
+		for (const [index, chat] of topicChats.entries()) {
+			expect(links.some((item) => Number(item.data.from) === Number(chat.id) && Number(item.data.to) === channelIds[index])).toBe(true);
+			expect(links.some((item) => Number(item.data.from) === Number(chat.id) && Number(item.data.to) === channelIds[1 - index])).toBe(false);
+		}
+		return {assigned: topicChats.map((chat, index) => ({thread_id: chat.messageThreadID, channel_id: channelIds[index]}))};
+	});
+
+	const delivery = [];
+	for (const [index, pageUrl] of [fixture.page_url, fixture.second_page_url].entries()) {
+		await control(page, baseURL, 'reset');
+		const marker = `cf7tg-e6-topic-${index}-${Date.now()}`;
+		const body = await submitPublicForm(page, {page_url: pageUrl}, marker);
+		const data = await telegramEvidence(page, baseURL);
+		const calls = sendMessageCalls(data).filter((call) => call.params.text?.includes(marker));
+		delivery.push({index, status: body.status, marker, calls});
+	}
+	await expectCheck('topic-two-form-delivery-isolated', 'Two real CF7 forms deliver to their separately assigned threads only.', async () => {
+		for (const {index, status, calls} of delivery) {
+			expect(status).toBe('mail_sent');
+			expect(calls).toHaveLength(3);
+			const topics = calls.filter((call) => String(call.params.chat_id) === String(groupChatId) && call.params.message_thread_id != null);
+			expect(topics).toHaveLength(1);
+			expect(Number(topics[0].params.message_thread_id)).toBe(threadIds[index]);
+			expect(topics[0].response.ok).toBe(true);
+		}
+		return {deliveries: delivery.map(({index, status, calls}) => ({form_id: formIds[index], status, destinations: calls.map((call) => ({chat_id: call.params.chat_id, message_thread_id: call.params.message_thread_id ?? null}))}))};
+	});
+	await expectCheck('topic-ordinary-recipient-delivery', 'General and the ordinary recipient receive both submissions without a thread parameter.', async () => {
+		for (const {calls} of delivery) {
+			const ordinary = calls.filter((call) => String(call.params.chat_id) === String(ordinaryChatId));
+			const general = calls.filter((call) => String(call.params.chat_id) === String(groupChatId) && call.params.message_thread_id == null);
+			expect(ordinary).toHaveLength(1);
+			expect(general).toHaveLength(1);
+			expect(ordinary[0].params).not.toHaveProperty('message_thread_id');
+			expect(general[0].params).not.toHaveProperty('message_thread_id');
+			expect(ordinary[0].response.ok).toBe(true);
+			expect(general[0].response.ok).toBe(true);
+		}
+		return {ordinary_chat_id: ordinaryChatId, general_chat_id: groupChatId, successful_deliveries: delivery.length};
+	});
+
+	await expectCheck('topic-failure-continuity-no-reroute', 'A failed topic retains its thread, CF7 succeeds, and another recipient is attempted without General reroute.', async () => {
+		await openAdmin(page, baseURL);
+		const ordinaryRow = page.getByTestId(`cf7tg-channel-${channelIds[0]}-chat-${ordinaryChat.id}`);
+		await ordinaryRow.click();
+		await expect(ordinaryRow).toHaveClass(/paused/);
+		await ordinaryRow.click();
+		await expect(ordinaryRow).toHaveClass(/active/);
+		await control(page, baseURL, 'reset');
+		await control(page, baseURL, 'script-failure', {method: 'sendMessage', chat_id: groupChatId, message_thread_id: String(threadIds[0]), count: '1'});
+		const marker = `cf7tg-e6-topic-failure-${Date.now()}`;
+		const body = await submitPublicForm(page, fixture, marker);
+		const calls = sendMessageCalls(await telegramEvidence(page, baseURL)).filter((call) => call.params.text?.includes(marker));
+		expect(body.status).toBe('mail_sent');
+		expect(calls).toHaveLength(3);
+		expect(calls.map((call) => [String(call.params.chat_id), call.params.message_thread_id ?? null, call.response.ok])).toEqual([
+			[String(groupChatId), null, true],
+			[String(groupChatId), threadIds[0], false],
+			[String(ordinaryChatId), null, true],
+		]);
+		const failed = calls.find((call) => String(call.params.chat_id) === String(groupChatId) && call.params.message_thread_id != null);
+		const general = calls.filter((call) => String(call.params.chat_id) === String(groupChatId) && call.params.message_thread_id == null);
+		const ordinary = calls.find((call) => String(call.params.chat_id) === String(ordinaryChatId));
+		expect(Number(failed?.params.message_thread_id)).toBe(threadIds[0]);
+		expect(failed?.response.failure_category).toBe('scripted_failure');
+		expect(failed?.response.ok).toBe(false);
+		expect(general).toHaveLength(1);
+		expect(general[0].response.ok).toBe(true);
+		expect(ordinary?.response.ok).toBe(true);
+		expect(ordinary?.params).not.toHaveProperty('message_thread_id');
+		expect(general[0].params).not.toHaveProperty('message_thread_id');
+		return {status: body.status, destinations: calls.map((call) => ({chat_id: call.params.chat_id, message_thread_id: call.params.message_thread_id ?? null, ok: call.response.ok}))};
+	});
+
+	await expectCheck('topic-evidence-redacted', 'Topic-flow evidence contains neither full bot tokens nor private chat labels.', async () => {
+		const data = await telegramEvidence(page, baseURL);
+		expectEvidenceRedacted(data);
+		return {token_hash_only: true, call_count: data.telegram.calls.length};
+	});
+	await expectCheck('topic-no-page-errors', 'No page errors occurred during the topic flow.', async () => {
+		expect(pageErrors).toEqual([]);
+		return {page_errors: pageErrors};
+	});
+	await expectCheck('topic-no-console-errors', 'No console errors occurred during the topic flow.', async () => {
+		expect(consoleErrors).toEqual([]);
+		return {console_errors: consoleErrors};
 	});
 });

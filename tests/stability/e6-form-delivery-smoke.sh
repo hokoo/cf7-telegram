@@ -24,7 +24,7 @@ WP_VERSION="${CF7TG_E6_WP_VERSION:-$(jq -r '.wordpress_version // .wordpress.def
 PHP_VERSION="${CF7TG_E6_PHP_VERSION:-$(jq -r '.php_version // "8.3"' <<<"${CURRENT_ROW}")}"
 WP_CLI_IMAGE="${CF7TG_E6_WP_CLI_IMAGE:-$(jq -r '.wp_cli_image // .wordpress.default_cli_image // "wordpress:cli-php8.3"' <<<"${CURRENT_ROW}")}"
 CF7_VERSION="${CF7TG_E6_CF7_VERSION:-$(jq -r '.contact_form_7_version // .dependencies.contact_form_7.default_version // "6.2"' <<<"${CURRENT_ROW}")}"
-EXPECTED_CANDIDATE_VERSION="${CF7TG_EXPECTED_CANDIDATE_VERSION:-$(jq -r '.candidate.expected_version // .support_contract.candidate_expected_version // "1.2.0"' "${SOURCE_MANIFEST}")}"
+EXPECTED_CANDIDATE_VERSION="${CF7TG_EXPECTED_CANDIDATE_VERSION:-$(jq -r '.candidate.expected_version // .support_contract.candidate_expected_version // "1.2.1"' "${SOURCE_MANIFEST}")}"
 CANDIDATE_ZIP="${CF7TG_CANDIDATE_ZIP:-${REPO_ROOT}/dist/${PLUGIN_SLUG}-wp-plugin.zip}"
 WEB_PORT="${CF7TG_E6_WEB_PORT:-$(shuf -i 20000-45000 -n 1)}"
 BASE_URL="${CF7TG_E6_BASE_URL:-http://127.0.0.1:${WEB_PORT}}"
@@ -36,7 +36,7 @@ SUMMARY_WRITTEN=0
 CURRENT_PROJECT=""
 WP_WEB_IMAGE=""
 
-REQUIRED_CHECKS='["fake-transport-active","public-form-renders","cf7-submit-success","send-message-attempts","no-unexpected-recipient","no-token-leakage","no-page-errors","no-console-errors","partial-failure-cf7-success","partial-failure-recipient-continuity","partial-failure-evidence-redacted","partial-failure-no-page-errors","partial-failure-no-console-errors","admin-empty-state","admin-bot-created","admin-bot-token-validated","admin-channel-created","admin-form-selectable","admin-chat-discovered","admin-relations-assigned","admin-delivery-targets-assigned-chat","admin-evidence-redacted","admin-deletion-safety","admin-no-page-errors","admin-no-console-errors"]'
+REQUIRED_CHECKS='["fake-transport-active","public-form-renders","cf7-submit-success","send-message-attempts","no-unexpected-recipient","no-token-leakage","no-page-errors","no-console-errors","partial-failure-cf7-success","partial-failure-recipient-continuity","partial-failure-evidence-redacted","partial-failure-no-page-errors","partial-failure-no-console-errors","admin-empty-state","admin-bot-created","admin-bot-token-validated","admin-channel-created","admin-form-selectable","admin-chat-discovered","admin-relations-assigned","admin-delivery-targets-assigned-chat","admin-evidence-redacted","admin-deletion-safety","admin-no-page-errors","admin-no-console-errors","topic-qualified-command-layout-copy","topic-two-destinations-discovered","topic-repeat-discovery-idempotent","topic-approval-explicit-assignment","topic-custom-labels-readable","topic-toggle-isolated","topic-two-form-delivery-isolated","topic-ordinary-recipient-delivery","topic-failure-continuity-no-reroute","topic-evidence-redacted","topic-no-page-errors","topic-no-console-errors"]'
 
 usage() {
 	cat <<'USAGE'
@@ -53,7 +53,7 @@ Options:
 
 Environment:
   CF7TG_CANDIDATE_ZIP              Candidate ZIP path.
-  CF7TG_EXPECTED_CANDIDATE_VERSION Expected candidate version, default 1.2.0.
+  CF7TG_EXPECTED_CANDIDATE_VERSION Expected candidate version, default 1.2.1.
   CF7TG_E6_RESULTS_DIR             Summary, logs, traces, screenshots, and Playwright report directory.
   CF7TG_E6_WP_VERSION              WordPress core version, default current support row.
   CF7TG_E6_WP_CLI_IMAGE            WP-CLI image, default current support row.

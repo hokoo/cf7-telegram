@@ -185,6 +185,54 @@ function cf7tg_e6_script_start_update(): array {
 	return cf7tg_e6_public_control_payload( $state, $fixture );
 }
 
+function cf7tg_e6_script_topic_updates(): array {
+	$fixture = cf7tg_e6_fixture();
+	$repeat = ! empty( $_POST['repeat'] );
+	$base_id = $repeat ? 991100 : 991000;
+	$group_id = '-100990777';
+	$bot_name = 'E6ForumTopicsAcceptance123456Bot';
+	$messages = [
+		[ 'thread_id' => 21, 'title' => 'Operations', 'type' => 'supergroup' ],
+		[ 'thread_id' => 22, 'title' => 'Support', 'type' => 'supergroup' ],
+		[ 'thread_id' => 1, 'title' => 'General', 'type' => 'supergroup' ],
+		[ 'thread_id' => null, 'title' => 'E6 Ordinary Chat', 'type' => 'private' ],
+	];
+	$updates = [];
+	foreach ( $messages as $index => $item ) {
+		$update_id = $base_id + $index + 1;
+		$message = [
+			'message_id' => $update_id + 1,
+			'date'       => time(),
+			'text'       => '/cf7tg_start@' . $bot_name,
+			'entities'   => [ [ 'offset' => 0, 'length' => strlen( '/cf7tg_start@' . $bot_name ), 'type' => 'bot_command' ] ],
+			'chat'       => [
+				'id'    => null === $item['thread_id'] ? '990124' : $group_id,
+				'type'  => $item['type'],
+			],
+		];
+		if ( null !== $item['thread_id'] ) {
+			$message['chat']['title'] = 'E6 Forum Group';
+			$message['is_topic_message'] = true;
+			$message['message_thread_id'] = $item['thread_id'];
+		} else {
+			$message['chat']['first_name'] = $item['title'];
+		}
+		$updates[] = [ 'update_id' => $update_id, 'message' => $message ];
+	}
+	$state = cf7tg_e6_telegram_state();
+	$state['bot_username'] = $bot_name;
+	$state['updates'] = $updates;
+	cf7tg_e6_save_telegram_state( $state );
+	$fixture['topic_flow'] = [
+		'group_chat_id' => $group_id,
+		'thread_ids'    => [ 21, 22 ],
+		'ordinary_chat_id' => '990124',
+		'bot_username' => $bot_name,
+	];
+	cf7tg_e6_save_fixture( $fixture );
+	return cf7tg_e6_public_control_payload( $state, $fixture );
+}
+
 function cf7tg_e6_parse_telegram_params( array $args ): array {
 	$body = $args['body'] ?? '';
 	if ( is_string( $body ) && '' !== trim( $body ) ) {
@@ -217,7 +265,7 @@ function cf7tg_e6_sanitize_params( array $params ): array {
 
 function cf7tg_e6_public_fixture( array $fixture ): array {
 	$public = [];
-	foreach ( [ 'schema', 'form_id', 'page_id', 'page_url', 'bot_post_id', 'channel_post_id', 'chat_post_ids', 'expected_chat_ids', 'unexpected_chat_id', 'bot_token_hash' ] as $key ) {
+	foreach ( [ 'schema', 'form_id', 'page_id', 'page_url', 'second_form_id', 'second_page_url', 'bot_post_id', 'channel_post_id', 'chat_post_ids', 'expected_chat_ids', 'unexpected_chat_id', 'bot_token_hash', 'topic_flow' ] as $key ) {
 		if ( array_key_exists( $key, $fixture ) ) {
 			$public[ $key ] = $fixture[ $key ];
 		}
@@ -326,7 +374,7 @@ function cf7tg_e6_default_telegram_response( string $method, array $params, arra
 					'id'         => 660001,
 					'is_bot'     => true,
 					'first_name' => 'E6 Fake',
-					'username'   => 'E6FakeTelegramBot',
+					'username'   => $state['bot_username'] ?? 'E6FakeTelegramBot',
 				],
 			]
 		);
@@ -382,7 +430,8 @@ function cf7tg_e6_default_telegram_response( string $method, array $params, arra
 
 function cf7tg_e6_take_scripted_failure( string $method, array $params, array &$state ): ?array {
 	$chat_id = isset( $params['chat_id'] ) ? (string) $params['chat_id'] : '';
-	foreach ( [ $method . ':' . $chat_id, $method ] as $key ) {
+	$thread_id = isset( $params['message_thread_id'] ) ? (string) $params['message_thread_id'] : '';
+	foreach ( [ $method . ':' . $chat_id . ':' . $thread_id, $method . ':' . $chat_id, $method ] as $key ) {
 		$count = (int) ( $state['failures'][ $key ] ?? 0 );
 		if ( $count < 1 ) {
 			continue;
@@ -462,7 +511,7 @@ add_filter(
 	static function ( $skip_mail, $contact_form ) {
 		$fixture = get_option( 'cf7tg_e6_fixture', [] );
 		$form_id = is_object( $contact_form ) && method_exists( $contact_form, 'id' ) ? (int) $contact_form->id() : 0;
-		if ( $form_id && $form_id === (int) ( $fixture['form_id'] ?? 0 ) ) {
+		if ( $form_id && in_array( $form_id, [ (int) ( $fixture['form_id'] ?? 0 ), (int) ( $fixture['second_form_id'] ?? 0 ) ], true ) ) {
 			return true;
 		}
 
@@ -491,8 +540,9 @@ function cf7tg_e6_fake_telegram_control(): void {
 	if ( 'script-failure' === $action ) {
 		$method = sanitize_text_field( wp_unslash( $_POST['method'] ?? 'sendMessage' ) );
 		$chat_id = sanitize_text_field( wp_unslash( $_POST['chat_id'] ?? '' ) );
+		$thread_id = sanitize_text_field( wp_unslash( $_POST['message_thread_id'] ?? '' ) );
 		$count = max( 1, (int) ( $_POST['count'] ?? 1 ) );
-		$key = $chat_id ? $method . ':' . $chat_id : $method;
+		$key = $thread_id ? $method . ':' . $chat_id . ':' . $thread_id : ( $chat_id ? $method . ':' . $chat_id : $method );
 		$state = cf7tg_e6_telegram_state();
 		$state['failures'][ $key ] = (int) ( $state['failures'][ $key ] ?? 0 ) + $count;
 		cf7tg_e6_save_telegram_state( $state );
@@ -501,6 +551,10 @@ function cf7tg_e6_fake_telegram_control(): void {
 
 	if ( 'script-start-update' === $action ) {
 		cf7tg_e6_control_response( cf7tg_e6_script_start_update() );
+	}
+
+	if ( 'script-topic-updates' === $action ) {
+		cf7tg_e6_control_response( cf7tg_e6_script_topic_updates() );
 	}
 
 	if ( 'evidence' === $action ) {
@@ -582,6 +636,22 @@ if ( ! $contact_form || ! method_exists( $contact_form, 'id' ) ) {
 }
 
 $form_id = (int) $contact_form->id();
+$second_form = wpcf7_save_contact_form(
+	[
+		'id'                  => -1,
+		'title'               => 'CF7TG E6 Topic Form',
+		'locale'              => 'en_US',
+		'form'                => $form_template,
+		'mail'                => $mail_template,
+		'additional_settings' => "skip_mail: on\n",
+	],
+	'save'
+);
+if ( ! $second_form || ! method_exists( $second_form, 'id' ) ) {
+	echo wp_json_encode( [ 'schema' => 1, 'error' => 'Could not create second Contact Form 7 form.' ] ) . "\n";
+	exit( 1 );
+}
+$second_form_id = (int) $second_form->id();
 $page_id = wp_insert_post(
 	[
 		'post_type'    => 'page',
@@ -600,6 +670,20 @@ if ( is_wp_error( $page_id ) || ! $page_id ) {
 		],
 		JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES
 	) . "\n";
+	exit( 1 );
+}
+
+$second_page_id = wp_insert_post(
+	[
+		'post_type'    => 'page',
+		'post_status'  => 'publish',
+		'post_title'   => 'CF7TG E6 Topic Page',
+		'post_content' => sprintf( '[contact-form-7 id="%d" title="CF7TG E6 Topic Form"]', $second_form_id ),
+	],
+	true
+);
+if ( is_wp_error( $second_page_id ) || ! $second_page_id ) {
+	echo wp_json_encode( [ 'schema' => 1, 'error' => 'Could not create second public page.' ] ) . "\n";
 	exit( 1 );
 }
 
@@ -668,6 +752,8 @@ $fixture = [
 	'form_id'            => $form_id,
 	'page_id'            => (int) $page_id,
 	'page_url'           => get_permalink( $page_id ),
+	'second_form_id'     => $second_form_id,
+	'second_page_url'    => get_permalink( $second_page_id ),
 	'bot_post_id'        => $bot->getPost()->ID,
 	'channel_post_id'    => $channel->getPost()->ID,
 	'chat_post_ids'      => $chat_posts,

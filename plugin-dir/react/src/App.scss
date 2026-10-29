@@ -200,11 +200,13 @@ body[class*="page_wpcf7_tg"] ul#adminmenu > li.current > a.current:after {
           display: flex;
           justify-content: space-between;
           align-items: center;
+          gap: 8px;
 
           .bot-title {
             display: flex;
             flex-direction: column;
             font-family: monospace;
+            min-width: 0;
 
             .bot-name {
               border-top-right-radius: 5px;
@@ -234,6 +236,7 @@ body[class*="page_wpcf7_tg"] ul#adminmenu > li.current > a.current:after {
 
             .bot-command {
               text-align: center;
+              overflow-wrap: anywhere;
               background-color: #112747;
               border-bottom-right-radius: 5px;
               border-bottom-left-radius: 5px;
@@ -246,6 +249,7 @@ body[class*="page_wpcf7_tg"] ul#adminmenu > li.current > a.current:after {
           .bot-token {
             text-align: center;
             color: #465b79;
+            flex-shrink: 0;
 
             .show-token {
               cursor: pointer;
@@ -321,7 +325,14 @@ body[class*="page_wpcf7_tg"] ul#adminmenu > li.current > a.current:after {
               box-sizing: border-box;
               width: 120px;
               overflow-wrap: anywhere;
+              padding: 0 5px;
               text-align: right;
+            }
+
+            .topic-identity {
+              margin-left: 4px;
+              min-width: 0;
+              overflow-wrap: anywhere;
             }
 
             .edit-chat-name {
@@ -334,6 +345,7 @@ body[class*="page_wpcf7_tg"] ul#adminmenu > li.current > a.current:after {
               line-height: inherit;
               min-height: 24px;
               padding: 0 5px;
+              width: 120px;
             }
 
             &.active {
@@ -348,17 +360,38 @@ body[class*="page_wpcf7_tg"] ul#adminmenu > li.current > a.current:after {
               color: #893535;
             }
 
-            span {
-              cursor: pointer;
-              padding: 0 5px;
+            .chat-actions {
+              display: flex;
+              flex: 0 0 auto;
+              gap: 2px;
+              margin-left: auto;
 
-              &.action {
+              .action {
+                align-items: center;
+                background: none;
+                border: 0;
                 color: #656565;
-                text-align: center;
-                text-transform: uppercase;
+                cursor: pointer;
+                display: inline-flex;
+                height: 24px;
+                justify-content: center;
+                opacity: 0.25;
+                padding: 0;
+                width: 24px;
 
-                &:hover {
+                &:hover:not(:disabled) {
                   color: #873d3d;
+                  opacity: 1;
+                }
+
+                &:focus-visible {
+                  opacity: 1;
+                  outline: 2px solid #0c88b4;
+                  outline-offset: 1px;
+                }
+
+                &:disabled {
+                  cursor: default;
                 }
               }
             }
@@ -658,9 +691,11 @@ body[class*="page_wpcf7_tg"] ul#adminmenu > li.current > a.current:after {
           }
 
           .form-list {
-            display: inline-flex;
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
             gap: 8px;
-            align-items: center;
+            align-items: start;
+            max-width: 624px;
 
             &.show-selector {
               opacity: .1;
@@ -669,7 +704,11 @@ body[class*="page_wpcf7_tg"] ul#adminmenu > li.current > a.current:after {
             li {
               display: inline-flex;
               gap: 8px;
-              align-items: center;
+              align-items: flex-start;
+              box-sizing: border-box;
+              max-width: 150px;
+              min-width: 0;
+              overflow-wrap: anywhere;
 
               padding: 5px 10px;
               border-radius: 5px;
@@ -678,6 +717,10 @@ body[class*="page_wpcf7_tg"] ul#adminmenu > li.current > a.current:after {
               border-color: #2f4f37;
 
               color: #487d44;
+
+              .detach-button {
+                flex-shrink: 0;
+              }
             }
           }
 
