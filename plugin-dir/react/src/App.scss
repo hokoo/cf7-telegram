@@ -328,6 +328,12 @@ body[class*="page_wpcf7_tg"] ul#adminmenu > li.current > a.current:after {
               text-align: right;
             }
 
+            .topic-identity {
+              margin-left: 4px;
+              min-width: 0;
+              overflow-wrap: anywhere;
+            }
+
             .edit-chat-name {
               background: transparent;
               border: 1px solid #0c88b447;

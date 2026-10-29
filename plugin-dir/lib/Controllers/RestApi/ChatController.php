@@ -122,13 +122,15 @@ class ChatController extends Controller {
 		}
 
 		try {
-			$result = $bot->getAPI()->getChat( $chat->getChatID() );
+			if ( null === $chat->getMessageThreadID() ) {
+				$result = $bot->getAPI()->getChat( $chat->getChatID() );
 
-			if ( ! $result->ok || ! is_array( $result->result ) ) {
-				return $this->error( 'rest_chat_name_restore_failed', 'Telegram chat could not be loaded.', 502 );
+				if ( ! $result->ok || ! is_array( $result->result ) ) {
+					return $this->error( 'rest_chat_name_restore_failed', 'Telegram chat could not be loaded.', 502 );
+				}
+
+				$chat->setTelegramData( $result->result );
 			}
-
-			$chat->setTelegramData( $result->result );
 			$chat->restoreTelegramName();
 			$chat->savePost();
 		} catch ( Throwable $exception ) {
@@ -146,6 +148,7 @@ class ChatController extends Controller {
 			$data = $response->get_data();
 			$data['customName'] = $chat->getCustomName();
 			$data['telegramName'] = $chat->getTelegramName();
+			$data['telegramTopicName'] = $chat->getTelegramTopicName();
 			$data['messageThreadID'] = $chat->getMessageThreadID();
 			$response->set_data( $data );
 
@@ -199,7 +202,8 @@ class ChatController extends Controller {
 
 	private function checkNameAvailability( Chat $chat, Bot $bot ): ?WP_Error {
 		try {
-			if ( Chat::STATUS_PENDING === $chat->getBotConnectionStatus( $bot ) ) {
+			$status = $chat->getBotConnectionStatus( $bot );
+			if ( null === $chat->getMessageThreadID() && Chat::STATUS_PENDING === $status ) {
 				return $this->error( 'rest_chat_name_pending', 'Pending chats cannot be renamed.', 409 );
 			}
 		} catch ( Throwable $exception ) {

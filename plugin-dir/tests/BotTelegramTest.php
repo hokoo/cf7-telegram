@@ -149,6 +149,38 @@ final class BotTelegramTest extends Cf7tg_TestCase {
 		$this->assertFalse( $channel->hasChat( $topic22 ) );
 	}
 
+	public function testRegisteredTopicTracksTelegramNameChangesWithoutDiscoveringOtherTopics(): void {
+		$created = $this->topicUpdate( 11, 21 );
+		unset( $created['message']['text'], $created['message']['entities'], $created['message']['message_thread_id'] );
+		$created['message']['message_id'] = 21;
+		$created['message']['forum_topic_created'] = [ 'name' => 'Operations' ];
+		$edited = $this->topicUpdate( 12, 21 );
+		unset( $edited['message']['text'], $edited['message']['entities'] );
+		$edited['message']['forum_topic_edited'] = [ 'name' => 'Support' ];
+		$unknown = $this->topicUpdate( 13, 22 );
+		unset( $unknown['message']['text'], $unknown['message']['entities'] );
+		$unknown['message']['forum_topic_created'] = [ 'name' => 'Unregistered' ];
+		$gateway = $this->gatewayWithUpdates( [ $this->topicUpdate( 10, 21 ) ] );
+		$gateway->queue( 'getWebhookInfo', $this->success( [ 'url' => '' ] ) );
+		$gateway->queue( 'getUpdates', $this->success( [ $created, $edited, $unknown ] ) );
+		$this->installGateways( [ self::OLD_TOKEN => $gateway ] );
+		$bot = $this->bot( self::OLD_TOKEN, '1001', 'TestBot' );
+
+		$bot->fetchUpdates();
+		$topic = Util::getChatByTelegramID( '-100700001', 21 );
+		$topic->setCustomName( 'Local label' )->savePost();
+		$result = $bot->fetchUpdates();
+		$topic = Util::getChatByTelegramID( '-100700001', 21 );
+
+		$this->assertTrue( $result->hasUpdatedChats );
+		$this->assertFalse( $result->hasNewChats );
+		$this->assertSame( 'Support', $topic->getTelegramTopicName() );
+		$this->assertSame( 'Local label', $topic->getCustomName() );
+		$this->assertSame( 'Local label', $topic->getTitle() );
+		$this->assertSame( Chat::STATUS_PENDING, $topic->getBotConnectionStatus( $bot ) );
+		$this->assertSame( null, Util::getChatByTelegramID( '-100700001', 22 ) );
+	}
+
 	public function testInvalidTopicUpdateStopsOffsetWithoutCreatingDefaultChat(): void {
 		$invalid = $this->topicUpdate( 11, 21 );
 		$invalid['message']['message_thread_id'] = 'bad';

@@ -1042,12 +1042,14 @@ test('forum topics use distinct bridges and retain destinations after a failed s
 			await row.locator('.rename-chat').click();
 			await row.getByTestId(`cf7tg-bot-${botId}-chat-${chat.id}-name-input`).fill(labels[index]);
 			await row.getByTestId(`cf7tg-bot-${botId}-chat-${chat.id}-name-input`).press('Enter');
-			await expect(row.locator('.chat-name')).toHaveText(labels[index]);
-			await expect(row.locator('.topic-identity')).toContainText(`E6 Forum Group · Topic #${threadIds[index]}`);
+			await expect(row.locator('.chat-name')).toHaveText('E6 Forum Group');
+			await expect(row.locator('.topic-identity')).toHaveText(labels[index]);
+			await expect(row.locator('.topic-identity')).toHaveAttribute('title', `Topic #${threadIds[index]}`);
 			await expect(row.locator('.topic-identity')).toBeVisible();
 			const bridgeRow = page.getByTestId(`cf7tg-channel-${channelIds[index]}-chat-${chat.id}`);
-			await expect(bridgeRow.locator('.chat-username')).toHaveText(labels[index]);
-			await expect(bridgeRow.locator('.topic-identity')).toContainText(`E6 Forum Group · Topic #${threadIds[index]}`);
+			await expect(bridgeRow.locator('.chat-username')).toHaveText('E6 Forum Group');
+			await expect(bridgeRow.locator('.topic-identity')).toHaveText(labels[index]);
+			await expect(bridgeRow.locator('.topic-identity')).toHaveAttribute('title', `Topic #${threadIds[index]}`);
 			await expect(bridgeRow.locator('.topic-identity')).toBeVisible();
 			const labelBounds = await bridgeRow.locator('.topic-identity').boundingBox();
 			const cardBounds = await page.getByTestId(`cf7tg-channel-${channelIds[index]}`).boundingBox();

@@ -3,6 +3,7 @@
 import React from 'react';
 import {copyWithTooltip} from '../utils/main';
 import {getChatStatus, getToggleButtonLabel} from '../utils/chatStatus';
+import {getTopicLabel} from '../utils/topicLabel';
 
 const BotView = ({
     bot,
@@ -124,14 +125,15 @@ const BotView = ({
                                 const isUpdating = updatingStatusIds.includes(chat.id);
                                 const isRenaming = renamingChatId === chat.id;
                                 const isUpdatingName = updatingNameIds.includes(chat.id);
-                                const canRename = status.toLowerCase() !== 'pending';
+                                const isTopic = chat.messageThreadID != null;
+                                const canRename = isTopic || status.toLowerCase() !== 'pending';
                                 return (
                                     <li
                                         key={chat.id}
                                         className={`chat-item ${status.toLowerCase()}`}
                                         data-testid={`cf7tg-bot-${bot.id}-chat-${chat.id}`}
                                     >
-                                        {isRenaming ? (
+                                        {isRenaming && !isTopic ? (
                                             <input
                                                 className="chat-name edit-chat-name"
                                                 data-testid={`cf7tg-bot-${bot.id}-chat-${chat.id}-name-input`}
@@ -145,14 +147,24 @@ const BotView = ({
                                         ) : (
                                             <span className="chat-name"
                                                   title={String(status)}
-                                            >{chat.title.rendered}</span>
+                                            >{isTopic ? (chat.telegramName || chat.title.rendered) : chat.title.rendered}</span>
                                         )}
-                                        {chat.messageThreadID != null && (
-                                            <small className="topic-identity" style={{marginLeft: 4}}>
-                                                {(chat.customName || isRenaming) && chat.telegramName ? `${chat.telegramName} · ` : ''}
-                                                {wp.i18n.__( 'Topic', 'cf7-telegram' )} #{chat.messageThreadID}
+                                        {isTopic && (isRenaming ? (
+                                            <input
+                                                className="topic-identity edit-chat-name"
+                                                data-testid={`cf7tg-bot-${bot.id}-chat-${chat.id}-name-input`}
+                                                type="text"
+                                                value={chatNameValue}
+                                                onChange={handleRenameChatChange}
+                                                onKeyDown={(event) => handleRenameChatKeyDown(chat.id, event)}
+                                                disabled={isUpdatingName}
+                                                autoFocus
+                                            />
+                                        ) : (
+                                            <small className="topic-identity" title={`${wp.i18n.__( 'Topic', 'cf7-telegram' )} #${chat.messageThreadID}`}>
+                                                {getTopicLabel(chat)}
                                             </small>
-                                        )}
+                                        ))}
 
                                         {isRenaming ? (
                                             <>

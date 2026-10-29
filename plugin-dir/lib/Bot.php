@@ -608,6 +608,25 @@ class Bot extends Entity implements wpPostAble{
 
 	private function processUpdate( array $update, RestBotUpdates $result, array &$processedChatIDs ): void {
 		$message = is_array( $update['message'] ?? null ) ? $update['message'] : [];
+		$topicEvent = $message['forum_topic_edited'] ?? $message['forum_topic_created'] ?? null;
+		if ( is_array( $topicEvent ) ) {
+			$name = Util::sanitizeTelegramText( $topicEvent['name'] ?? null );
+			$chatID = Util::sanitizeTelegramChatID( $message['chat']['id'] ?? '' );
+			$rawThreadID = $message['message_thread_id'] ?? ( isset( $message['forum_topic_created'] ) ? ( $message['message_id'] ?? null ) : null );
+			try {
+				$threadID = Util::normalizeMessageThreadID( $rawThreadID );
+			} catch ( \InvalidArgumentException $exception ) {
+				return;
+			}
+			if ( '' !== $name && null !== $threadID && 'supergroup' === ( $message['chat']['type'] ?? null ) && preg_match( '/^-?[1-9][0-9]*$/', $chatID ) ) {
+				$chat = Util::getChatByTelegramID( $chatID, $threadID );
+				if ( $chat && $this->getChats()->contains( $chat ) && $chat->getTelegramTopicName() !== $name ) {
+					$chat->setTelegramTopicName( $name )->savePost();
+					$result->hasUpdatedChats = true;
+				}
+			}
+			return;
+		}
 
 		if ( empty( $message ) || ! $this->messageHasBotCommand( $message ) ) {
 			return;

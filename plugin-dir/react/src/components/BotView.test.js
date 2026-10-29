@@ -97,9 +97,11 @@ describe('BotView copyable bot name', () => {
             chatNameValue="Custom"
         />);
 
-        expect(screen.getByTestId('cf7tg-bot-1-chat-10')).toHaveTextContent('Same label');
-        expect(screen.getByTestId('cf7tg-bot-1-chat-10').querySelector('.topic-identity')).toHaveTextContent('Operations · Topic #21');
-        expect(screen.getByTestId('cf7tg-bot-1-chat-11').querySelector('.topic-identity')).toHaveTextContent('Support · Topic #22');
+        expect(screen.getByTestId('cf7tg-bot-1-chat-10').querySelector('.chat-name')).toHaveTextContent('Operations');
+        expect(screen.getByTestId('cf7tg-bot-1-chat-10').querySelector('.topic-identity')).toHaveTextContent('Same label');
+        expect(screen.getByTestId('cf7tg-bot-1-chat-10').querySelector('.topic-identity')).toHaveAttribute('title', 'Topic #21');
+        expect(screen.getByTestId('cf7tg-bot-1-chat-10').querySelector('.rename-chat')).toBeInTheDocument();
+        expect(screen.getByTestId('cf7tg-bot-1-chat-11').querySelector('.chat-name')).toHaveTextContent('Support');
         expect(screen.getByTestId('cf7tg-bot-1-chat-11-name-input')).toHaveValue('Custom');
     });
 
@@ -117,7 +119,28 @@ describe('BotView copyable bot name', () => {
         />);
 
         expect(screen.getByTestId('cf7tg-bot-1-chat-12-name-input')).toHaveValue('New label');
-        expect(screen.getByTestId('cf7tg-bot-1-chat-12').querySelector('.topic-identity')).toHaveTextContent('Operations · Topic #23');
+        expect(screen.getByTestId('cf7tg-bot-1-chat-12').querySelector('.chat-name')).toHaveTextContent('Operations');
+    });
+
+    it('shows a Telegram topic name when known and its ID as a fallback', () => {
+        render(<BotView
+            bot={{id: 1}}
+            nameValue="current_bot"
+            isTokenEmpty
+            tokenValue=""
+            online
+            chatsForBot={[
+                {id: 13, title: {rendered: 'Forum'}, telegramName: 'Forum', telegramTopicName: 'Questions', messageThreadID: 24},
+                {id: 14, title: {rendered: 'Forum'}, telegramName: 'Forum', messageThreadID: 25},
+            ]}
+            bot2ChatConnections={[
+                {data: {from: 1, to: 13, meta: {status: ['active']}}},
+                {data: {from: 1, to: 14, meta: {status: ['active']}}},
+            ]}
+        />);
+
+        expect(screen.getByTestId('cf7tg-bot-1-chat-13').querySelector('.topic-identity')).toHaveTextContent('Questions');
+        expect(screen.getByTestId('cf7tg-bot-1-chat-14').querySelector('.topic-identity')).toHaveTextContent('Topic #25');
     });
 
     it('does not mutate token state while rendering edit mode', () => {

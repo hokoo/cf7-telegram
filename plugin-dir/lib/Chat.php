@@ -25,6 +25,7 @@ class Chat extends Entity implements WPPostAble{
 	public const STATUS_MUTED = 'muted';
 	public const CUSTOM_NAME_PARAM = 'customName';
 	public const TELEGRAM_TITLE_PARAM = 'telegramTitle';
+	public const TELEGRAM_TOPIC_NAME_PARAM = 'telegramTopicName';
 
 	/**
 	 * @throws wppaLoadPostException
@@ -101,6 +102,15 @@ class Chat extends Entity implements WPPostAble{
 
 	public function getTelegramTitle(): string {
 		return Util::sanitizeTelegramText( $this->getParam( self::TELEGRAM_TITLE_PARAM ) );
+	}
+
+	public function setTelegramTopicName( string $name ): Chat {
+		$this->setParam( self::TELEGRAM_TOPIC_NAME_PARAM, Util::sanitizeTelegramText( $name ) );
+		return $this;
+	}
+
+	public function getTelegramTopicName(): string {
+		return Util::sanitizeTelegramText( $this->getParam( self::TELEGRAM_TOPIC_NAME_PARAM ) );
 	}
 
 	public function setCustomName( string $name ): Chat {

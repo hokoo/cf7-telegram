@@ -150,25 +150,28 @@ final class RestChatControllerTest extends Cf7tg_TestCase {
 		$this->assertSame( 'Alice Current', $data['telegramName'] );
 	}
 
-	public function testTopicIdentityIsReadOnlyAndSurvivesTelegramNameRefresh(): void {
+	public function testPendingTopicCanBeRenamedLocallyAndRestoredWithoutTelegramRequest(): void {
 		$gateway = new Cf7tg_RestChatControllerGateway();
-		$gateway->queue( 'getChat', $this->success( [
-			'id' => '-100700001', 'type' => 'supergroup', 'title' => 'Updated group',
-		] ) );
 		$this->installGateway( $gateway, self::TOKEN );
 		$bot = $this->bot();
 		$chat = $this->chat( [ 'id' => '-100700001', 'type' => 'supergroup', 'title' => 'Old group' ] );
-		$chat->setMessageThreadID( 22 )->savePost();
+		$chat->setMessageThreadID( 22 )->setTelegramTopicName( 'Operations' )->savePost();
 		$bot->connectChat( $chat );
+		$chat->setPending( $bot );
 		$controller = new ChatController( Client::CPT_CHAT );
 
-		$before = $controller->prepare_item_for_response( $chat->getPost(), $this->request( 'GET', $chat->getPost()->ID ) );
+		$renamed = $controller->rename( $this->request( 'POST', $chat->getPost()->ID, [
+			'bot_id' => $bot->getPost()->ID, 'name' => 'Local label',
+		] ) );
 		$response = $controller->restore_name( $this->request( 'POST', $chat->getPost()->ID, [ 'bot_id' => $bot->getPost()->ID ] ) );
 
-		$this->assertSame( 22, $before->get_data()['messageThreadID'] );
+		$this->assertSame( 'Local label', $renamed->get_data()['customName'] );
+		$this->assertSame( 'Operations', $renamed->get_data()['telegramTopicName'] );
 		$this->assertSame( 22, $response->get_data()['messageThreadID'] );
-		$this->assertSame( 22, ( new Chat( $chat->getPost()->ID ) )->getMessageThreadID() );
-		$this->assertSame( 'Updated group', ( new Chat( $chat->getPost()->ID ) )->getTitle() );
+		$this->assertSame( '', $response->get_data()['customName'] );
+		$this->assertSame( 'Operations', $response->get_data()['telegramTopicName'] );
+		$this->assertSame( 'Old group', ( new Chat( $chat->getPost()->ID ) )->getTitle() );
+		$this->assertSame( [], $gateway->calls );
 	}
 
 	public function testRestoreNameReturnsSafeErrorWhenTelegramChatCannotBeLoaded(): void {

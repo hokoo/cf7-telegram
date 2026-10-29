@@ -2,6 +2,7 @@
 
 import React, {useState, useEffect, useRef} from 'react';
 import BotView from './BotView';
+import {getTopicLabel} from '../utils/topicLabel';
 import {
     connectChat2Channel, disconnectConnectionBot2Chat, setBot2ChatConnectionStatus
 } from "../utils/main";
@@ -110,7 +111,8 @@ const Bot = ({
 
     const canRenameChat = (chatId) => {
         const connection = bot2ChatConnections.find(c => c.data.from === bot.id && c.data.to === chatId);
-        return !!connection && connection?.data?.meta?.status?.[0] !== 'pending';
+        const chat = chats.find(item => item.id === chatId);
+        return !!connection && (chat?.messageThreadID != null || connection?.data?.meta?.status?.[0] !== 'pending');
     };
 
     const [lastPing, setLastPing] = useState(null);
@@ -219,7 +221,7 @@ const Bot = ({
 
             consecutiveTransportErrorsRef.current = 0;
             setError(null);
-            if (updates.hasNewConnections || updates.hasNewChats) {
+            if (updates.hasNewConnections || updates.hasNewChats || updates.hasUpdatedChats) {
                 await loadChatData();
             }
         } catch (err) {
@@ -444,7 +446,7 @@ const Bot = ({
 
         setError(null);
         setRenamingChatId(chat.id);
-        setChatNameValue(chat.title?.rendered ?? '');
+        setChatNameValue(chat.messageThreadID != null ? getTopicLabel(chat) : (chat.title?.rendered ?? ''));
     };
 
     const handleRenameChatChange = (event) => {
@@ -473,7 +475,8 @@ const Bot = ({
 
         if (!chat || updatingNameIds.includes(chatId) || !canRenameChat(chatId)) return;
 
-        if (nextName === '' || nextName === (chat.title?.rendered ?? '')) {
+        const currentName = chat.messageThreadID != null ? getTopicLabel(chat) : (chat.title?.rendered ?? '');
+        if (nextName === '' || nextName === currentName) {
             handleCancelRenameChat();
             return;
         }

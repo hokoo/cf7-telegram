@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Select from 'react-select';
+import {getTopicLabel} from '../utils/topicLabel';
 
 const ChannelView = ({
     channel,
@@ -157,11 +158,10 @@ const ChannelView = ({
                                     aria-disabled={mutatingRelations}
                                     title={getToggleButtonLabel(chat.status)}
                                 >
-                                    <span className={`chat-username`}>{chat.title.rendered}</span>
+                                    <span className={`chat-username`}>{chat.messageThreadID != null ? (chat.telegramName || chat.title.rendered) : chat.title.rendered}</span>
                                     {chat.messageThreadID != null && (
-                                        <small className="topic-identity" style={{marginLeft: 4}}>
-                                            {chat.customName && chat.telegramName ? `${chat.telegramName} · ` : ''}
-                                            {wp.i18n.__( 'Topic', 'cf7-telegram' )} #{chat.messageThreadID}
+                                        <small className="topic-identity" style={{marginLeft: 4}} title={`${wp.i18n.__( 'Topic', 'cf7-telegram' )} #${chat.messageThreadID}`}>
+                                            {getTopicLabel(chat)}
                                         </small>
                                     )}
                                 </div>
