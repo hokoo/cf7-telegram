@@ -706,7 +706,7 @@ SQL-страницу, удалить из неё запрещённые запи
 
 ### R1.1 Регистрация и get-configuration
 
-Status: `review` — owner принял код и локальные проверки; ожидается приёмка root.
+Status: `completed` — root принял код, локальные проверки и commit `c393034`.
 Goal: авторизованный клиент получает полный безопасный список конфигурации.
 Scope: bootstrap/category, схема и callback get-configuration, общие чистые
 read/permission helpers, focused tests. В этой задаче регистрируется только
@@ -732,7 +732,7 @@ Handoff: revision/diff boundary, фактические paths, AC evidence, ко
 
 ### R1.2 Статическая diagnose-form
 
-Status: `waiting_dependency`.
+Status: `todo` — R1.1 принят root.
 Goal: объяснить проблемы маршрута формы без внешних запросов и изменения данных.
 Scope: схема/callback diagnose-form, обход графа одной формы, issue/status
 aggregation, focused regression. Переиспользовать чтение и права R1.1.
@@ -1068,3 +1068,10 @@ fresh batch owner → specialists, отдельный независимый epi
   и остаётся R1.3. Диагностика не зарегистрирована до R1.2; весь R1 не завершён.
   Worker и monitor завершены, потомков/работающих команд нет; root получает IDs
   для поддержанного lifecycle cleanup. Следующая работа после приёмки root — R1.2.
+- Root принял R1.1 на `c3930344720050aaabd0f95a5b77e46a72a2c4bb`: проверены
+  decisive hunks, status, полный composer log и handoff; дерево чистое.
+  Worker, monitor и owner архивированы штатным `codex archive --remote`
+  через обнаруженный daemon socket, все команды exit 0; список агентов после
+  cleanup содержит только root. Потомки и проверочные процессы остановлены.
+- R1.2 готов. Для fresh owner выбран `gpt-6.1-sol/high`: диагностика использует
+  принятый read path, но требует аккуратного обхода графа, прав и агрегации issues.
