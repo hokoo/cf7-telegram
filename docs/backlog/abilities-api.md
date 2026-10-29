@@ -1231,3 +1231,12 @@ fresh batch owner → specialists, отдельный независимый epi
   После восстановления root: прочитать этот checkpoint/ledger, запустить fresh
   independent epic_qa напрямую root на frozen source/harness/candidate, затем
   supported cleanup completed descendants по указанным native IDs.
+- Root восстановлен и принял технический handoff R1.3 на `237003b36a6b19df5ecbfcaa6f5115bee67763a6`:
+  проверены actual compatibility/fixture/CI diffs, legacy counters, raw summaries
+  (legacy retake 349/349, current 313/313, optional PHP8.5 313/313), ledger и
+  совпадение candidate/reference SHA. Исходный aggregate failure сохранён.
+  Writer/monitor/owner completed и команды остановлены; все три native sessions
+  архивированы через serving daemon, exits 0, live list содержит только root.
+  Следующий шаг — fresh independent `epic_qa` напрямую root, роль
+  `gpt-6-sol/high`, read-only; проверяемая граница `e25d811..237003b` плюс этот
+  bookkeeping. Продукт `75ad9e6`, harness `01220cf`, ZIP hash не изменились.
