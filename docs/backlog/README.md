@@ -17,7 +17,7 @@ for the other abilities. R1 implementation was authorized on 2026-10-29 and is
 being coordinated by root in `release/abilities-readonly`; R1.1 is accepted at
 `c393034`, R1.2 at `c534c66`, and R1.3 is technically accepted at `237003b`.
 Local Core/REST/MCP and compatibility gates passed. Independent epic QA requested
-a bounded repair for malformed saved chat IDs; a fresh QA gate follows the repair.
+a bounded repair for malformed saved chat IDs, accepted at `137f308`; fresh QA is pending.
 The remaining four abilities retain `needs_design` and are outside this delivery.
 
 ## B1. Preserve legacy Telegram chat display names during migration

@@ -1314,3 +1314,9 @@ fresh batch owner → specialists, отдельный независимый epi
   Далее root принимает handoff и запускает fresh independent QA; AC8/общий DoD
   до его вердикта остаётся unmet. При повторе исходного failure — остановить
   automatic repair. Этот owner завершает только текущий repair и не берёт successor.
+- Root принял repair на `137f308b2f6ebd4265197966c0d6cddb5ca398ba` после actual
+  source/test diff, raw PHPUnit/E4/Plugin Check/E6 summaries, ledger и независимого
+  сравнения ZIP contents. Все три repair sessions completed/stopped и архивированы
+  штатным CLI, exits 0. Product `542f7ab`, новый ZIP `786807309ac1e62f024d371bafe00b545f0c3b746c097d212d253342cecd9d9c`.
+  Далее fresh independent `epic_qa`, pinned `gpt-6-sol/high/read-only`, напрямую
+  root на полной R1 границе; исходный fail остаётся историческим вердиктом.
