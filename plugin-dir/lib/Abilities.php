@@ -20,6 +20,25 @@ class Abilities {
 	public static function init(): void {
 		add_action( 'wp_abilities_api_categories_init', [ self::class, 'registerCategory' ] );
 		add_action( 'wp_abilities_api_init', [ self::class, 'register' ] );
+		add_filter( 'rest_pre_dispatch', [ self::class, 'decodeRestGetInput' ], 10, 3 );
+	}
+
+	/** Core 6.9 passes GET input through as a string despite documenting JSON objects. */
+	public static function decodeRestGetInput( $result, $server, $request ) {
+		if ( null !== $result || 'GET' !== $request->get_method() ||
+			! preg_match( '~^/wp-abilities/v1/abilities/cf7-telegram/(?:get-configuration|diagnose-form)/run/?$~', $request->get_route() ) ) return $result;
+		$query = $request->get_query_params();
+		if ( ! is_string( $query['input'] ?? null ) ) return $result;
+		$object = json_decode( $query['input'] );
+		if ( JSON_ERROR_NONE !== json_last_error() || ! is_object( $object ) ) return $result;
+		$query['input'] = json_decode( $query['input'], true );
+		$request->set_query_params( $query );
+		return $result;
+	}
+
+	/** Let the execute callback report the existing 503 while Core is still booting. */
+	public static function abilityPermission(): bool {
+		return is_user_logged_in() && ( ! self::ready() || current_user_can( Settings::getCaps() ) );
 	}
 
 	public static function registerCategory(): void {
@@ -38,7 +57,7 @@ class Abilities {
 			'category'            => 'cf7-telegram',
 			'input_schema'        => self::inputSchema(),
 			'output_schema'       => self::outputSchema(),
-			'permission_callback' => [ self::class, 'permission' ],
+			'permission_callback' => [ self::class, 'abilityPermission' ],
 			'execute_callback'    => [ self::class, 'getConfiguration' ],
 			'meta'                => [
 				'public'       => true,
@@ -54,7 +73,7 @@ class Abilities {
 			'input_schema'        => [ 'type' => 'object', 'additionalProperties' => false, 'required' => [ 'form_id' ],
 				'properties' => [ 'form_id' => [ 'type' => 'integer', 'minimum' => 1 ] ] ],
 			'output_schema'       => self::diagnosisSchema(),
-			'permission_callback' => [ self::class, 'permission' ],
+			'permission_callback' => [ self::class, 'abilityPermission' ],
 			'execute_callback'    => [ self::class, 'diagnoseForm' ],
 			'meta'                => [
 				'public'       => true,
