@@ -200,7 +200,7 @@ class Abilities {
 		$resource = $input['resource'];
 		try {
 			$posts = self::storageRead( static fn() => get_posts( [ 'post_type' => self::RESOURCES[ $resource ], 'post_status' => 'publish', 'posts_per_page' => -1,
-				'fields' => 'ids', 'orderby' => 'ID', 'order' => 'ASC', 'suppress_filters' => true ] ) );
+				'fields' => 'ids', 'orderby' => 'ID', 'order' => 'ASC', 'suppress_filters' => false ] ) );
 			if ( ! is_array( $posts ) ) throw new \RuntimeException();
 			$visible = [];
 			foreach ( $posts as $postID ) {
@@ -527,7 +527,13 @@ class Abilities {
 		$label = preg_replace( '/(?<!\d)-?\d{8,}(?!\d)/', LogRedactor::REDACTION_MARKER, $label ) ?? $label;
 		$label = preg_replace( '/WPFC7TG_BOT_TOKEN(?:__\d+)?/', '', $label ) ?? $label;
 		$label = trim( $label );
-		return '' === $label ? sprintf( $post->post_type === Client::CPT_CHAT ? __( 'Recipient #%d', 'cf7-telegram' ) : __( 'Item #%d', 'cf7-telegram' ), $post->ID ) : $label;
+		if ( '' !== $label ) return $label;
+		if ( $post->post_type === Client::CPT_CHAT ) {
+			/* translators: %d: Local WordPress recipient post ID. */
+			return sprintf( __( 'Recipient #%d', 'cf7-telegram' ), $post->ID );
+		}
+		/* translators: %d: Local WordPress post ID. */
+		return sprintf( __( 'Item #%d', 'cf7-telegram' ), $post->ID );
 	}
 
 	private static function error( string $code, string $message, int $status ): WP_Error {
