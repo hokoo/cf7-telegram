@@ -3,7 +3,7 @@
 Overall scope: six abilities. The accepted first independent stage contains
 `get-configuration` and `diagnose-form`; its implementation was authorized on
 2026-10-29 on `release/abilities-readonly`. The second stage contains only
-`get-recent-errors`; its execution was authorized on 2026-10-31 and is under verification. The other three abilities
+`get-recent-errors`; its execution was authorized on 2026-10-31 and completed with independent QA `pass`. The other three abilities
 retain open design questions.
 Date: 2026-10-29. Baseline: Message Bridge for Contact Form 7 and Telegram 1.2.1,
 commit `e25d811`. Coordination: root; no release number has been assigned yet.
@@ -967,7 +967,7 @@ retention-override, missing-table/DB-fault, and no-side-effects assertions;
 
 ### R2.2 Real Core/REST/MCP verification and stage acceptance
 
-Status: `in_progress` (R2.1 accepted by root; execution authorized).
+Status: `completed` (root accepted runtime evidence and independent QA `pass` at `47e28b1`).
 Goal: verify the one-ability addition across supported transports and delivery
 compatibility, then document and independently accept the R2 stage.
 Scope: extend `tests/stability/wp-r1-abilities-smoke.php` and
@@ -1768,3 +1768,20 @@ roadmap or duplicate registry; checkpoints remain in this file.
   three implemented abilities against the specification with ponytail.
   Propose a correction plan only for serious drift or excess complexity;
   this follow-up does not authorize additional implementation.
+
+- Independent QA `/root/r2_epic_qa`, native
+  `01a18eda-8f0b-71e0-8f3e-c69b987e4702`, returned **pass**. Verdict
+  retained unchanged; reviewed boundary `4de389f..47e28b1`, clean HEAD.
+  Reviewer was independent of implementation and technical ownership and
+  inspected code, specification, README, original runtime evidence and ZIP.
+  All R2-AC1–AC8 and DoD pass; no required-criterion findings or human
+  exceptions. Incomplete history is documented API behavior; hosted CI,
+  real Telegram sends and publication remain outside R2. Reviewer stopped
+  without descendants or active commands; root accepted the verdict.
+- Root completed R2.1 and R2.2. Product `1f11237`, final harness `1983ce0`,
+  candidate version 1.2.1 SHA-256
+  `e597fbcc2fb9ab53e3cfd4d68960c9fa10b93056944ae9bc7f6235e073455cfb`.
+  All required and available optional local gates passed; no version bump,
+  push, merge or publication. Next is the separately requested read-only
+  specification/ponytail review of the three implemented abilities.
+- Root archived the completed QA session through the serving daemon, exit 0.
