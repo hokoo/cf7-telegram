@@ -9,6 +9,17 @@ use iTRON\cf7Telegram\Logger;
 use iTRON\cf7Telegram\Maintenance;
 
 final class MaintenanceTest extends Cf7tg_TestCase {
+	public function testRetentionGettersNormalizeWithoutCleanup(): void {
+		$queriesBefore = $GLOBALS['wpdb_queries'];
+		$insertsBefore = $GLOBALS['wpdb_inserts'];
+		add_filter( 'cf7tg/logRetentionDays', static fn() => -10 );
+		add_filter( 'cf7tg/logMaxRows', static fn() => 0 );
+		$this->assertSame( 0, Maintenance::getLogRetentionDays() );
+		$this->assertSame( 1, Maintenance::getLogMaxRows() );
+		$this->assertSame( $queriesBefore, $GLOBALS['wpdb_queries'] );
+		$this->assertSame( $insertsBefore, $GLOBALS['wpdb_inserts'] );
+	}
+
 	public function testRegisterScheduleAddsCleanupInterval(): void {
 		$schedules = Maintenance::registerSchedule( [] );
 

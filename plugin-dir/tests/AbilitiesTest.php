@@ -7,6 +7,7 @@ use iTRON\cf7Telegram\Bot;
 use iTRON\cf7Telegram\BotToken;
 use iTRON\cf7Telegram\Client;
 use iTRON\cf7Telegram\Controllers\CPT;
+use iTRON\cf7Telegram\Maintenance;
 
 final class AbilitiesTest extends Cf7tg_TestCase {
 	protected function setUp(): void {
@@ -54,6 +55,157 @@ final class AbilitiesTest extends Cf7tg_TestCase {
 		return array_column( $diagnosis['issues'], 'code' );
 	}
 
+	private function seedRecentLog( array $rows ): void {
+		$GLOBALS['wpdb']->tables[] = 'cf7tg_log';
+		$GLOBALS['wp_log_rows'] = $rows;
+		$GLOBALS['recent_log_queries'] = [];
+		$GLOBALS['wp_get_results_handler'] = static function ( string $query ) {
+			$GLOBALS['recent_log_queries'][] = $query;
+			if ( ! preg_match( '/WHERE date BETWEEN (\d+) AND (\d+) AND level BETWEEN (\d+) AND (\d+)(?: AND ID < (\d+))? ORDER BY ID DESC LIMIT (\d+)$/', $query, $match ) ) return null;
+			$rows = array_values( array_filter( $GLOBALS['wp_log_rows'], static fn( object $row ): bool =>
+				$row->date >= (int) $match[1] && $row->date <= (int) $match[2] &&
+				$row->level >= (int) $match[3] && $row->level <= (int) $match[4] &&
+				( '' === ( $match[5] ?? '' ) || $row->ID < (int) $match[5] ) ) );
+			usort( $rows, static fn( object $a, object $b ): int => $b->ID <=> $a->ID );
+			return array_slice( $rows, 0, (int) $match[6] );
+		};
+	}
+
+	private function logRow( int $id, int $time, int $level, $message, $data ): object {
+		return (object) [ 'ID' => $id, 'date' => $time, 'level' => $level, 'msg' => $message, 'data' => $data ];
+	}
+
+	public function testRecentErrorInputsAndStableCursor(): void {
+		$queriesBefore = $GLOBALS['wpdb_queries'];
+		$insertsBefore = $GLOBALS['wpdb_inserts'];
+		$this->seedRecentLog( [
+			$this->logRow( 1, 100, 1, 'Unknown event', '{}' ),
+			$this->logRow( 2, 100, 2, 'Unknown event', '{}' ),
+			$this->logRow( 3, 100, 3, 'Unknown event', '{}' ),
+			$this->logRow( 4, 101, 0, 'Unknown event', '{}' ),
+			$this->logRow( 5, 102, 3, 'Unknown event', '{}' ),
+		] );
+		$defaults = Abilities::getRecentErrors();
+		$this->assertSame( 1, $defaults['min_level'] );
+		$this->assertSame( null, $defaults['next_before_id'] );
+		$this->assertSame( 24 * HOUR_IN_SECONDS, $defaults['until'] - $defaults['since'] );
+		$this->assertSame( [], $defaults['items'] );
+		$this->assertTrue( str_ends_with( $GLOBALS['recent_log_queries'][0], 'ORDER BY ID DESC LIMIT 21' ) );
+		$input = [ 'since' => 100, 'until' => 101, 'min_level' => 0, 'limit' => 2 ];
+		$first = Abilities::getRecentErrors( $input );
+		$this->assertSame( [ 4, 3 ], array_column( $first['items'], 'id' ) );
+		$this->assertSame( 3, $first['next_before_id'] );
+		$this->assertSame( [ 100, 101, 0 ], [ $first['since'], $first['until'], $first['min_level'] ] );
+		$GLOBALS['wp_log_rows'][] = $this->logRow( 6, 100, 3, 'Unknown event', '{}' );
+		$second = Abilities::getRecentErrors( $input + [ 'before_id' => $first['next_before_id'] ] );
+		$this->assertSame( [ 2, 1 ], array_column( $second['items'], 'id' ) );
+		$this->assertSame( null, $second['next_before_id'] );
+		$this->assertSame( [ 6, 4 ], array_column( Abilities::getRecentErrors( $input )['items'], 'id' ) );
+		$this->assertSame( [], Abilities::getRecentErrors( $input + [ 'before_id' => 1 ] )['items'] );
+		$this->assertSame( [ 5 ], array_column( Abilities::getRecentErrors( [ 'since' => 102, 'until' => 102 ] )['items'], 'id' ) );
+		foreach ( [ [ 'since' => -1 ], [ 'since' => '100' ], [ 'since' => null ], [ 'until' => 0 ],
+			[ 'until' => '101' ], [ 'min_level' => 4 ], [ 'min_level' => true ], [ 'min_level' => null ], [ 'before_id' => 0 ], [ 'before_id' => null ],
+			[ 'before_id' => '2' ], [ 'limit' => 0 ], [ 'limit' => 101 ], [ 'limit' => 1.0 ],
+			[ 'limit' => null ], [ 'extra' => 1 ] ] as $invalid ) {
+			$this->assertSame( 'cf7tg_invalid_input', Abilities::getRecentErrors( $invalid )->get_error_code() );
+		}
+		$this->assertSame( 'cf7tg_invalid_input', Abilities::getRecentErrors( [ 'since' => 102, 'until' => 101 ] )->get_error_code() );
+		$this->assertSame( $queriesBefore, $GLOBALS['wpdb_queries'] );
+		$this->assertSame( $insertsBefore, $GLOBALS['wpdb_inserts'] );
+		$this->assertSame( [], $GLOBALS['wp_remote_post_requests'] );
+	}
+
+	public function testRecentErrorsAllowlistedMappingAndHistoricSecrets(): void {
+		$secret = '123456789:abcdefghijklmnopqrstuvwxyzABCDE123456789';
+		$this->seedRecentLog( [
+			$this->logRow( 1, 100, 3, 'Telegram delivery failed.', json_encode( [ 'chatPostID' => 12, 'chunk' => 2,
+				'status' => 429, 'errorCode' => 42, 'errorType' => 'telegram', 'retryAfter' => 8,
+				'chatID' => '-100123456789', 'token' => $secret, 'text' => 'submission' ] ) ),
+			$this->logRow( 2, 100, 0, 'Bot is unreachable', json_encode( [ 'wpPostID' => 88, 'status' => 0,
+				'errorCode' => 0, 'errorType' => 'transport', 'retryAfter' => '9', 'error' => $secret ] ) ),
+			$this->logRow( 3, 100, 1, 'Bot initialization error.', 'Bot token is not set.' ),
+			$this->logRow( 4, 100, 2, 'Channel has no bot connected. Telegram send skipped.', json_encode( [ 'channelPostID' => 77, 'channelTitle' => 'private' ] ) ),
+			$this->logRow( 5, 100, 3, 'Token ' . $secret, json_encode( [ 'chatPostID' => 9 ] ) ),
+			$this->logRow( 6, 100, 3, 'Telegram delivery failed.', '{broken' ),
+			$this->logRow( 7, 100, 3, [], '{}' ),
+			$this->logRow( 8, 100, 3, 'Telegram delivery failed.', json_encode( [ 'chatPostID' => '12', 'chunk' => -1,
+				'status' => '500', 'errorCode' => false, 'errorType' => $secret ] ) ),
+			$this->logRow( 9, 100, 0, 'Bot cannot be pinged', json_encode( [ 'wpPostID' => 10, 'error' => $secret ] ) ),
+		] );
+		$result = Abilities::getRecentErrors( [ 'since' => 100, 'until' => 100, 'min_level' => 0 ] );
+		$items = array_column( $result['items'], null, 'id' );
+		$this->assertSame( [ 'telegram_delivery_failed', 'bot_unreachable', 'bot_token_missing', 'bridge_bot_missing', 'other', 'other', 'other', 'telegram_delivery_failed', 'bot_unreachable' ], array_reverse( array_column( $result['items'], 'event' ) ) );
+		$this->assertSame( 12, $items[1]['context']['recipient_id'] );
+		$this->assertSame( 2, $items[1]['context']['chunk'] );
+		$this->assertSame( 429, $items[1]['context']['http_status'] );
+		$this->assertSame( 'telegram', $items[1]['context']['error_type'] );
+		$this->assertSame( null, $items[2]['context']['bot_id'] );
+		$this->assertSame( 0, $items[2]['context']['http_status'] );
+		$this->assertSame( null, $items[2]['context']['retry_after'] );
+		$this->assertSame( 77, $items[4]['context']['bridge_id'] );
+		$this->assertSame( null, $items[8]['context']['recipient_id'] );
+		$this->assertSame( null, $items[8]['context']['error_type'] );
+		$this->assertSame( null, $items[9]['context']['bot_id'] );
+		$this->assertSame( 'Plugin event', $items[5]['message'] );
+		$this->assertSame( 'Plugin event', $items[6]['message'] );
+		$this->assertSame( 'Plugin event', $items[7]['message'] );
+		$json = json_encode( $result );
+		foreach ( [ $secret, '-100123456789', 'submission', 'channelTitle', 'wpPostID', 'chatID', '"token"' ] as $unsafe ) {
+			$this->assertFalse( str_contains( $json, $unsafe ), $unsafe );
+		}
+		$this->assertSame( false, $result['history_complete'] );
+	}
+
+	public function testRecentErrorsPermissionsRetentionAndStorageFailures(): void {
+		$queriesBefore = $GLOBALS['wpdb_queries'];
+		$insertsBefore = $GLOBALS['wpdb_inserts'];
+		$GLOBALS['wpdb']->tables = array_values( array_diff( $GLOBALS['wpdb']->tables, [ 'cf7tg_log', 'wp_cf7tg_log' ] ) );
+		$missing = Abilities::getRecentErrors( [ 'since' => 0 ] );
+		$this->assertSame( [], $missing['items'] );
+		$this->assertSame( null, $missing['next_before_id'] );
+		$this->assertSame( $queriesBefore, $GLOBALS['wpdb_queries'] );
+		add_filter( 'cf7tg/logRetentionDays', static fn() => -5 );
+		add_filter( 'cf7tg/logMaxRows', static fn() => 0 );
+		$this->assertSame( [ 'days' => 0, 'max_rows' => 1 ], Abilities::getRecentErrors()['retention'] );
+		$this->assertSame( 0, Maintenance::getLogRetentionDays() );
+		$this->assertSame( 1, Maintenance::getLogMaxRows() );
+		$GLOBALS['current_user_can_callback'] = static fn( string $cap ): bool => 'edit_posts' === $cap;
+		$this->assertFalse( Abilities::recentErrorsAbilityPermission() );
+		$this->assertSame( 'cf7tg_forbidden', Abilities::getRecentErrors()->get_error_code() );
+		$GLOBALS['current_user_can_callback'] = static fn( string $cap ): bool => 'manage_options' === $cap;
+		$this->assertFalse( Abilities::recentErrorsAbilityPermission() );
+		$this->assertSame( 'cf7tg_forbidden', Abilities::getRecentErrors()->get_error_code() );
+		$GLOBALS['current_user_can_callback'] = static fn( string $cap ): bool => in_array( $cap, [ 'edit_posts', 'manage_options' ], true );
+		$this->assertTrue( Abilities::recentErrorsAbilityPermission() );
+		$this->assertSame( [], Abilities::getRecentErrors()['items'] );
+		$GLOBALS['wp_user_logged_in'] = false;
+		$this->assertFalse( Abilities::recentErrorsAbilityPermission() );
+		$this->assertSame( 'cf7tg_forbidden', Abilities::getRecentErrors()->get_error_code() );
+		$GLOBALS['wp_user_logged_in'] = true;
+		$GLOBALS['wpdb']->tables[] = 'cf7tg_log';
+		$GLOBALS['wp_get_results_handler'] = static function ( string $query, $wpdb ) { $wpdb->last_error = 'sensitive SQL error'; return null; };
+		$error = Abilities::getRecentErrors();
+		$this->assertSame( 'cf7tg_storage_unavailable', $error->get_error_code() );
+		$this->assertSame( [ 'status' => 503 ], $error->get_error_data() );
+		$this->assertFalse( str_contains( $error->get_error_message(), 'sensitive' ) );
+		$this->assertSame( $queriesBefore, $GLOBALS['wpdb_queries'] );
+		$this->assertSame( $insertsBefore, $GLOBALS['wpdb_inserts'] );
+		$this->assertSame( [], $GLOBALS['wp_remote_post_requests'] );
+	}
+
+	public function testRecentErrorsGetTransportOnlyDecodesJsonObjects(): void {
+		$request = new class {
+			private array $query = [ 'input' => '{"since":0,"limit":2}' ];
+			public function get_method(): string { return 'GET'; }
+			public function get_route(): string { return '/wp-abilities/v1/abilities/cf7-telegram/get-recent-errors/run'; }
+			public function get_query_params(): array { return $this->query; }
+			public function set_query_params( array $query ): void { $this->query = $query; }
+		};
+		$this->assertSame( null, Abilities::decodeRestGetInput( null, null, $request ) );
+		$this->assertSame( [ 'since' => 0, 'limit' => 2 ], $request->get_query_params()['input'] );
+		$this->assertSame( 'preempted', Abilities::decodeRestGetInput( 'preempted', null, $request ) );
+	}
+
 	public function testSavedDestinationAddressShapesControlEligibility(): void {
 		$cases = [
 			[ 'abc', 'private', 'invalid' ], [ 'private', 'private', 'invalid' ],
@@ -93,7 +245,7 @@ final class AbilitiesTest extends Cf7tg_TestCase {
 		Abilities::init();
 		do_action( 'wp_abilities_api_categories_init' );
 		do_action( 'wp_abilities_api_init' );
-		$this->assertSame( [ 'cf7-telegram/get-configuration', 'cf7-telegram/diagnose-form' ], array_keys( $GLOBALS['wp_abilities'] ) );
+		$this->assertSame( [ 'cf7-telegram/get-configuration', 'cf7-telegram/diagnose-form', 'cf7-telegram/get-recent-errors' ], array_keys( $GLOBALS['wp_abilities'] ) );
 		$this->assertArrayHasKey( 'cf7-telegram', $GLOBALS['wp_ability_categories'] );
 		$ability = $GLOBALS['wp_abilities']['cf7-telegram/get-configuration'];
 		$this->assertSame( 'cf7-telegram', $ability['category'] );
@@ -123,6 +275,15 @@ final class AbilitiesTest extends Cf7tg_TestCase {
 		$this->assertSame( [ 'no_bridge', 'broken_relation', 'no_bot', 'token_missing', 'no_recipients', 'recipient_not_active', 'invalid_destination', 'cached_bot_offline' ],
 			$diagnose['output_schema']['properties']['issues']['items']['properties']['code']['enum'] );
 		$this->assertSame( [ false ], $diagnose['output_schema']['properties']['delivery_verified']['enum'] );
+		$recent = $GLOBALS['wp_abilities']['cf7-telegram/get-recent-errors'];
+		$this->assertSame( $ability['meta'], $recent['meta'] );
+		$this->assertSame( [], $recent['input_schema']['default'] );
+		$this->assertSame( false, $recent['input_schema']['additionalProperties'] );
+		$this->assertSame( [], $recent['input_schema']['required'] ?? [] );
+		$this->assertSame( [ 'since', 'until', 'min_level', 'before_id', 'limit' ], array_keys( $recent['input_schema']['properties'] ) );
+		$this->assertSame( false, $recent['output_schema']['additionalProperties'] );
+		$this->assertSame( false, $recent['output_schema']['properties']['items']['items']['additionalProperties'] );
+		$this->assertSame( false, $recent['output_schema']['properties']['items']['items']['properties']['context']['additionalProperties'] );
 		$this->assertSame( 'cf7tg_invalid_input', $this->read( 'forms', [ 'extra' => 1 ] )->get_error_code() );
 		$this->assertSame( 'cf7tg_invalid_input', Abilities::getConfiguration( [ 'resource' => [] ] )->get_error_code() );
 		$this->assertSame( 'cf7tg_invalid_input', $this->read( 'forms', [ 'page' => '1' ] )->get_error_code() );

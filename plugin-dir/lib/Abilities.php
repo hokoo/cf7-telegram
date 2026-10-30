@@ -5,6 +5,7 @@ namespace iTRON\cf7Telegram;
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 use iTRON\cf7Telegram\Controllers\CPT;
+use iTRON\cf7Telegram\Telegram\TelegramDeliveryResult;
 use iTRON\wpConnections\Query\Connection as ConnectionQuery;
 use WP_Error;
 use WP_Post;
@@ -26,7 +27,7 @@ class Abilities {
 	/** Core 6.9 passes GET input through as a string despite documenting JSON objects. */
 	public static function decodeRestGetInput( $result, $server, $request ) {
 		if ( null !== $result || 'GET' !== $request->get_method() ||
-			! preg_match( '~^/wp-abilities/v1/abilities/cf7-telegram/(?:get-configuration|diagnose-form)/run/?$~', $request->get_route() ) ) return $result;
+			! preg_match( '~^/wp-abilities/v1/abilities/cf7-telegram/(?:get-configuration|diagnose-form|get-recent-errors)/run/?$~', $request->get_route() ) ) return $result;
 		$query = $request->get_query_params();
 		if ( ! is_string( $query['input'] ?? null ) ) return $result;
 		$object = json_decode( $query['input'] );
@@ -84,6 +85,66 @@ class Abilities {
 				'annotations'  => [ 'readonly' => true, 'destructive' => false, 'idempotent' => true ],
 			],
 		] );
+		wp_register_ability( 'cf7-telegram/get-recent-errors', [
+			'ability_class'       => ReadOnlyAbility::class,
+			'label'               => __( 'Get recent CF7 Telegram errors', 'cf7-telegram' ),
+			'description'         => __( 'Read a bounded page of sanitized plugin log events without changing them.', 'cf7-telegram' ),
+			'category'            => 'cf7-telegram',
+			'input_schema'        => self::recentErrorsInputSchema(),
+			'output_schema'       => self::recentErrorsOutputSchema(),
+			'permission_callback' => [ self::class, 'recentErrorsAbilityPermission' ],
+			'execute_callback'    => [ self::class, 'getRecentErrors' ],
+			'meta'                => [
+				'public'       => true,
+				'show_in_rest' => true,
+				'mcp'          => [ 'public' => true ],
+				'annotations'  => [ 'readonly' => true, 'destructive' => false, 'idempotent' => true ],
+			],
+		] );
+	}
+
+	private static function recentErrorsInputSchema(): array {
+		return [ 'type' => 'object', 'default' => [], 'additionalProperties' => false, 'properties' => [
+			'since' => [ 'type' => 'integer', 'minimum' => 0 ],
+			'until' => [ 'type' => 'integer', 'minimum' => 0 ],
+			'min_level' => [ 'type' => 'integer', 'enum' => [ 0, 1, 2, 3 ], 'default' => 1 ],
+			'before_id' => [ 'type' => 'integer', 'minimum' => 1 ],
+			'limit' => [ 'type' => 'integer', 'minimum' => 1, 'maximum' => 100, 'default' => 20 ],
+		] ];
+	}
+
+	private static function recentErrorsOutputSchema(): array {
+		$nullableID = [ 'type' => [ 'integer', 'null' ], 'minimum' => 1 ];
+		$nullableNumber = [ 'type' => [ 'integer', 'null' ] ];
+		$context = [
+			'bot_id' => $nullableID, 'bridge_id' => $nullableID, 'recipient_id' => $nullableID,
+			'chunk' => $nullableID, 'http_status' => $nullableNumber,
+			'telegram_error_code' => $nullableNumber, 'error_type' => [ 'type' => [ 'string', 'null' ],
+				'enum' => [ null, TelegramDeliveryResult::ERROR_TRANSPORT, TelegramDeliveryResult::ERROR_HTTP,
+					TelegramDeliveryResult::ERROR_TELEGRAM, TelegramDeliveryResult::ERROR_MALFORMED_RESPONSE ] ],
+			'retry_after' => $nullableNumber,
+		];
+		$item = [
+			'id' => [ 'type' => 'integer', 'minimum' => 1 ],
+			'occurred_at' => [ 'type' => 'integer', 'minimum' => 0 ],
+			'level' => [ 'type' => 'integer', 'enum' => [ 0, 1, 2, 3 ] ],
+			'event' => [ 'type' => 'string', 'enum' => [ 'telegram_delivery_failed', 'bot_unreachable', 'bot_token_missing', 'bridge_bot_missing', 'other' ] ],
+			'message' => [ 'type' => 'string' ],
+			'context' => [ 'type' => 'object', 'additionalProperties' => false, 'required' => array_keys( $context ), 'properties' => $context ],
+		];
+		$retention = [ 'days' => [ 'type' => 'integer', 'minimum' => 0 ], 'max_rows' => [ 'type' => 'integer', 'minimum' => 1 ] ];
+		$properties = [
+			'schema_version' => [ 'type' => 'integer', 'enum' => [ 1 ] ],
+			'since' => [ 'type' => 'integer', 'minimum' => 0 ],
+			'until' => [ 'type' => 'integer', 'minimum' => 0 ],
+			'min_level' => [ 'type' => 'integer', 'enum' => [ 0, 1, 2, 3 ] ],
+			'items' => [ 'type' => 'array', 'items' => [ 'type' => 'object', 'additionalProperties' => false,
+				'required' => array_keys( $item ), 'properties' => $item ] ],
+			'next_before_id' => $nullableID,
+			'history_complete' => [ 'type' => 'boolean', 'enum' => [ false ] ],
+			'retention' => [ 'type' => 'object', 'additionalProperties' => false, 'required' => array_keys( $retention ), 'properties' => $retention ],
+		];
+		return [ 'type' => 'object', 'additionalProperties' => false, 'required' => array_keys( $properties ), 'properties' => $properties ];
 	}
 
 	private static function diagnosisSchema(): array {
@@ -183,6 +244,107 @@ class Abilities {
 			return self::error( 'cf7tg_forbidden', __( 'You cannot read CF7 Telegram configuration.', 'cf7-telegram' ), 403 );
 		}
 		return true;
+	}
+
+	public static function recentErrorsAbilityPermission(): bool {
+		return is_user_logged_in() && current_user_can( 'manage_options' ) &&
+			( ! self::ready() || current_user_can( Settings::getCaps() ) );
+	}
+
+	public static function getRecentErrors( $input = [] ) {
+		$permission = self::permission();
+		if ( true !== $permission ) return $permission;
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return self::error( 'cf7tg_forbidden', __( 'You cannot read CF7 Telegram logs.', 'cf7-telegram' ), 403 );
+		}
+		if ( ! is_array( $input ) || array_diff( array_keys( $input ), [ 'since', 'until', 'min_level', 'before_id', 'limit' ] ) ) {
+			return self::error( 'cf7tg_invalid_input', __( 'Invalid recent errors request.', 'cf7-telegram' ), 400 );
+		}
+		$now = time();
+		$since = array_key_exists( 'since', $input ) ? $input['since'] : max( 0, $now - 24 * HOUR_IN_SECONDS );
+		$until = array_key_exists( 'until', $input ) ? $input['until'] : $now;
+		$minLevel = array_key_exists( 'min_level', $input ) ? $input['min_level'] : 1;
+		$beforeID = $input['before_id'] ?? null;
+		$limit = array_key_exists( 'limit', $input ) ? $input['limit'] : 20;
+		if ( ! is_int( $since ) || $since < 0 || ! is_int( $until ) || $until < $since ||
+			! is_int( $minLevel ) || $minLevel < 0 || $minLevel > 3 ||
+			( array_key_exists( 'before_id', $input ) && ( ! is_int( $beforeID ) || $beforeID < 1 ) ) ||
+			! is_int( $limit ) || $limit < 1 || $limit > 100 ) {
+			return self::error( 'cf7tg_invalid_input', __( 'Invalid recent errors request.', 'cf7-telegram' ), 400 );
+		}
+		try {
+			global $wpdb;
+			$table = $wpdb->prefix . 'cf7tg_log';
+			$exists = self::storageRead( static fn() => $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $table ) ) ) );
+			$rows = [];
+			if ( $exists === $table ) {
+				$identifier = '`' . str_replace( '`', '``', $table ) . '`';
+				$query = "SELECT ID, date, level, msg, data FROM $identifier WHERE date BETWEEN %d AND %d AND level BETWEEN %d AND %d";
+				$args = [ $since, $until, $minLevel, Logger::LEVEL_CRITICAL ];
+				if ( null !== $beforeID ) {
+					$query .= ' AND ID < %d';
+					$args[] = $beforeID;
+				}
+				$query .= ' ORDER BY ID DESC LIMIT %d';
+				$args[] = $limit + 1;
+				$rows = self::storageRead( static fn() => $wpdb->get_results( $wpdb->prepare( $query, $args ) ) );
+				if ( ! is_array( $rows ) ) throw new \RuntimeException();
+			}
+			$hasMore = count( $rows ) > $limit;
+			$items = array_map( [ self::class, 'recentErrorItem' ], array_slice( $rows, 0, $limit ) );
+			return [
+				'schema_version' => 1, 'since' => $since, 'until' => $until, 'min_level' => $minLevel,
+				'items' => $items, 'next_before_id' => $hasMore ? $items[ count( $items ) - 1 ]['id'] : null,
+				'history_complete' => false,
+				'retention' => [ 'days' => Maintenance::getLogRetentionDays(), 'max_rows' => Maintenance::getLogMaxRows() ],
+			];
+		} catch ( \Throwable $error ) {
+			return self::error( 'cf7tg_storage_unavailable', __( 'Log storage is unavailable.', 'cf7-telegram' ), 503 );
+		}
+	}
+
+	private static function recentErrorItem( $row ): array {
+		$messages = [
+			'Telegram delivery failed.' => [ 'telegram_delivery_failed', __( 'Telegram delivery failed.', 'cf7-telegram' ) ],
+			'Bot is unreachable' => [ 'bot_unreachable', __( 'Bot is unreachable.', 'cf7-telegram' ) ],
+			'Bot cannot be pinged' => [ 'bot_unreachable', __( 'Bot is unreachable.', 'cf7-telegram' ) ],
+			'Bot initialization error.' => [ 'bot_token_missing', __( 'Bot token is missing.', 'cf7-telegram' ) ],
+			'Channel has no bot connected. Telegram send skipped.' => [ 'bridge_bot_missing', __( 'Bridge has no connected bot.', 'cf7-telegram' ) ],
+		];
+		$known = is_object( $row ) && is_string( $row->msg ?? null ) ? ( $messages[ $row->msg ] ?? null ) : null;
+		$decoded = is_object( $row ) && is_string( $row->data ?? null ) ? json_decode( $row->data ) : null;
+		$data = is_object( $decoded ) ? get_object_vars( $decoded ) : null;
+		if ( $known && 'bot_token_missing' === $known[0] && 'Bot token is not set.' === $row->data ) $data = [];
+		if ( ! is_array( $data ) ) $known = null;
+		$context = array_fill_keys( [ 'bot_id', 'bridge_id', 'recipient_id', 'chunk', 'http_status',
+			'telegram_error_code', 'error_type', 'retry_after' ], null );
+		if ( $known ) {
+			$event = $known[0];
+			if ( 'telegram_delivery_failed' === $event ) {
+				$context['recipient_id'] = self::logInteger( $data['chatPostID'] ?? null, 1 );
+				$context['chunk'] = self::logInteger( $data['chunk'] ?? null, 1 );
+			} elseif ( 'bridge_bot_missing' === $event ) {
+				$context['bridge_id'] = self::logInteger( $data['channelPostID'] ?? null, 1 );
+			}
+			if ( in_array( $event, [ 'telegram_delivery_failed', 'bot_unreachable' ], true ) ) {
+				$context['http_status'] = self::logInteger( $data['status'] ?? null, 0, 599 );
+				$context['telegram_error_code'] = self::logInteger( $data['errorCode'] ?? null );
+				$context['retry_after'] = self::logInteger( $data['retryAfter'] ?? null, 0 );
+				$types = [ TelegramDeliveryResult::ERROR_TRANSPORT, TelegramDeliveryResult::ERROR_HTTP,
+					TelegramDeliveryResult::ERROR_TELEGRAM, TelegramDeliveryResult::ERROR_MALFORMED_RESPONSE ];
+				$context['error_type'] = in_array( $data['errorType'] ?? null, $types, true ) ? $data['errorType'] : null;
+			}
+		}
+		return [
+			'id' => (int) $row->ID, 'occurred_at' => (int) $row->date, 'level' => (int) $row->level,
+			'event' => $known[0] ?? 'other',
+			'message' => LogRedactor::redactString( $known[1] ?? __( 'Plugin event', 'cf7-telegram' ) ),
+			'context' => $context,
+		];
+	}
+
+	private static function logInteger( $value, int $minimum = PHP_INT_MIN, int $maximum = PHP_INT_MAX ): ?int {
+		return is_int( $value ) && $value >= $minimum && $value <= $maximum ? $value : null;
 	}
 
 	public static function getConfiguration( $input ) {
