@@ -5,6 +5,7 @@ if ( ! defined( 'ABSPATH' ) ) exit( 1 );
 use iTRON\cf7Telegram\Abilities;
 use iTRON\cf7Telegram\Client;
 use iTRON\cf7Telegram\ReadOnlyAbility;
+use iTRON\cf7Telegram\Settings;
 use iTRON\wpConnections\Query;
 
 $checks = [];
@@ -20,11 +21,11 @@ if ( ! function_exists( 'wp_get_ability' ) ) {
 	exit( 1 );
 }
 
-$names = [ 'cf7-telegram/get-configuration', 'cf7-telegram/diagnose-form' ];
+$names = [ 'cf7-telegram/get-configuration', 'cf7-telegram/diagnose-form', 'cf7-telegram/get-recent-errors' ];
 $registry = wp_get_abilities();
 $registered = array_values( array_filter( array_keys( $registry ), static fn( string $name ): bool => str_starts_with( $name, 'cf7-telegram/' ) ) );
 sort( $registered );
-$record( 'r1-registered-two', $registered === [ 'cf7-telegram/diagnose-form', 'cf7-telegram/get-configuration' ] &&
+$record( 'r2-registered-three', $registered === [ 'cf7-telegram/diagnose-form', 'cf7-telegram/get-configuration', 'cf7-telegram/get-recent-errors' ] &&
 	null !== wp_get_ability_category( 'cf7-telegram' ) );
 $list = wp_get_ability( $names[0] );
 $diagnose = wp_get_ability( $names[1] );
@@ -409,10 +410,152 @@ remove_filter( 'map_meta_cap', $hide, PHP_INT_MAX );
 $expected = [ 'get-configuration' => $call( $names[0], [ 'resource' => 'forms', 'per_page' => 1 ] ),
 	'diagnose-form' => $call( $names[1], [ 'form_id' => $form ] ) ];
 
+// Keep the R1 graph and its checks intact; exercise the shared log separately.
+$recent = wp_get_ability( $names[2] );
+$recent_input = [ 'since' => 1000, 'until' => 1001, 'min_level' => 0, 'limit' => 2 ];
+$record( 'r2-core-schema', $recent instanceof ReadOnlyAbility &&
+	false === ( $recent->get_input_schema()['additionalProperties'] ?? null ) &&
+	false === ( $recent->get_output_schema()['additionalProperties'] ?? null ) &&
+	true === ( $recent->get_meta()['annotations']['readonly'] ?? null ) &&
+	false === ( $recent->get_meta()['annotations']['destructive'] ?? null ) &&
+	true === ( $recent->get_meta()['annotations']['idempotent'] ?? null ) );
+$log_table = $wpdb->prefix . 'cf7tg_log';
+$log_identifier = '`' . str_replace( '`', '``', $log_table ) . '`';
+$log_rows = [
+	[ 1000, 1, 'Telegram delivery failed.', wp_json_encode( [ 'chatPostID' => 42, 'chunk' => 2, 'status' => 429,
+		'errorCode' => 43, 'errorType' => 'telegram', 'retryAfter' => 8, 'token' => '123456789:R2_SECRET_SENTINEL',
+		'chatID' => '-100123456789', 'text' => 'R2_SUBMISSION_SENTINEL' ] ) ],
+	[ 1000, 0, 'Bot is unreachable', wp_json_encode( [ 'wpPostID' => 77, 'status' => 0, 'errorType' => 'transport' ] ) ],
+	[ 1000, 3, 'R2_SECRET_SENTINEL', '{bad JSON' ],
+	[ 1001, 2, 'Channel has no bot connected. Telegram send skipped.', wp_json_encode( [ 'channelPostID' => $bridge ] ) ],
+];
+$log_ids = [];
+foreach ( $log_rows as [ $date, $level, $msg, $data ] ) {
+	$log_ids[] = $wpdb->insert( $log_table, [ 'source' => 'r2-smoke', 'date' => $date, 'level' => $level, 'msg' => $msg, 'data' => $data ] )
+		? (int) $wpdb->insert_id : 0;
+}
+$page1 = $call( $names[2], $recent_input );
+$rest_recent = $request( 'GET', $names[2], $recent_input );
+$record( 'r2-core-rest-parity', ! in_array( 0, $log_ids, true ) && is_array( $page1 ) &&
+	200 === $rest_recent->get_status() && $rest_recent->get_data() === $page1 &&
+	[ $log_ids[3], $log_ids[2] ] === array_column( $page1['items'] ?? [], 'id' ) &&
+	$log_ids[2] === ( $page1['next_before_id'] ?? null ) && false === ( $page1['history_complete'] ?? null ) );
+$bad_recent = $page1;
+$bad_recent['items'][0]['context']['http_status'] = '429';
+$record( 'r2-core-nested-output-validation', 'ability_invalid_output' === $output_probe( 'recent-errors', $recent->get_output_schema(), $bad_recent ) );
+$wpdb->insert( $log_table, [ 'source' => 'r2-smoke', 'date' => 1000, 'level' => 3, 'msg' => 'Bot initialization error.', 'data' => 'Bot token is not set.' ] );
+$new_id = (int) $wpdb->insert_id;
+$page2 = $call( $names[2], $recent_input + [ 'before_id' => $page1['next_before_id'] ] );
+$fresh = $call( $names[2], $recent_input );
+$record( 'r2-cursor-bounds', [ $log_ids[1], $log_ids[0] ] === array_column( $page2['items'] ?? [], 'id' ) &&
+	isset( $page2['next_before_id'] ) === false && array_key_exists( 'next_before_id', $page2 ) &&
+	[ $new_id, $log_ids[3] ] === array_column( $fresh['items'] ?? [], 'id' ) &&
+	[ $log_ids[3] ] === array_column( $call( $names[2], [ 'since' => 1001, 'until' => 1001 ] )['items'] ?? [], 'id' ) &&
+	[ $log_ids[1], $log_ids[0] ] === array_column( $call( $names[2], [ 'since' => 1000, 'until' => 1000, 'min_level' => 0, 'before_id' => $log_ids[2] ] )['items'] ?? [], 'id' ) );
+$all_recent = $call( $names[2], [ 'since' => 1000, 'until' => 1001, 'min_level' => 0 ] );
+$recent_items = array_column( $all_recent['items'] ?? [], null, 'id' );
+$recent_json = wp_json_encode( $all_recent );
+$record( 'r2-historic-redaction', ( $recent_items[ $log_ids[0] ]['event'] ?? null ) === 'telegram_delivery_failed' &&
+	( $recent_items[ $log_ids[0] ]['context']['recipient_id'] ?? null ) === 42 &&
+	( $recent_items[ $log_ids[1] ]['event'] ?? null ) === 'bot_unreachable' &&
+	array_key_exists( 'bot_id', $recent_items[ $log_ids[1] ]['context'] ?? [] ) &&
+	null === $recent_items[ $log_ids[1] ]['context']['bot_id'] &&
+	( $recent_items[ $log_ids[2] ]['event'] ?? null ) === 'other' &&
+	( $recent_items[ $log_ids[2] ]['message'] ?? null ) === 'Plugin event' &&
+	is_string( $recent_json ) && ! str_contains( $recent_json, 'R2_SECRET_SENTINEL' ) &&
+	! str_contains( $recent_json, 'R2_SUBMISSION_SENTINEL' ) && ! str_contains( $recent_json, '-100123456789' ) &&
+	! str_contains( $recent_json, 'wpPostID' ) && ! str_contains( $recent_json, 'chatID' ) );
+$recent_numeric = [];
+foreach ( [ 'since', 'until', 'min_level', 'before_id', 'limit' ] as $key ) {
+	$input = $recent_input;
+	$input[ $key ] = '1';
+	$before_numeric = $executions;
+	$php_numeric = $call( $names[2], $input );
+	$after_php_numeric = $executions;
+	$rest_numeric = $request( 'GET', $names[2], $input );
+	$recent_numeric[ $key ] = [ 'php_code' => $error_code( $php_numeric ),
+		'php_message' => is_wp_error( $php_numeric ) ? $php_numeric->get_error_message() : '',
+		'rest_code' => $rest_numeric->get_data()['code'] ?? '', 'rest_status' => $rest_numeric->get_status(),
+		'php_callback_count' => $after_php_numeric - $before_numeric,
+		'rest_callback_count' => $executions - $after_php_numeric ];
+}
+$record( 'r2-numeric-string-input-parity', count( $recent_numeric ) === 5 &&
+	! array_filter( $recent_numeric, static fn( array $case ): bool => '' === $case['php_code'] ||
+		$case['php_code'] !== $case['rest_code'] || 400 !== $case['rest_status'] ||
+		0 !== $case['php_callback_count'] || 0 !== $case['rest_callback_count'] ), $recent_numeric );
+$before_method = $executions;
+$wrong_recent_method = $request( 'POST', $names[2], $recent_input );
+$record( 'r2-wrong-method', 405 === $wrong_recent_method->get_status() &&
+	'rest_ability_invalid_method' === ( $wrong_recent_method->get_data()['code'] ?? null ) && $before_method === $executions );
+$retention_days = static fn() => 0;
+$retention_rows = static fn() => 7;
+add_filter( 'cf7tg/logRetentionDays', $retention_days );
+add_filter( 'cf7tg/logMaxRows', $retention_rows );
+$retained = $call( $names[2], $recent_input );
+remove_filter( 'cf7tg/logRetentionDays', $retention_days );
+remove_filter( 'cf7tg/logMaxRows', $retention_rows );
+$record( 'r2-retention-overrides', ( $retained['retention'] ?? null ) === [ 'days' => 0, 'max_rows' => 7 ] );
+$settings_cap = Settings::getCaps();
+$permission_results = [];
+foreach ( [ 'settings_only' => 'manage_options', 'manage_only' => $settings_cap ] as $case => $deny ) {
+	$filter = static function ( array $caps ) use ( $deny ): array { $caps[ $deny ] = false; return $caps; };
+	add_filter( 'user_has_cap', $filter, PHP_INT_MAX );
+	$php_denied = $call( $names[2], $recent_input );
+	$rest_denied = $request( 'GET', $names[2], $recent_input );
+	remove_filter( 'user_has_cap', $filter, PHP_INT_MAX );
+	$permission_results[ $case ] = [ $error_code( $php_denied ), $rest_denied->get_status(), $rest_denied->get_data()['code'] ?? '' ];
+}
+$record( 'r2-core-capability-split', $settings_cap !== 'manage_options' &&
+	$permission_results['settings_only'][0] === 'ability_invalid_permissions' &&
+	$permission_results['manage_only'][0] === 'ability_invalid_permissions' &&
+	$permission_results['settings_only'][1] === 403 && $permission_results['manage_only'][1] === 403 &&
+	$permission_results['settings_only'][2] === 'rest_ability_cannot_execute' &&
+	$permission_results['manage_only'][2] === 'rest_ability_cannot_execute', $permission_results );
+$backup_table = $wpdb->prefix . 'cf7tg_r2_smoke_backup';
+$backup_identifier = '`' . str_replace( '`', '``', $backup_table ) . '`';
+$renamed = false !== $wpdb->query( "RENAME TABLE $log_identifier TO $backup_identifier" );
+$missing_recent = $renamed ? $call( $names[2], $recent_input ) : null;
+$missing_recent_rest = $renamed ? $request( 'GET', $names[2], $recent_input ) : null;
+$restored = $renamed && false !== $wpdb->query( "RENAME TABLE $backup_identifier TO $log_identifier" );
+$record( 'r2-missing-log-table', $renamed && $restored && is_array( $missing_recent ) &&
+	[] === ( $missing_recent['items'] ?? null ) && array_key_exists( 'next_before_id', $missing_recent ) &&
+	null === $missing_recent['next_before_id'] && 200 === $missing_recent_rest->get_status() &&
+	$missing_recent === $missing_recent_rest->get_data() );
+$break_read = static function ( string $sql ): string {
+	return str_starts_with( $sql, 'SELECT ID, date, level, msg, data FROM ' ) ? 'SELECT * FROM cf7tg_r2_missing_table' : $sql;
+};
+add_filter( 'query', $break_read, PHP_INT_MAX );
+$storage_error = $call( $names[2], $recent_input );
+$storage_rest = $request( 'GET', $names[2], $recent_input );
+remove_filter( 'query', $break_read, PHP_INT_MAX );
+$record( 'r2-storage-fault', $restored && 'cf7tg_storage_unavailable' === $error_code( $storage_error ) &&
+	503 === ( is_wp_error( $storage_error ) ? ( $storage_error->get_error_data()['status'] ?? null ) : null ) &&
+	! str_contains( is_wp_error( $storage_error ) ? $storage_error->get_error_message() : '', 'cf7tg_r2_missing_table' ) &&
+	503 === $storage_rest->get_status() && 'cf7tg_storage_unavailable' === ( $storage_rest->get_data()['code'] ?? null ) &&
+	( is_wp_error( $storage_error ) ? $storage_error->get_error_message() : null ) === ( $storage_rest->get_data()['message'] ?? null ) );
+$r2_before = $snapshot();
+$r2_mutations = $mutations;
+$r2_http = $http;
+$r2_gateway = $gateway;
+$stable1 = $call( $names[2], $recent_input );
+$stable2 = $call( $names[2], $recent_input );
+$stable_rest = $request( 'GET', $names[2], $recent_input );
+$recent->get_input_schema();
+$recent->get_output_schema();
+wp_get_abilities();
+$r2_after = $snapshot();
+$record( 'r2-readonly-repeated', null !== $r2_before && $r2_before === $r2_after &&
+	$stable1 === $stable2 && $stable1 === $stable_rest->get_data() &&
+	$r2_mutations === $mutations && $r2_http === $http && $r2_gateway === $gateway );
+$expected['get-recent-errors'] = $call( $names[2], $recent_input );
+$expected['get-recent-errors-sensitive'] = $all_recent;
+$expected['get-recent-errors-next'] = $call( $names[2], $recent_input + [ 'before_id' => $expected['get-recent-errors']['next_before_id'] ] );
+
 $failed = count( array_filter( $checks, static fn( array $check ): bool => 'fail' === $check['status'] ) );
 echo wp_json_encode( [ 'schema' => 1, 'wordpress' => get_bloginfo( 'version' ), 'php' => PHP_VERSION,
 	'contact_form_7' => WPCF7_VERSION, 'fixture' => [ 'form_id' => $form, 'empty_form_id' => $empty, 'hidden_recipient_id' => $topic ],
-	'expected' => $expected, 'numeric_input' => $numeric_input,
+	'expected' => $expected, 'numeric_input' => $numeric_input, 'recent_numeric_input' => $recent_numeric,
+	'recent_input' => $recent_input,
 	'summary' => [ 'total' => count( $checks ), 'failed' => $failed ],
 	'checks' => $checks ], JSON_PRETTY_PRINT ) . "\n";
 exit( $failed ? 1 : 0 );

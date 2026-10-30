@@ -491,7 +491,7 @@ run_abilities() {
 		fail_step "r1" "versions" "Feature row runtime versions do not match requested versions."
 	fi
 	local id
-	for id in r1-core-available r1-registered-two r1-core-schema r1-visible-pagination r1-php-rest-parity r1-core-input-validation r1-rest-method-validation r1-rest-normalization-scope r1-numeric-string-input-parity r1-four-resources r1-topic-identity r1-relation-statuses r1-two-bot-cardinality r1-token-precedence r1-diagnose-status r1-diagnose-rest-parity r1-core-nested-output-validation r1-all-diagnosis-codes r1-offline-warning-only r1-address-validity r1-mixed-and-corrupt-graph r1-readonly-repeated r1-secret-redaction r1-anonymous-denied r1-subscriber-denied r1-diagnose-hidden-graph r1-hidden-relation; do
+	for id in r1-core-available r2-registered-three r1-core-schema r1-visible-pagination r1-php-rest-parity r1-core-input-validation r1-rest-method-validation r1-rest-normalization-scope r1-numeric-string-input-parity r1-four-resources r1-topic-identity r1-relation-statuses r1-two-bot-cardinality r1-token-precedence r1-diagnose-status r1-diagnose-rest-parity r1-core-nested-output-validation r1-all-diagnosis-codes r1-offline-warning-only r1-address-validity r1-mixed-and-corrupt-graph r1-readonly-repeated r1-secret-redaction r1-anonymous-denied r1-subscriber-denied r1-diagnose-hidden-graph r1-hidden-relation r2-core-schema r2-core-rest-parity r2-core-nested-output-validation r2-cursor-bounds r2-historic-redaction r2-numeric-string-input-parity r2-wrong-method r2-retention-overrides r2-core-capability-split r2-missing-log-table r2-storage-fault r2-readonly-repeated; do
 		if ! jq -e --arg id "${id}" '[.checks[] | select(.id == $id)] | length == 1 and .[0].status == "pass"' "${ABILITY_JSON}" >/dev/null; then
 			fail_step "r1" "${id}" "Required Core assertion missing, skipped, duplicated, or failed." "$(jq -c --arg id "${id}" '[.checks[] | select(.id == $id)] | first | .extra // {}' "${ABILITY_JSON}")"
 		fi
@@ -506,7 +506,7 @@ run_abilities() {
 run_early_probe() {
 	if ! run_logged "r1" "mu-probe-install" wp_run eval 'if (!is_dir(WPMU_PLUGIN_DIR)) wp_mkdir_p(WPMU_PLUGIN_DIR); if (!copy("/e4-tests/wp-r1-mu-probes.php", WPMU_PLUGIN_DIR . "/cf7tg-r1-probes.php")) exit(1);'; then return 1; fi
 	if dc run -T --rm -e CF7TG_R1_EARLY_PROBE=1 cli php -d memory_limit=512M /usr/local/bin/wp --allow-root eval 'exit(!empty($GLOBALS["cf7tg_r1_early_probe"]) ? 0 : 1);' >"${LOG_DIR}/r1-early-probe.log" 2>&1; then
-		emit "r1" "early-not-ready" "pass" "Direct and native Core executions of both abilities return cf7tg_not_ready 503 before init."
+		emit "r1" "early-not-ready" "pass" "Direct and native Core executions of all three abilities return cf7tg_not_ready 503 before init."
 	else
 		fail_step "r1" "early-not-ready" "Early bootstrap callbacks did not return cf7tg_not_ready 503."
 	fi
@@ -516,11 +516,17 @@ http_request() {
 	local user="$1" input="$2" name="$3" method="$4" output="$5"
 	local url="${BASE_URL}/"
 	local auth=()
+	local headers=()
 	if [ -n "${user}" ]; then auth=(--user "${user}"); fi
+	if [ "$#" -ge 6 ]; then headers=(--dump-header "$6"); fi
 	curl --silent --show-error --max-time 20 --output "${output}" --write-out '%{http_code}' \
 		--request "${method}" "${url}" --get \
 		--data-urlencode "rest_route=/wp-abilities/v1/abilities/cf7-telegram/${name}/run" \
-		--data-urlencode "input=${input}" "${auth[@]}"
+		--data-urlencode "input=${input}" "${auth[@]}" "${headers[@]}"
+}
+
+r2_callback_count() {
+	awk -F': ' 'tolower($1) == "x-cf7tg-r2-executions" {gsub(/\r/, "", $2); print $2}' "$1" | tail -n 1
 }
 
 run_http() {
@@ -569,6 +575,11 @@ run_http() {
 		jq -e -s 'length == 2 and all(.[]; .code == "cf7tg_not_ready")' "${early_list}" "${early_diagnose}" >/dev/null; then
 		emit "r1" "http-not-ready" "pass" "Authenticated real HTTP returns 503 from both abilities when models are unavailable."
 	else fail_step "r1" "http-not-ready" "Real HTTP readiness guard did not return cf7tg_not_ready 503."; fi
+	local early_recent="${RESULTS_DIR}/r2-http-not-ready.json" early_recent_status
+	early_recent_status="$(http_request "admin:${password}" '{"since":0}' get-recent-errors GET "${early_recent}")"
+	if [ "${early_recent_status}" = 503 ] && jq -e '.code == "cf7tg_not_ready"' "${early_recent}" >/dev/null; then
+		emit "r2" "http-not-ready" "pass" "Authenticated recent-error GET returns cf7tg_not_ready 503 when models are unavailable."
+	else fail_step "r2" "http-not-ready" "Recent-error HTTP readiness guard returned the wrong result."; fi
 	wp_run option delete cf7tg_r1_force_not_ready >"${LOG_DIR}/r1-http-not-ready-clear.log" 2>&1 || fail_step "r1" "http-not-ready-clear" "Could not clear isolated readiness probe."
 	status="$(http_request '' '{"resource":"forms"}' get-configuration GET "${anonymous_out}")"
 	local anonymous_diagnose="${RESULTS_DIR}/r1-http-anonymous-diagnose.json" anonymous_diagnose_status
@@ -601,6 +612,57 @@ run_http() {
 		emit "r1" "http-hidden-graph" "pass" "Admin diagnosis rejects a hidden graph object over real HTTP."
 	else fail_step "r1" "http-hidden-graph" "Real HTTP diagnosis exposed a hidden graph."; fi
 	wp_run option delete cf7tg_r1_hidden_post_id >"${LOG_DIR}/r1-http-unhide.log" 2>&1 || fail_step "r1" "http-unhide" "Could not clear isolated capability probe."
+	local recent_input recent_out="${RESULTS_DIR}/r2-http-recent.json" recent_status
+	recent_input="$(jq -c '.recent_input' "${ABILITY_JSON}")"
+	recent_status="$(http_request "admin:${password}" "${recent_input}" get-recent-errors GET "${recent_out}" "${recent_out}.headers")"
+	if [ "${recent_status}" = 200 ] && jq -e --slurpfile expected "${ABILITY_JSON}" '. == $expected[0].expected["get-recent-errors"] and .history_complete == false and (.items | length == 2)' "${recent_out}" >/dev/null; then
+		emit "r2" "http-recent" "pass" "Authenticated real HTTP GET matches the sanitized Core result."
+	else fail_step "r2" "http-recent" "Authenticated real HTTP recent errors differed from Core."; fi
+	local sensitive_out="${RESULTS_DIR}/r2-http-sensitive.json" next_out="${RESULTS_DIR}/r2-http-next.json" sensitive_status next_status cursor
+	sensitive_status="$(http_request "admin:${password}" '{"since":1000,"until":1001,"min_level":0}' get-recent-errors GET "${sensitive_out}")"
+	cursor="$(jq -r '.expected["get-recent-errors"].next_before_id' "${ABILITY_JSON}")"
+	next_status="$(http_request "admin:${password}" "$(jq -nc --argjson input "${recent_input}" --argjson cursor "${cursor}" '$input + {before_id:$cursor}')" get-recent-errors GET "${next_out}")"
+	if [ "${sensitive_status}" = 200 ] && [ "${next_status}" = 200 ] &&
+		jq -e --slurpfile expected "${ABILITY_JSON}" '. == $expected[0].expected["get-recent-errors-sensitive"] and (.items | length >= 5) and (tostring | contains("R2_SECRET_SENTINEL") | not)' "${sensitive_out}" >/dev/null &&
+		jq -e --slurpfile expected "${ABILITY_JSON}" '. == $expected[0].expected["get-recent-errors-next"]' "${next_out}" >/dev/null; then
+		emit "r2" "http-cursor-redaction" "pass" "Real HTTP paging and old-row redaction match Core."
+	else fail_step "r2" "http-cursor-redaction" "Real HTTP paging or old-row redaction differed from Core."; fi
+	local key numeric_input numeric_out numeric_status numeric_failures=""
+	for key in since until min_level before_id limit; do
+		numeric_input="$(jq -nc --argjson input "${recent_input}" --arg key "${key}" '$input + {($key):"1"}')"
+		numeric_out="${RESULTS_DIR}/r2-http-numeric-${key}.json"
+		numeric_status="$(http_request "admin:${password}" "${numeric_input}" get-recent-errors GET "${numeric_out}" "${numeric_out}.headers")"
+		if [ "${numeric_status}" != 400 ] || ! jq -e --slurpfile expected "${ABILITY_JSON}" --arg key "${key}" '.code == $expected[0].recent_numeric_input[$key].php_code' "${numeric_out}" >/dev/null ||
+			[ "$(r2_callback_count "${numeric_out}.headers")" != 0 ]; then numeric_failures="${numeric_failures} ${key}"; fi
+	done
+	if [ -z "${numeric_failures}" ]; then emit "r2" "http-numeric-string-input" "pass" "All five numeric strings match PHP errors and skip the callback."
+	else fail_step "r2" "http-numeric-string-input" "Real HTTP numeric strings differed from PHP or executed the callback." "$(jq -nc --arg cases "${numeric_failures# }" '{failed_cases:$cases}')"; fi
+	local recent_bad="${RESULTS_DIR}/r2-http-bad-method.json"
+	recent_status="$(http_request "admin:${password}" "${recent_input}" get-recent-errors POST "${recent_bad}" "${recent_bad}.headers")"
+	if [ "${recent_status}" = 405 ] && jq -e '.code == "rest_ability_invalid_method"' "${recent_bad}" >/dev/null && [ "$(r2_callback_count "${recent_bad}.headers")" = 0 ]; then
+		emit "r2" "http-bad-method" "pass" "POST rejected before recent-error callback."
+	else fail_step "r2" "http-bad-method" "POST reached recent-error callback or returned the wrong error."; fi
+	local recent_anon="${RESULTS_DIR}/r2-http-anonymous.json" recent_sub="${RESULTS_DIR}/r2-http-subscriber.json"
+	local anon_status sub_status
+	anon_status="$(http_request '' "${recent_input}" get-recent-errors GET "${recent_anon}")"
+	sub_status="$(http_request "r1_subscriber:${subscriber_password}" "${recent_input}" get-recent-errors GET "${recent_sub}")"
+	if { [ "${anon_status}" = 401 ] || [ "${anon_status}" = 403 ]; } && [ "${sub_status}" = 403 ] &&
+		jq -e -s 'length == 2 and all(.[]; .code == "rest_ability_cannot_execute")' "${recent_anon}" "${recent_sub}" >/dev/null; then
+		emit "r2" "http-basic-denials" "pass" "Anonymous and subscriber requests are denied."
+	else fail_step "r2" "http-basic-denials" "Anonymous or subscriber could read recent errors."; fi
+	if ! wp_run eval 'add_role("r2_settings_only", "R2 settings only", ["read" => true, \iTRON\cf7Telegram\Settings::getCaps() => true]); add_role("r2_manage_only", "R2 manage only", ["read" => true, "manage_options" => true]); foreach (["r2_settings_only", "r2_manage_only"] as $role) { $id = wp_create_user($role, wp_generate_password(24), $role . "@example.test"); if (is_wp_error($id)) exit(1); (new WP_User($id))->set_role($role); }' >"${LOG_DIR}/r2-capability-users.log" 2>&1; then
+		fail_step "r2" "http-capability-split" "Could not create isolated split-capability users."
+	else
+		local split_user split_password split_out split_status split_failures=""
+		for split_user in r2_settings_only r2_manage_only; do
+			split_password="$(wp_run user application-password create "${split_user}" R2E4Smoke --porcelain 2>"${LOG_DIR}/r2-${split_user}-password.stderr" | tr -d '\r\n')"
+			split_out="${RESULTS_DIR}/r2-http-${split_user}.json"
+			split_status="$(http_request "${split_user}:${split_password}" "${recent_input}" get-recent-errors GET "${split_out}")"
+			if [ "${split_status}" != 403 ] || ! jq -e '.code == "rest_ability_cannot_execute"' "${split_out}" >/dev/null; then split_failures="${split_failures} ${split_user}"; fi
+		done
+		if [ -z "${split_failures}" ]; then emit "r2" "http-capability-split" "pass" "Each capability alone is insufficient over real HTTP."
+		else fail_step "r2" "http-capability-split" "A split-capability HTTP request returned the wrong result." "$(jq -nc --arg users "${split_failures# }" '{failed_users:$users}')"; fi
+	fi
 	unset password subscriber_password
 }
 
@@ -633,11 +695,11 @@ run_mcp() {
 		emit "r1" "mcp-tools" "pass" "Official STDIO transport exposes three default meta-tools."
 	else fail_step "r1" "mcp-tools" "Official STDIO meta-tools unavailable."; return 1; fi
 	local discover='{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"mcp-adapter-discover-abilities","arguments":{}}}'
-	if mcp_call admin "${discover}" "${prefix}-discover.json" && jq -e '.result.isError != true and (([.. | objects | .name? // empty | select(startswith("cf7-telegram/"))] + [.result.content[]?.text | fromjson? | .. | objects | .name? // empty | select(startswith("cf7-telegram/"))] | unique) == ["cf7-telegram/diagnose-form","cf7-telegram/get-configuration"])' "${prefix}-discover.json" >/dev/null; then
-		emit "r1" "mcp-discover" "pass" "Official MCP discovery contains exactly two plugin abilities."
-	else fail_step "r1" "mcp-discover" "Official MCP discovery did not find exactly two abilities."; return 1; fi
+	if mcp_call admin "${discover}" "${prefix}-discover.json" && jq -e '.result.isError != true and (([.. | objects | .name? // empty | select(startswith("cf7-telegram/"))] + [.result.content[]?.text | fromjson? | .. | objects | .name? // empty | select(startswith("cf7-telegram/"))] | unique) == ["cf7-telegram/diagnose-form","cf7-telegram/get-configuration","cf7-telegram/get-recent-errors"])' "${prefix}-discover.json" >/dev/null; then
+		emit "r1" "mcp-discover" "pass" "Official MCP discovery contains exactly three plugin abilities."
+	else fail_step "r1" "mcp-discover" "Official MCP discovery did not find exactly three abilities."; return 1; fi
 	local name request output
-	for name in get-configuration diagnose-form; do
+	for name in get-configuration diagnose-form get-recent-errors; do
 		request="$(jq -nc --arg name "cf7-telegram/${name}" '{jsonrpc:"2.0",id:1,method:"tools/call",params:{name:"mcp-adapter-get-ability-info",arguments:{ability_name:$name}}}')"
 		output="${prefix}-info-${name}.json"
 		if mcp_call admin "${request}" "${output}" && jq -e '.result.isError != true and (.result | tostring | contains("input_schema") and contains("output_schema"))' "${output}" >/dev/null; then
@@ -646,14 +708,18 @@ run_mcp() {
 	done
 	local form_id
 	form_id="$(jq -r '.fixture.form_id' "${ABILITY_JSON}")"
-	for name in get-configuration diagnose-form; do
+	for name in get-configuration diagnose-form get-recent-errors; do
 		local parameters
-		if [ "${name}" = get-configuration ]; then parameters='{"resource":"forms","per_page":1}'; else parameters="$(jq -nc --argjson id "${form_id}" '{form_id:$id}')"; fi
+		case "${name}" in
+			get-configuration) parameters='{"resource":"forms","per_page":1}' ;;
+			diagnose-form) parameters="$(jq -nc --argjson id "${form_id}" '{form_id:$id}')" ;;
+			get-recent-errors) parameters='{"since":1000,"until":1001,"min_level":0}' ;;
+		esac
 		request="$(jq -nc --arg name "cf7-telegram/${name}" --argjson input "${parameters}" '{jsonrpc:"2.0",id:1,method:"tools/call",params:{name:"mcp-adapter-execute-ability",arguments:{ability_name:$name,parameters:$input}}}')"
 		output="${prefix}-execute-${name}.json"
 		if mcp_call admin "${request}" "${output}" &&
 			jq -c '[.result.structuredContent, (.result.content[]?.text | fromjson?)] | map(select(type == "object") | if .success == true and (.data | type == "object") then .data elif .schema_version == 1 then . else empty end) | first' "${output}" >"${output}.data" &&
-			jq -e --slurpfile expected "${ABILITY_JSON}" --arg name "${name}" '. == $expected[0].expected[$name]' "${output}.data" >/dev/null; then
+			jq -e --slurpfile expected "${ABILITY_JSON}" --arg name "${name}" '. == $expected[0].expected[if $name == "get-recent-errors" then "get-recent-errors-sensitive" else $name end]' "${output}.data" >/dev/null; then
 			emit "r1" "mcp-execute-${name}" "pass" "Official MCP STDIO executes the ability."
 		else fail_step "r1" "mcp-execute-${name}" "Official MCP result differs from real PHP execute output."; fi
 		if mcp_call r1_subscriber "${request}" "${prefix}-denied-${name}.json" && mcp_permission_denied "${prefix}-denied-${name}.json"; then
@@ -661,13 +727,14 @@ run_mcp() {
 		else fail_step "r1" "mcp-denied-${name}" "Official MCP subscriber execution was not denied."; fi
 	done
 	local numeric_case numeric_parameters numeric_message numeric_failures=""
-	for numeric_case in page per_page form_id; do
+	for numeric_case in page per_page form_id since until min_level before_id limit; do
 		case "${numeric_case}" in
 			page) numeric_parameters='{"resource":"forms","page":"1"}'; name=get-configuration ;;
 			per_page) numeric_parameters='{"resource":"forms","per_page":"1"}'; name=get-configuration ;;
 			form_id) numeric_parameters="$(jq -nc --arg id "${form_id}" '{form_id:$id}')"; name=diagnose-form ;;
+			*) numeric_parameters="$(jq -nc --argjson input "$(jq -c '.recent_input' "${ABILITY_JSON}")" --arg key "${numeric_case}" '$input + {($key):"1"}')"; name=get-recent-errors ;;
 		esac
-		numeric_message="$(jq -r --arg case "${numeric_case}" '.numeric_input[$case].php_message // ""' "${ABILITY_JSON}")"
+		numeric_message="$(jq -r --arg case "${numeric_case}" '(.numeric_input[$case] // .recent_numeric_input[$case]).php_message // ""' "${ABILITY_JSON}")"
 		request="$(jq -nc --arg name "cf7-telegram/${name}" --argjson input "${numeric_parameters}" '{jsonrpc:"2.0",id:1,method:"tools/call",params:{name:"mcp-adapter-execute-ability",arguments:{ability_name:$name,parameters:$input}}}')"
 		output="${prefix}-numeric-${numeric_case}.json"
 		if [ -n "${numeric_message}" ] && mcp_call admin "${request}" "${output}" &&
@@ -678,7 +745,7 @@ run_mcp() {
 		else numeric_failures="${numeric_failures} ${numeric_case}"; fi
 	done
 	if [ -z "${numeric_failures}" ]; then
-		emit "r1" "mcp-numeric-string-input" "pass" "Official MCP rejects all three numeric strings with the same safe PHP error."
+		emit "r1" "mcp-numeric-string-input" "pass" "Official MCP rejects all eight numeric strings with the same safe PHP error."
 	else fail_step "r1" "mcp-numeric-string-input" "Official MCP numeric-string input differs from native PHP." "$(jq -nc --arg cases "${numeric_failures# }" --arg result_prefix "${prefix}-numeric" '{failed_cases:$cases,result_prefix:$result_prefix}')"; fi
 	local hidden_id
 	hidden_id="$(jq -r '.fixture.hidden_recipient_id' "${ABILITY_JSON}")"
@@ -693,6 +760,14 @@ run_mcp() {
 		emit "r1" "mcp-hidden-graph" "pass" "Official MCP execution rejects the same hidden object graph."
 	else fail_step "r1" "mcp-hidden-graph" "Official MCP execution exposed a hidden graph."; fi
 	wp_run option delete cf7tg_r1_hidden_post_id >"${LOG_DIR}/r1-mcp-unhide.log" 2>&1 || fail_step "r1" "mcp-unhide" "Could not clear isolated capability probe."
+	local split_user split_request split_failures=""
+	split_request="$(jq -nc --argjson input "$(jq -c '.recent_input' "${ABILITY_JSON}")" '{jsonrpc:"2.0",id:1,method:"tools/call",params:{name:"mcp-adapter-execute-ability",arguments:{ability_name:"cf7-telegram/get-recent-errors",parameters:$input}}}')"
+	for split_user in r2_settings_only r2_manage_only; do
+		if mcp_call "${split_user}" "${split_request}" "${prefix}-denied-${split_user}.json" && mcp_permission_denied "${prefix}-denied-${split_user}.json"; then :
+		else split_failures="${split_failures} ${split_user}"; fi
+	done
+	if [ -z "${split_failures}" ]; then emit "r2" "mcp-capability-split" "pass" "Official MCP denies users with either capability alone."
+	else fail_step "r2" "mcp-capability-split" "Official MCP split-capability denial failed." "$(jq -nc --arg users "${split_failures# }" '{failed_users:$users}')"; fi
 }
 
 require_tools
@@ -713,12 +788,20 @@ for required in versions core-abilities early-not-ready http-admin http-diagnose
 		fail_step "r1" "required-${required}" "Required HTTP check missing, skipped, duplicated, or failed."
 	fi
 done
+for required in http-not-ready http-recent http-cursor-redaction http-numeric-string-input http-bad-method http-basic-denials http-capability-split; do
+	if ! jq -s -e --arg id "${required}" '[.[] | select(.case == "r2" and .step == $id)] | length == 1 and .[0].status == "pass"' "${EVIDENCE_JSONL}" >/dev/null; then
+		fail_step "r2" "required-${required}" "Required recent-error HTTP check missing, skipped, duplicated, or failed."
+	fi
+done
 if [ "${MCP_REQUIRED}" = 1 ]; then
-	for required in mcp-version mcp-tools mcp-discover mcp-info-get-configuration mcp-info-diagnose-form mcp-execute-get-configuration mcp-execute-diagnose-form mcp-denied-get-configuration mcp-denied-diagnose-form mcp-numeric-string-input mcp-hidden-graph; do
+	for required in mcp-version mcp-tools mcp-discover mcp-info-get-configuration mcp-info-diagnose-form mcp-info-get-recent-errors mcp-execute-get-configuration mcp-execute-diagnose-form mcp-execute-get-recent-errors mcp-denied-get-configuration mcp-denied-diagnose-form mcp-denied-get-recent-errors mcp-numeric-string-input mcp-hidden-graph; do
 		if ! jq -s -e --arg id "${required}" '[.[] | select(.case == "r1" and .step == $id)] | length == 1 and .[0].status == "pass"' "${EVIDENCE_JSONL}" >/dev/null; then
 			fail_step "r1" "required-${required}" "Required MCP check missing, skipped, duplicated, or failed."
 		fi
 	done
+	if ! jq -s -e '[.[] | select(.case == "r2" and .step == "mcp-capability-split")] | length == 1 and .[0].status == "pass"' "${EVIDENCE_JSONL}" >/dev/null; then
+		fail_step "r2" "required-mcp-capability-split" "Required MCP capability check missing, skipped, duplicated, or failed."
+	fi
 fi
 write_summary
 
