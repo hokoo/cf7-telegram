@@ -19,7 +19,7 @@ if ( ! defined( 'WPCF7TG_PLUGIN_NAME' ) ) {
 }
 
 if ( ! defined( 'WPCF7TG_VERSION' ) ) {
-	define( 'WPCF7TG_VERSION', '1.2.1' );
+	define( 'WPCF7TG_VERSION', '1.2.2' );
 }
 
 if ( ! defined( 'WPCF7TG_FILE' ) ) {
