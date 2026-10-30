@@ -20,6 +20,40 @@ final class SettingsTest extends Cf7tg_TestCase {
 		$this->assertSame( 12000, Settings::DEFAULT_UPDATES_INTERVAL );
 	}
 
+	public function testMissingMediafilesAddonHasNoActivationLink(): void {
+		$this->assertSame( [ 'state' => 'not_installed', 'activation_url' => '' ], Settings::getMediafilesAddonState() );
+		$this->assertSame( [], $GLOBALS['wp_nonce_actions'] );
+	}
+
+	public function testActiveMediafilesAddonHasNoActivationLink(): void {
+		$plugin = 'cf7-telegram-mediafiles/cf7-telegram-mediafiles.php';
+		$GLOBALS['wp_installed_plugins'][ $plugin ] = [];
+		update_option( 'active_plugins', [ $plugin ] );
+
+		$this->assertSame( [ 'state' => 'active', 'activation_url' => '' ], Settings::getMediafilesAddonState() );
+		$this->assertSame( [], $GLOBALS['wp_nonce_actions'] );
+	}
+
+	public function testInactiveMediafilesAddonUsesWordPressActivationWithPluginNonce(): void {
+		$plugin = 'cf7-telegram-mediafiles/cf7-telegram-mediafiles.php';
+		$GLOBALS['wp_installed_plugins'][ $plugin ] = [];
+		$state = Settings::getMediafilesAddonState();
+		parse_str( parse_url( $state['activation_url'], PHP_URL_QUERY ), $query );
+
+		$this->assertSame( 'inactive', $state['state'] );
+		$this->assertSame( admin_url( 'plugins.php' ), strtok( $state['activation_url'], '?' ) );
+		$this->assertSame( [ 'action' => 'activate', 'plugin' => $plugin, '_wpnonce' => 'test-nonce' ], $query );
+		$this->assertSame( [ 'activate-plugin_' . $plugin ], $GLOBALS['wp_nonce_actions'] );
+	}
+
+	public function testInactiveMediafilesAddonDoesNotOfferActivationWithoutPermission(): void {
+		$GLOBALS['wp_installed_plugins']['cf7-telegram-mediafiles/cf7-telegram-mediafiles.php'] = [];
+		$GLOBALS['current_user_can'] = false;
+
+		$this->assertSame( [ 'state' => 'inactive', 'activation_url' => '' ], Settings::getMediafilesAddonState() );
+		$this->assertSame( [], $GLOBALS['wp_nonce_actions'] );
+	}
+
 	public function testFailedMigrationStateExposesRetryAndLastError(): void {
 		$this->seedFailedMigrationState();
 

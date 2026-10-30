@@ -37,7 +37,7 @@ Options:
 
 Environment:
   CF7TG_CANDIDATE_ZIP                         Candidate ZIP path.
-  CF7TG_EXPECTED_CANDIDATE_VERSION            Expected candidate version, default 1.2.1.
+  CF7TG_EXPECTED_CANDIDATE_VERSION            Expected candidate version, default 1.2.2.
   CF7TG_E5_SUPPORT_MATRIX_IMAGE_PROBE_TIMEOUT Docker manifest probe timeout, default 90s.
   CF7TG_E5_SUPPORT_MATRIX_RESULTS_DIR         Evidence output directory.
 USAGE
