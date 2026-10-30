@@ -25,6 +25,26 @@ This plugin lets you send Contact Form 7 messages to Telegram chats via a bot. S
 
 **The integration is configured correctly when the bot panel is highlighted in blue and the bridge panel is highlighted in green.**
 
+= Read-only Abilities API =
+
+On WordPress 6.9 or newer, two abilities expose saved configuration without sending to Telegram: <code>cf7-telegram/get-configuration</code> and <code>cf7-telegram/diagnose-form</code>. Older WordPress versions continue to deliver forms without the Abilities API. A logged-in user needs the existing CF7 Telegram settings capability and permission to read each involved form, bridge, bot, and recipient. Lists omit objects the user cannot read and count only visible items; diagnosis rejects a form when any existing object in its bounded route graph is hidden. An anonymous user cannot run either ability.
+
+In PHP, after WordPress has initialized:
+
+<code>wp_get_ability( 'cf7-telegram/get-configuration' )->execute( [ 'resource' => 'forms', 'page' => 1, 'per_page' => 50 ] );</code>
+<code>wp_get_ability( 'cf7-telegram/diagnose-form' )->execute( [ 'form_id' => 123 ] );</code>
+
+For authenticated REST clients, use GET with a JSON-encoded <code>input</code> query parameter. WordPress Application Passwords or normal cookie and REST nonce authentication work; the plugin adds no separate credential:
+
+<code>GET /wp-json/wp-abilities/v1/abilities/cf7-telegram/get-configuration/run?input=%7B%22resource%22%3A%22bridges%22%2C%22page%22%3A1%7D</code>
+<code>GET /wp-json/wp-abilities/v1/abilities/cf7-telegram/diagnose-form/run?input=%7B%22form_id%22%3A123%7D</code>
+
+The <code>resource</code> is <code>forms</code>, <code>bridges</code>, <code>bots</code>, or <code>recipients</code>. Results use schema version 1 and pages of up to 100 visible items, ordered by WordPress ID. Recipient IDs are local WordPress IDs; a forum topic keeps its distinct <code>message_thread_id</code>. Bot token presence and cached online/offline status are saved-state observations only.
+
+The optional official WordPress MCP Adapter exposes these abilities through its default server. With that separate plugin installed, a local MCP client can run <code>wp mcp-adapter serve --server=mcp-adapter-default-server --user=admin</code> using STDIO. Discover the abilities with <code>mcp-adapter-discover-abilities</code>, inspect their schemas with <code>mcp-adapter-get-ability-info</code>, then call <code>mcp-adapter-execute-ability</code> with <code>{"ability_name":"cf7-telegram/diagnose-form","parameters":{"form_id":123}}</code>. The server applies the WordPress user's permissions. The adapter is not required for PHP or REST use; this plugin does not include an MCP server.
+
+Diagnosis is static: <code>ready</code> means the saved route has eligible active recipients, <code>partial</code> means eligible and broken paths coexist, and <code>blocked</code> means no eligible path remains. <code>cached_bot_offline</code> is only a warning. <code>delivery_verified</code> is always false: diagnosis does not contact Telegram, submit a CF7 form, prove that a message arrived, change configuration, or repair a route. Existing form delivery remains the way to test end-to-end behavior.
+
 = Hooks and constants =
 
 Filter <code>wpcf7tg_skip_tg</code>

@@ -552,6 +552,26 @@ seed_fixture() {
 	run_logged "${case_id}" "seed_fixture" wp_run eval-file /e1-tests/wp-seed-fixture.php || return 1
 }
 
+run_r1_legacy_delivery() {
+	[ "${WP_VERSION}" = '5.6.19' ] || return 0
+	local result="${RESULTS_DIR}/r1-legacy-delivery.json"
+	local stderr="${LOG_DIR}/r1-legacy-delivery.stderr"
+	local exit_code=0 id
+	if wp_run eval-file /e1-tests/wp-r1-legacy-delivery.php >"${result}" 2>"${stderr}"; then :; else exit_code="$?"; fi
+	if ! jq -e --arg wp "${WP_VERSION}" --arg cf7 "${CF7_VERSION}" '.wordpress == $wp and .contact_form_7 == $cf7 and (.php | startswith("8.0."))' "${result}" >/dev/null 2>&1; then
+		fail_step "fresh" "r1-legacy-versions" "Legacy Core, PHP, or CF7 runtime version mismatch."
+		return 1
+	fi
+	for id in r1-legacy-no-api r1-legacy-fake-delivery; do
+		if ! jq -e --arg id "${id}" '[.checks[]? | select(.id == $id)] | length == 1 and .[0].status == "pass"' "${result}" >/dev/null 2>&1; then
+			fail_step "fresh" "${id}" "Required legacy assertion missing, skipped, duplicated, or failed." "$(jq -nc --arg result "${result}" --arg stderr "${stderr}" --argjson exit_code "${exit_code}" '{result:$result,stderr:$stderr,exit_code:$exit_code}')"
+			return 1
+		fi
+	done
+	if [ "${exit_code}" -ne 0 ]; then fail_step "fresh" "r1-legacy-exit" "Legacy fixture exited nonzero."; return 1; fi
+	emit "fresh" "r1-legacy-delivery" "pass" "No Abilities API and ordinary fake Telegram topic delivery verified." "$(jq -nc --arg result "${result}" '{result:$result}')"
+}
+
 run_fresh_case() {
 	local case_id="fresh"
 	local candidate_version
@@ -563,7 +583,8 @@ run_fresh_case() {
 
 	if setup_site "${case_id}" \
 		&& run_logged "${case_id}" "candidate_install" wp_run plugin install /artifacts/cf7-telegram-candidate.zip --force --activate \
-		&& write_state "${case_id}" "after-activate"; then
+		&& write_state "${case_id}" "after-activate" \
+		&& run_r1_legacy_delivery; then
 		assert_active_version "${case_id}" "after-activate" "${candidate_version}" || true
 		assert_cleanup_scheduled "${case_id}" "after-activate" || true
 

@@ -4,6 +4,26 @@ This directory records accepted follow-up work that is not part of an active
 implementation batch. Tasks use the repository status model and are not
 commitments to a release.
 
+## B2. WordPress Abilities API adaptation
+
+Status: needs_design
+
+Specification: [Abilities API](abilities-api.md), drafted 2026-10-29.
+User-selected target scope: configuration discovery, static form diagnostics, bridge
+test delivery, message preview, bridge configuration, and recent errors.
+First independent stage: `get-configuration` and `diagnose-form`; implementation
+plan R1.1–R1.3 is in the specification. It does not depend on unresolved questions
+for the other abilities. R1 implementation was authorized on 2026-10-29 and
+completed by root in `release/abilities-readonly`; R1.1 is accepted at `c393034`,
+R1.2 at `c534c66`, and R1.3 with its destination repair at `137f308` (product `542f7ab`).
+Local Core/REST/MCP and compatibility gates passed. Fresh independent QA accepted
+`e25d811..119b66a` with `pass_with_notes`; R1-AC1–R1-AC8 and DoD are met.
+Candidate ZIP and evidence are recorded in the specification checkpoint.
+Draft PR: [#72](https://github.com/hokoo/cf7-telegram/pull/72); its description and
+epic documentation are in English. Hosted CI is tracked in the PR; version bump,
+merge and publication remain a separate release task.
+The remaining four abilities retain `needs_design` and are outside this delivery.
+
 ## B1. Preserve legacy Telegram chat display names during migration
 
 Status: needs_design
