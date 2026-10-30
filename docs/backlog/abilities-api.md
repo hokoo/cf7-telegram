@@ -1785,3 +1785,30 @@ roadmap or duplicate registry; checkpoints remain in this file.
   push, merge or publication. Next is the separately requested read-only
   specification/ponytail review of the three implemented abilities.
 - Root archived the completed QA session through the serving daemon, exit 0.
+
+## Post-delivery specification and ponytail review
+
+- Root reviewed all three implemented abilities after completed R2 at
+  `5527ea9`, including registration/transports, input/output schemas, permission
+  and graph checks, token/destination helpers, log mapping, read paths and
+  focused/runtime evidence. No serious functional mismatch or unnecessary
+  architecture found; the accepted R1/R2 boundaries exclude the remaining
+  abilities and bridge revision. No additional implementation was performed.
+- Non-blocking contract wording: `Abilities::graphPost()` denies unreadable
+  objects before checking CPT, so an unreadable wrong-CPT `form_id` returns
+  403; a readable wrong CPT returns 404. `AbilitiesTest` explicitly covers
+  this priority. The general permissions paragraph can clarify this overlap;
+  changing the established privacy-first behavior is not recommended.
+- Known scale limit: configuration reads enumerate all candidate posts for
+  accurate permission-filtered totals, and `relations()` reads all four
+  relation sets before graph/page selection. No measured performance failure
+  was established. Profile a large real configuration before considering
+  scoped existing wpConnections queries; no cache/repository layer is needed.
+- Optional tiny cleanup: the legacy-constant branch in `BotToken::value()`
+  repeats the preceding `constantName()`/`defined()` decision. It can be
+  removed with existing token-precedence checks when touching that helper.
+- Ponytail recommendation: retain the current structure. Complete explicit
+  schemas, strict integer adapter, GET decoding, read-only storage boundary
+  and permission guards serve demonstrated contracts. No correction batch
+  is proposed for serious drift because none was found; minor notes do not
+  alter the independent R2 QA verdict or authorize follow-up implementation.
