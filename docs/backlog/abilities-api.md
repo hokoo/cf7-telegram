@@ -1,9 +1,10 @@
 # Adapting the plugin to the WordPress Abilities API
 
-Overall scope: six abilities; open questions for the remaining abilities retain
-`needs_design` status. The user separated the first independent stage:
-`get-configuration` and `diagnose-form`. Implementation of this stage was authorized
-on 2026-10-29 and takes place on `release/abilities-readonly`.
+Overall scope: six abilities. The accepted first independent stage contains
+`get-configuration` and `diagnose-form`; its implementation was authorized on
+2026-10-29 on `release/abilities-readonly`. The second stage contains only
+`get-recent-errors`; its execution was authorized on 2026-10-31 and is under verification. The other three abilities
+retain open design questions.
 Date: 2026-10-29. Baseline: Message Bridge for Contact Form 7 and Telegram 1.2.1,
 commit `e25d811`. Coordination: root; no release number has been assigned yet.
 
@@ -153,9 +154,10 @@ References: [Abilities API](https://developer.wordpress.org/apis/abilities-api/)
 
 ## Target-set contracts
 
-Only get-configuration and diagnose-form apply to the first stage, with the
-clarifications in “First-stage plan.” The other contracts remain design
-proposals and are not accepted for implementation by that plan.
+Only get-configuration and diagnose-form apply to the accepted first stage,
+with the clarifications in “First-stage plan.” Recent errors has a bounded
+second-stage plan below, with execution authorized on 2026-10-31. The
+other three contracts remain design proposals.
 
 Every successful result is a JSON object with required `schema_version: 1`.
 IDs are positive integers. Nullable fields explicitly allow `null`.
@@ -536,6 +538,7 @@ return `WP_Error` with a stable code and `data.status`:
 | `cf7tg_forbidden` | 403 | Insufficient permission for the operation/related object |
 | `cf7tg_not_found` | 404 | No object of the required CPT |
 | `cf7tg_not_ready` | 503 | CF7/models/relationships are not yet available |
+| `cf7tg_storage_unavailable` | 503 | Existing storage read failed; no raw database error is returned |
 | `cf7tg_invalid_configuration` | 409 | Cannot begin test: bot/token missing or graph damaged |
 | `cf7tg_invalid_input` | 400 | Cross-field constraints, unknown sample fields, inactive configure recipient |
 | `cf7tg_conflict` | 409 | Revision stale or configuration changing concurrently |
@@ -888,15 +891,171 @@ product decisions, owner returns the specific scope conflict instead of
 enlarging the task. Normal read-error handling and fixture preparation are
 ordinary implementation work, not new questions for the user.
 
+## Second-stage plan: recent errors only
+
+R2 adds `cf7-telegram/get-recent-errors` to accepted R1. It depends on R1's
+technical acceptance, not R1 publication or T2–T4. The user authorized execution
+and scoped local commits on 2026-10-31; push, merge, and publication remain
+outside this delivery. It does not
+register send, preview, or configure stubs. R2 uses the [Recent errors](#recent-errors)
+contract, [permissions](#permissions-and-data), [registration](#registration-and-compatibility),
+and [invocation rules](#invocation-errors-and-api-transport) above. R2 does not
+claim completion of the six-ability target set.
+
+### R2.1 Implement bounded recent-error reads and focused tests
+
+Status: `completed` (root accepted implementation and verification at `1f11237`).
+Goal: authorized clients can page through sanitized Logger events with no read
+side effects.
+Scope: `plugin-dir/lib/Abilities.php`, `plugin-dir/lib/ReadOnlyAbility.php`,
+`plugin-dir/lib/Maintenance.php`, minimal pure read helpers if needed, and focused
+`plugin-dir/tests/AbilitiesTest.php`/`MaintenanceTest.php` coverage. Register
+exactly the third plugin ability with its complete Core-supported input/output
+schemas, readonly/non-destructive/idempotent annotations, GET REST exposure,
+and optional official MCP exposure. Extend the existing R1 GET decoding and
+strict integer validation for `since`, `until`, `min_level`, `before_id`, and
+`limit` without coercion or regressions to `page`, `per_page`, or `form_id`.
+Out of Scope: log cleanup/repair, new storage/dependencies, form filtering,
+delivery confirmation or success rates, raw log access, other ability stubs,
+and changes to ordinary CF7 delivery.
+DoR: accepted R1 boundary and explicit R2 execution authorization; the bounded
+contract above is the design input. Routine code inspection and local setup
+belong to execution.
+DoD: R2-AC1–R2-AC5 pass focused tests and scoped diff review; a future authorized
+writer commits only the reviewed implementation/test changes in a scoped local
+commit, records its revision and exact checks, and stops before R2.2 verification.
+AC:
+1. R2-AC1: all five optional inputs use the specified defaults, strict integer
+   and range checks (`until >= since`, `before_id > 0`, `limit` 1–100), inclusive
+   UTC bounds, and reject extra properties. SQL is parameterized, ordered by
+   ID DESC, and uses an ID strictly below `before_id`. Reusing fixed time bounds
+   across pages has no duplicates or omissions among matching rows present at
+   traversal start and retained throughout, including equal timestamps. Newly
+   inserted higher IDs do not disrupt later pages and are found by a fresh
+   query. Empty/terminal pages have `next_before_id: null`; external retention
+   deletion does not imply a snapshot.
+2. R2-AC2: output has the required version, effective filters, items, nullable
+   cursor, `history_complete: false`, and retention days/max rows from the
+   existing normalized constants/filters. Use a pure way to reuse
+   `Maintenance::getLogRetentionDays()`/`getLogMaxRows()` normalization rather
+   than duplicating it or invoking cleanup.
+3. R2-AC3: map known Logger messages to the documented event codes and static
+   translated safe text. Type-check only the context allowlist; ambiguous
+   `wpPostID` never becomes `bot_id`. Unknown or malformed historic `msg`/`data`
+   yields generic `other`/“Plugin event” and safe nullable context. Sanitize
+   the returned representation of historic and current rows without rewriting
+   stored records. No raw `msg`, `data`, exception, token, chat ID, or submission
+   content appears in result or error text.
+4. R2-AC4: permission checks require both `Settings::getCaps()` and
+   `manage_options` for every PHP/Core, REST, and MCP execution. A user with
+   only either capability is denied; the fully authorized user can read.
+5. R2-AC5: read directly from the existing log table without constructing
+   `Logger` or an `Entity` path that installs it. A missing table returns an
+   empty result without creation; a real DB failure returns a safe
+   `cf7tg_storage_unavailable` 503. Repeated reads after normal bootstrap,
+   plus listing/schema inspection, produce zero writes, HTTP, cleanup, repair,
+   or Telegram calls. Legacy no-API loading and both R1 outputs persist.
+Dependencies: R1 accepted; explicit execution authorization.
+Notes/Risks: old rows may contain unredacted secrets and malformed payloads;
+level 0 can include bot-unavailable events, so the default level 1 is not a
+complete error history. The Logger constructor installs a table and is unsafe
+for this read path. Use fixed sentinel secrets in tests, not live Telegram.
+Checks/evidence: `cd plugin-dir && composer test` (record whether PHPUnit or
+compatibility fallback ran), focused malformed/old-row, capability, cursor,
+retention-override, missing-table/DB-fault, and no-side-effects assertions;
+`git diff --check`. No runtime check is claimed by this plan.
+
+### R2.2 Real Core/REST/MCP verification and stage acceptance
+
+Status: `in_progress` (R2.1 accepted by root; execution authorized).
+Goal: verify the one-ability addition across supported transports and delivery
+compatibility, then document and independently accept the R2 stage.
+Scope: extend `tests/stability/wp-r1-abilities-smoke.php` and
+`tests/stability/e4-rest-ui-smoke.sh` with R2 evidence, and update
+`plugin-dir/readme.txt` for permissions, GET input/cursor examples, retention
+and history limits. Deliberately change the R1 exact-two registration and MCP discovery
+assertions to an exact three-name set; preserve the original two abilities'
+schema, permissions, privacy, and output checks. Run the existing E4/E6/E5
+gates on one fixed ZIP candidate; root commissions fresh independent epic QA
+after the stable complete R2 boundary, not after each task.
+Out of Scope: new abilities, real Telegram sends, version bump, hosted CI
+execution, push, merge, deployment, and publication.
+DoR: R2.1 technically accepted at a stable revision/diff; its writer and
+mutating commands stopped; R2 execution authorized. R2.2 builds the final ZIP
+after its harness/documentation edits, before broad external verification.
+DoD: R2-AC1–R2-AC8 have passing focused and real-runtime evidence with no
+required skip; exact versions, commands, exits, summary/log paths, ZIP SHA-256,
+source revision, and independent QA verdict are recorded in this checkpoint.
+Future authorized documentation/harness changes have a scoped local commit and
+root accepts the complete R2 handoff. Hosted CI remains a separate PR/release
+prerequisite and is never inferred from local gates.
+AC:
+1. R2-AC6: WP 6.9/PHP 8.3/CF7 6.1.4 and the manifest's current required row
+   discover exactly the three named abilities and category. Real Core executes
+   and validates nested schemas; PHP and authenticated/denied HTTP GET REST
+   enforce the same input, output, permissions, error codes, and redaction on
+   both rows. Official MCP Adapter discovery/execution does so on the current
+   row. Wrong methods and numeric strings do not execute callbacks.
+2. R2-AC7: E4 covers missing-table vs DB failure, old/malformed rows and
+   sentinel secrets, inclusive bounds, equal timestamps, new rows between
+   cursor pages, retention overrides, capability split, and zero side effects.
+   R1 checks remain active; no count relaxation (`>= 2`) or removed assertion.
+3. R2-AC8: legacy WP 5.6.19/PHP 8.0/CF7 5.4.2 loads without the Abilities API
+   and preserves fake-transport delivery. Current E6 form delivery and required
+   E5 support rows pass on the same candidate. README states the shared-log
+   privilege and incomplete-history limits; independent QA gives `pass` or
+   `pass_with_notes` on the frozen R2 boundary.
+Dependencies: accepted R2.1, Core/MCP runtime, and existing Docker/DB/browser
+verification environment; no dependency on T2–T4 or R1 publication.
+Notes/Risks: the current row's versions come from
+[`e1-version-sources.json`](../../tests/stability/e1-version-sources.json),
+not an assumed latest version. Official MCP Adapter smoke already lives in E4.
+Record source changes to shared R1 fixture expectations as R2 work; historical
+R1 acceptance and QA verdicts remain unchanged.
+
+### R2 verification order and handoff
+
+After authorization: R2.1 → technical acceptance/stop → R2.2 harness/docs edits
+→ final ZIP/frozen boundary → serialized shared-state gates → fresh independent
+epic QA → root acceptance. Multi-batch execution uses root → fresh batch owner
+→ worker or test_monitor; root launches epic QA. Choose and record models when
+execution starts. A test_monitor owns the broad Docker/DB/browser ladder; do not run
+shared-state gates concurrently or rerun one without a changed candidate or
+unresolved failure. Retain failed attempts, required check IDs, summary/logs,
+actual versions and candidate hash. Missing environments or required skips
+are not passing evidence.
+
+Existing command ladder, with distinct result/work directories and one
+recorded ZIP hash (from the repository root except `composer test`):
+
+```bash
+set -e
+(cd plugin-dir && composer test)
+git diff --check
+scripts/build-release-zip.sh
+sha256sum dist/cf7-telegram-wp-plugin.zip
+CF7TG_E4_SMOKE_WP_VERSION=6.9 CF7TG_E4_SMOKE_CF7_VERSION=6.1.4 CF7TG_E4_SMOKE_WP_CLI_IMAGE=wordpress:cli-php8.3 tests/stability/e4-rest-ui-smoke.sh --candidate-zip dist/cf7-telegram-wp-plugin.zip
+tests/stability/e4-rest-ui-smoke.sh --candidate-zip dist/cf7-telegram-wp-plugin.zip
+tests/stability/e6-form-delivery-smoke.sh --candidate-zip dist/cf7-telegram-wp-plugin.zip --skip-browser-install
+tests/stability/e5-support-matrix.sh --candidate-zip dist/cf7-telegram-wp-plugin.zip
+```
+
+Use `--skip-browser-install` only when Chromium is already installed. E4's
+current-row run must include its official MCP smoke; do not disable
+`CF7TG_E4_MCP_REQUIRED`. Evaluate the scripts' required check IDs and result
+summaries, not exit codes alone. Required PHPUnit and hosted CI gates for a PR
+or release are not waived by a local compatibility fallback or draft CI skips.
+
 ## Follow-up work for the remaining abilities
 
-The plan below covers the target set after separate R1 acceptance. Run checks
-for the changed scope, rather than repeating the entire first stage without
-cause.
+The plan below covers send, preview, configure, and overall six-ability
+acceptance after separate R1/R2 stages. Recent errors belongs only to R2
+above. Run checks for the changed scope, rather than repeating an accepted
+stage without cause.
 
-First registration/reading, then test sending, preview/logs, consistent bridge
-changes, and an overall gate. Use existing PHPUnit/compat harness, fake Telegram,
-and E6; no new test framework is needed. A registrar stub for
+After R1/R2 registration and reading, test sending, preview, consistent bridge
+changes, and run an overall gate. Use existing PHPUnit/compat harness, fake
+Telegram, and E6; no new test framework is needed. A registrar stub for
 `wp_register_ability()` cannot replace real Abilities API checks.
 
 Required matrix: legacy WP 5.6.19 / PHP 8.0 / CF7 5.4.2 without API; WP 6.9 /
@@ -939,7 +1098,7 @@ start the other abilities or closure of the entire target set.
 
 ### T2 Test sending with a reliable result
 
-Status: `waiting_dependency`.
+Status: `needs_design` (test contract acceptance remains open).
 Goal: an authorized client tests sending through a selected bridge.
 Scope: send callback, normalization of confirmations, minimal shared helpers
 if needed, focused fake Telegram tests.
@@ -952,20 +1111,21 @@ Dependencies: T1.
 Notes/Risks: filters may alter the message/destination; whole-request timeout;
 no exactly-once guarantee. Checks do not call real Telegram.
 
-### T3 Preview and error reads
+### T3 Preview a message
 
-Status: `waiting_dependency`.
-Goal: obtain a base preview and diagnostic events without external effects.
-Scope: two read callbacks, shared pure formatter, bounded log mapper,
-permissions, and focused/runtime checks.
-Out of Scope: end-to-end submit, complete submission history, bridge changes.
-DoR: T1 accepted; base_template and log limitations accepted; execution authorized.
-DoD: AC9, AC13, AC16–AC17; PHP gate and production delivery regressions after
+Status: `needs_design` (base-template limits remain to be accepted).
+Goal: obtain a base preview from synthetic values without external effects.
+Scope: preview read callback, shared pure formatter, permissions, and
+focused/runtime checks.
+Out of Scope: end-to-end submit, log reads, real submission data, bridge changes.
+DoR: T1 accepted; base_template limits accepted; execution authorized.
+DoD: preview aspects of AC9, AC13, and AC17; PHP gate and production delivery regressions after
 extracting formatter; diff review and scoped commit.
 AC: relevant overall criteria; no write/send or recovery of real submission
 data; synthetic samples do not enter the log.
-Dependencies: T1; technical acceptance of the preceding batch before writing.
-Notes/Risks: mail tags with special context, third-party filters, legacy logs.
+Dependencies: T1; technical acceptance of any preceding shared-checkout batch
+before writing. R2 and T2 are not functional prerequisites.
+Notes/Risks: mail tags with special context and third-party filters.
 
 ### T4 Consistent bridge creation and updates
 
@@ -993,11 +1153,11 @@ Goal: a verified candidate and clear client contract.
 Scope: extend existing runtime fixtures/evidence for Core REST/MCP, check the
 matrix and E4/E6, add usage to README.
 Out of Scope: release bump, push, merge, deployment, and publication.
-DoR: T1–T4 accepted; writer stopped; candidate and revision frozen.
+DoR: R1, R2, T2–T4 accepted; writer stopped; candidate and revision frozen.
 DoD: AC1–AC17 confirmed; required gates pass; independent epic QA returns
 `pass` or `pass_with_notes`; verified scoped commits and evidence recorded here.
 AC: overall criteria; no skipped required test recorded as pass.
-Dependencies: T1–T4, Core/MCP runtime, and existing verification environment.
+Dependencies: R1, R2, T2–T4, Core/MCP runtime, and existing verification environment.
 Notes/Risks: API support on minimum version, third-party plugins/filters;
 specification and execution have separate boundaries.
 
@@ -1407,3 +1567,204 @@ roadmap or duplicate registry; checkpoints remain in this file.
   user documentation needed no translation. The worker stopped and was archived
   normally, exit 0. This follow-up changes documentation only; product code,
   contracts, historical evidence, and the independent QA verdict are unchanged.
+
+## R2 planning checkpoint
+
+- 2026-10-31: planned R2.1–R2.2 against clean
+  `release/abilities-readonly` HEAD `4de389f32776911d8af5875a881a932f8f025fc1`.
+  Local delivery boundary: uncommitted changes only in this specification and
+  `docs/backlog/README.md`; no product implementation, runtime test, or commit.
+- R2 is only `get-recent-errors`; accepted R1 is its technical prerequisite.
+  T2/T3/T4 remain separate, and R1 publication does not gate R2. The next work
+  is R2.1 after explicit execution authorization, then R2.2 after technical
+  acceptance at a stable R2.1 revision; R2.2 freezes the final candidate after
+  its harness/documentation edits. Overall six-ability design remains open.
+- Plan checks: `git diff --check` passed; relative links/anchors, exactly two
+  task contracts with all required fields and R2-AC1–R2-AC8, T3/T5 ownership and
+  dependencies, and referenced source/script paths passed local read-only checks.
+  Product gates in the R2 ladder remain future obligations, not evidence here.
+- Documentation writer `/root/r2_executable_tasks`, native thread
+  `01a18e97-0087-7491-8796-ee61a8cf74cf`; no descendants. Writer and
+  documentation-check commands stopped at handoff.
+- Root accepted the local documentation diff after review and independent
+  checks: 20 local links/anchors, two complete task contracts and eight AC,
+  `bash -n` for the command ladder, script paths/options, and `git diff --check`
+  passed. R1 plan/checkpoint text matches the baseline unchanged. Runtime gates
+  were not run; implementation remains pending explicit authorization.
+
+## R2 execution checkpoint
+
+- 2026-10-31: user authorized R2.1 and R2.2 execution, including their scoped
+  local commit and verification boundaries. Baseline HEAD `4de389f`; existing
+  uncommitted R2 planning changes in this file and `docs/backlog/README.md`
+  are preserved. No push, merge, version bump, or publication is authorized.
+- R2.1 owner selection: `gpt-6.1-sol`, `high`, fresh `batch_owner`; bounded PHP
+  implementation with privacy, cursor, and backward-compatibility risks.
+  Workers and test monitors use their pinned role models. One implementation
+  writer and serialized shared-state checks; root accepts each batch before
+  its successor, and commissions fresh independent epic QA for complete R2.
+- R2.1 technically accepted by owner after scoped source/test review; local
+  implementation commit `1f112379c1a750696bbe1fd4bb7110f479c99814` changes only
+  `plugin-dir/lib/{Abilities,ReadOnlyAbility,Maintenance}.php` and
+  `plugin-dir/tests/{Abilities,Maintenance}Test.php` (339 additions, 5 removals).
+  Reviewed diff SHA-256: `189d304e7494c3162aa78e63dcdbc88e8245bf7fb690f75621410a6990c6a390`.
+  Existing planning edits in the two backlog documents remain uncommitted.
+- AC1: strict optional inputs/defaults, inclusive bounds and ID cursor with
+  equal timestamps/concurrent higher inserts; AC2: complete nested schemas,
+  normalized retention and incomplete-history marker; AC3: static safe event
+  mapping and typed context, historic/malformed sentinel data; AC4: both
+  capabilities independently required; AC5: direct table reads, missing-table
+  empty result, safe DB failure and zero mutation/HTTP assertions. Existing R1
+  tests pass; no-API bootstrap guard is unchanged. Owner corrected the optional
+  input schema's top-level `default: []` after checking Core normalization.
+- Final serial checks, exits 0: `cd plugin-dir && composer test` on host
+  PHP 8.0.30 used compatibility harness, 131 tests/0 failures; real
+  `docker run --rm --network none --read-only --tmpfs /tmp:rw -v /home/itron/reps/cf7-telegram:/app:ro -w /app/plugin-dir --entrypoint php wodby/wordpress-php:8.3-4.62.1 vendor/bin/phpunit`
+  ran PHPUnit 9.6.36, 131 tests/911 assertions, no skips; `git diff --check`
+  and `php -l` for all five changed files passed. Logs:
+  `/tmp/cf7tg-r21-verification-20261031/{composer-test.log,phpunit-transcript.log,lint-diff-transcript.log}`.
+  Docker's initial sandbox-denied attempt exited 126 before execution; the
+  approved same command passed. Worker fixture failures remain in tool
+  transcripts; final independent evidence covers the unchanged committed diff.
+- Owner `/root/r21_owner`, native `01a18e9e-709c-75d1-b0e4-a53b53389c1d`;
+  worker `/root/r21_owner/implementation`, native
+  `01a18e9e-eaaf-7c52-9b5a-7bc0b9d431f1`; monitor
+  `/root/r21_owner/verification`, native `01a18ea5-2718-76c1-9dab-647ec675438d`.
+  Both specialists completed with no descendants/running commands; temporary
+  test container exited. Root archived the monitor normally, exit 0.
+- No R2.1 blockers. Core/REST/MCP runtime gates, legacy delivery verification,
+  final ZIP, usage documentation and independent R2 QA remain R2.2 obligations;
+  none is claimed here. Next: root accepts this handoff and starts a fresh
+  R2.2 owner. This owner stops before that successor batch.
+
+- Root accepted R2.1 after inspecting the actual five-file diff, committed
+  revision, and durable compatibility/PHPUnit logs. All three R2.1 agent
+  branches completed and were archived via the serving daemon, exits 0;
+  no descendant commands remained. R2.1 is complete at `1f11237`.
+- R2.2 owner selection: fresh `batch_owner`, `gpt-6.1-sol/high`; real Core,
+  REST/MCP integration and serialized support-matrix evidence require careful
+  contract review. R2.2 is now active; root commissions independent QA only
+  after its complete frozen implementation and runtime evidence handoff.
+
+- R2.2 owner `/root/r22_owner`, native
+  `01a18ea7-e862-7863-b563-69af682edd5a`, started at `1f11237` with only the
+  two existing backlog documents dirty. Source contract and role/skills read;
+  fresh worker `/root/r22_owner/implementation` owns only runtime fixtures,
+  E4 runner and user README. No product edits or broad commands authorized
+  during writing; exact three-name assertions preserve all original R1 gates.
+  After reviewed stable edits and scoped commit, a fresh monitor runs the
+  serialized source/build/E4-minimum/E4-current-MCP/E6/E5 ladder. Independent
+  R2 QA and final acceptance remain root-owned.
+- R2.2 reviewed harness/docs boundary: scoped commit
+  `280b30ae4d7a128823749e5d6ef41d8cce63e96a` changes only
+  `plugin-dir/readme.txt`, `tests/stability/e4-rest-ui-smoke.sh`,
+  `tests/stability/wp-r1-{abilities-smoke,mu-probes}.php` (270 additions,
+  22 removals); product unchanged from accepted R2.1. Owner inspected actual
+  diff and corrected a stale post-insert cursor expectation before freezing;
+  all prior R1 assertions remain except the explicit exact-three name update.
+  Worker native `01a18ea8-6ec0-7e00-8169-fffa418ec93d` completed with no
+  running processes. PHP/bash syntax, diff and scoped commit checks passed.
+  Fresh monitor `/root/r22_owner/verification` now owns serial verification
+  at `/tmp/cf7tg-r22-verification-20261031/`; runtime/ZIP/QA evidence pending.
+- R2.2 first monitor native `01a18eaf-6c88-7a93-82e5-596bb2400de9`
+  stopped at required minimum E4 failures; no current/E6/E5 gate was run.
+  Composer compatibility 131/0, real PHPUnit 131/911 (no skips), syntax/diff
+  passed. Standard build retry with network access passed (first npm DNS
+  failure retained): candidate 1.2.1 SHA-256
+  `e597fbcc2fb9ab53e3cfd4d68960c9fa10b93056944ae9bc7f6235e073455cfb`,
+  `SOURCE_DATE_EPOCH=1793395183`, source `280b30a`. Initial stale ZIP copy is
+  invalid and is not a candidate. Evidence root above retains every attempt.
+  Real minimum WP6.9/PHP8.3.33/CF7 6.1.4: existing smoke passed; Core 37/39,
+  failures `r2-core-nested-output-validation` (Core accepts numeric strings)
+  and `r2-core-capability-split` (test denied raw instead of mapped CF7 cap).
+  Required failures remain failures. Same worker resumes bounded harness
+  repair; no product defect established or criterion waived. Monitor/project
+  processes stopped; root owns monitor cleanup.
+- R2.2 bounded harness repair reviewed and committed at
+  `1983ce09f3ab90ee1af62c325b84fdff91b6bb6b`: two test paths only, 15 additions /
+  11 removals. The nested probe uses an invalid nonnumeric value; permission
+  tests resolve CF7 primitive mappings and verify both effective capability
+  booleans before Core/HTTP/MCP denial checks. No package content changed;
+  final ZIP hash remains `e597fbcc…455cfb` with build source `280b30a`.
+  Writer stopped; fresh monitor `/root/r22_owner/verification_repair` owns
+  the remaining serial gates under `/tmp/cf7tg-r22-verification-final-20261031/`.
+  It also verifies no-argument defaults and invalid input ranges through native
+  WP-CLI in the retained current E4 runtime, then explicitly cleans that project.
+  Root archived the prior stopped monitor normally (exit 0); no criterion waived.
+- R2.2 repaired E4 minimum and current passed on the same candidate hash:
+  WP6.9/PHP8.3.33/CF7 6.1.4 and WP7.1/PHP8.3.33/CF7 6.2 each have existing
+  smoke 24/24 and Core abilities 39/39; wrapper steps 33/33 and 49/49.
+  Current official MCP Adapter 0.7.1 passed all 15 required assertions.
+  Owner inspected raw summaries and effective split-capability booleans.
+  Native current no-argument/default and nine invalid/order probes passed
+  with zero SQL mutation/HTTP/gateway activity. Its first wrongly derived
+  project invocation ran no assertions and remains a recorded failed attempt;
+  the correct project was identified by the exact compose-file Docker label.
+  E6 current passed 57/57 wrapper and all 37 browser/fake-transport checks;
+  browser execution ran, only installation was skipped. E5 full matrix remains
+  active. Final evidence is under the new verification-final root above.
+- Evidence correction: the first monitor's stale pre-build ZIP copy was
+  overwritten by the successful final reference; its stale hash and failed
+  build log remain, but no separate stale archive is claimed retained. The
+  actual final candidate reference and failed E4 artifacts are preserved.
+- R2.2 technical handoff accepted by owner after actual four-path diff and raw
+  runtime evidence review; status remains `review`, independent R2 QA pending.
+  Final harness commit `1983ce09f3ab90ee1af62c325b84fdff91b6bb6b` follows
+  `280b30ae4d7a128823749e5d6ef41d8cce63e96a`; net scope is README, E4 runner,
+  and two existing fixtures (274 additions / 22 removals). R2.1 product remains
+  `1f112379c1a750696bbe1fd4bb7110f479c99814`. Candidate build source is
+  `280b30a`; `git diff --quiet 280b30a 1983ce0 -- plugin-dir` exited 0,
+  so the harness-only repair retains the same final ZIP/version/source epoch.
+  The final ZIP and reference both hash to
+  `e597fbcc2fb9ab53e3cfd4d68960c9fa10b93056944ae9bc7f6235e073455cfb`.
+- Final gates (all exits 0, no required skips): Composer compatibility 131/0
+  and real PHPUnit 131 tests / 911 assertions from the unchanged R2.1 product;
+  E4 minimum/current existing 24/24 + Core 39/39, wrappers 33/33 and 49/49;
+  current official MCP Adapter 0.7.1, 15/15 required checks; supplemental
+  native defaults and nine invalid/order inputs pass, mutation/HTTP/gateway=0;
+  E6 57/57 wrapper and 37/37 browser/fake-transport assertions; full E5 11/11
+  aggregate, zero failure/skip. E5 rows: legacy 349/349 (10 cases), current
+  313/313 (9), optional WP7.1/PHP8.5.10/CF7 6.2 313/313 (9). Each row uses
+  the final hash and has zero failed/expected-failed steps. Owner read raw
+  legacy no-API/fake-delivery IDs and mail_sent/hook=1/completed=2/send=2/
+  ok=2/ordinary=true/topic=true. Source syntax and final diff checks pass.
+- AC mapping: R2-AC1–5 retain accepted focused evidence and gain real Core
+  validation, cursor, sanitized historic-row, retention, permission and
+  storage/no-side-effect assertions; AC6 passes both real Core/GET rows and
+  official current MCP; AC7 passes exact-three registration, all retained
+  R1 checks and the R2 edge cases; AC8 README, legacy and current delivery /
+  support evidence pass, with **independent QA and root acceptance pending**.
+  No criterion is waived; R2 is not declared complete. No version bump,
+  hosted CI, push, merge, publication or real Telegram delivery was performed.
+- Exact remaining-ladder ledger:
+  `/tmp/cf7tg-r22-verification-final-20261031/verification-summary.txt`,
+  SHA-256 `c67ff72c77e31fb93e6007ebc19fb0ab138e930443daedf37e5cc3813d8c70fc`.
+  Source/build logs remain under `/tmp/cf7tg-r22-verification-20261031/`.
+  Reproducible supplemental command: `native-probe-command.sh`; successful
+  tool-captured JSON was retrospectively saved as `native-probe-output.json`
+  with explicit provenance; failed command output remains adjacent. No probe
+  was rerun to create these artifacts. Prior failed attempts remain failures.
+- Lifecycle: worker `/root/r22_owner/implementation`, native
+  `01a18ea8-6ec0-7e00-8169-fffa418ec93d`, and final monitor
+  `/root/r22_owner/verification_repair`, native
+  `01a18eb7-7b66-7cc0-98dc-15d07428a0a0`, completed without descendants or
+  active commands. Monitor confirmed isolated E4/E6/E5 containers/volumes
+  absent, including both supplemental projects; unrelated live `cf7t_*`
+  remained untouched. Owner native `01a18ea7-e862-7863-b563-69af682edd5a`
+  stops at this handoff. Root owns supported cleanup and fresh independent
+  R2 QA, then final backlog acceptance commit. Only the two existing backlog
+  documents remain dirty; their prior edits and root bookkeeping are preserved.
+
+- Root accepted the complete R2.2 technical handoff after actual diffs and raw
+  E4/E6/E5 summaries, ledger/probe evidence, package-delta and four ZIP-member
+  comparisons. All R2.2 descendants/commands stopped; worker, final monitor,
+  and owner were archived through the serving daemon, exits 0. No code or
+  candidate changes are pending. R2.2 stays `review` until independent QA.
+- Independent R2 QA selection: fresh `epic_qa`, pinned `gpt-6-sol/high`,
+  directly from root. Review the frozen complete R2 diff from `4de389f`
+  through the pre-QA checkpoint commit, product `1f11237`, harness `1983ce0`,
+  and candidate `e597fbcc…455cfb`; required AC1–AC8 and delivery evidence.
+- Follow-up requested by the user: after R2 execution/acceptance, review all
+  three implemented abilities against the specification with ponytail.
+  Propose a correction plan only for serious drift or excess complexity;
+  this follow-up does not authorize additional implementation.

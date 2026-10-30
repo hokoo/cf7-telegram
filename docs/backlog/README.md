@@ -22,7 +22,14 @@ Candidate ZIP and evidence are recorded in the specification checkpoint.
 Draft PR: [#72](https://github.com/hokoo/cf7-telegram/pull/72); its description and
 epic documentation are in English. Hosted CI is tracked in the PR; version bump,
 merge and publication remain a separate release task.
-The remaining four abilities retain `needs_design` and are outside this delivery.
+Second-stage plan R2.1–R2.2 in the specification covers only
+`get-recent-errors`: implementation with focused tests, then real Core/REST/MCP
+verification, documentation, and independent stage acceptance. Its design is
+ready, and execution was authorized on 2026-10-31; R2.1 is accepted
+and locally committed at `1f11237`; R2.2 is in progress. R2 does not depend on R1
+publication or send/preview/configure. The remaining three abilities retain
+open design or execution gates, and the overall six-ability epic remains
+`needs_design`.
 
 ## B1. Preserve legacy Telegram chat display names during migration
 
