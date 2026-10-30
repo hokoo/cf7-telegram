@@ -91,6 +91,9 @@ class Settings {
 			'phrases' => [
 				'empty' => Bot::getEmptyToken(),
 			],
+			'addons' => [
+				'mediafiles' => self::getMediafilesAddonState(),
+			],
 
 			'migration' => [
 				'show_action_button' => self::shouldShowMigrationActionButton(),
@@ -104,6 +107,30 @@ class Settings {
 				'bot_fetch' => defined( 'WPCF7TG_UPDATES_INTERVAL' ) ? WPCF7TG_UPDATES_INTERVAL : self::DEFAULT_UPDATES_INTERVAL,
 			],
 		) );
+	}
+
+	public static function getMediafilesAddonState(): array {
+		if ( ! function_exists( 'get_plugins' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/plugin.php';
+		}
+
+		$plugin = 'cf7-telegram-mediafiles/cf7-telegram-mediafiles.php';
+		$installed = isset( get_plugins()[ $plugin ] );
+		$active = $installed && is_plugin_active( $plugin );
+		$activation_url = '';
+
+		if ( $installed && ! $active && current_user_can( 'activate_plugin', $plugin ) ) {
+			$activation_url = admin_url( 'plugins.php?' . http_build_query( [
+				'action'   => 'activate',
+				'plugin'   => $plugin,
+				'_wpnonce' => wp_create_nonce( 'activate-plugin_' . $plugin ),
+			] ) );
+		}
+
+		return [
+			'state' => $active ? 'active' : ( $installed ? 'inactive' : 'not_installed' ),
+			'activation_url' => $activation_url,
+		];
 	}
 
 	public static function pluginUrl() {
