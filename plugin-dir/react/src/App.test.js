@@ -204,6 +204,7 @@ describe('App migration recovery', () => {
 describe('App resource loading', () => {
     beforeEach(() => {
         jest.clearAllMocks();
+        delete global.cf7TelegramData.addons;
 
         fetchClient.mockResolvedValue([]);
         fetchForms.mockResolvedValue([]);
@@ -229,6 +230,36 @@ describe('App resource loading', () => {
         expect(await screen.findByText('Bots')).toBeInTheDocument();
         expect(screen.getByText('A Telegram bot is required to run the integration. Create at least one bot, then connect it here.')).toBeInTheDocument();
         expect(screen.getByRole('link', {name: 'How to create a bot'})).toHaveAttribute('href', 'https://core.telegram.org/bots#3-how-do-i-create-a-bot');
+    });
+
+    it.each(['not_installed', 'inactive', 'active'])('shows the media add-on state %s after the settings', async (state) => {
+        const activationUrl = 'https://example.test/wp-admin/plugins.php?action=activate&plugin=cf7-telegram-mediafiles%2Fcf7-telegram-mediafiles.php&_wpnonce=test-nonce';
+        global.cf7TelegramData.addons = {mediafiles: {state, activation_url: state === 'inactive' ? activationUrl : ''}};
+        render(<App />);
+
+        const banner = await screen.findByRole('complementary', {name: 'MediaFiles add-on'});
+        expect(banner).toHaveTextContent('Send photos, documents, audio and video uploaded through your forms to Telegram.');
+        const label = state === 'inactive' ? 'Activate add-on' : (state === 'active' ? 'About the add-on' : 'Get the add-on');
+        const link = screen.getByRole('link', {name: label});
+        expect(link).toHaveAttribute('href', state === 'inactive' ? activationUrl : 'https://store.itron.pro/product/contact-form-7-telegram-attachments/');
+        if (state === 'inactive') {
+            expect(link).not.toHaveAttribute('target');
+            expect(banner).toHaveTextContent('Installed, inactive');
+            expect(screen.queryByRole('link', {name: 'Get the add-on'})).not.toBeInTheDocument();
+        } else {
+            expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+        }
+        expect(Boolean(screen.queryByText('Add-on active'))).toBe(state === 'active');
+        expect(document.querySelector('.main-container').compareDocumentPosition(banner) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
+
+    it('explains activation permissions instead of offering the installed add-on again', async () => {
+        global.cf7TelegramData.addons = {mediafiles: {state: 'inactive', activation_url: ''}};
+        render(<App />);
+
+        expect(await screen.findByText('Ask an administrator to activate the add-on.')).toBeInTheDocument();
+        expect(screen.queryByRole('link', {name: 'Activate add-on'})).not.toBeInTheDocument();
+        expect(screen.queryByRole('link', {name: 'Get the add-on'})).not.toBeInTheDocument();
     });
 
     it('keeps successful resources visible and retries only failed requests', async () => {
