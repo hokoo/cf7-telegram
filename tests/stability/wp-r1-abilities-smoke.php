@@ -441,7 +441,7 @@ $record( 'r2-core-rest-parity', ! in_array( 0, $log_ids, true ) && is_array( $pa
 	[ $log_ids[3], $log_ids[2] ] === array_column( $page1['items'] ?? [], 'id' ) &&
 	$log_ids[2] === ( $page1['next_before_id'] ?? null ) && false === ( $page1['history_complete'] ?? null ) );
 $bad_recent = $page1;
-$bad_recent['items'][0]['context']['http_status'] = '429';
+$bad_recent['items'][0]['context']['http_status'] = 'invalid-http-status';
 $record( 'r2-core-nested-output-validation', 'ability_invalid_output' === $output_probe( 'recent-errors', $recent->get_output_schema(), $bad_recent ) );
 $wpdb->insert( $log_table, [ 'source' => 'r2-smoke', 'date' => 1000, 'level' => 3, 'msg' => 'Bot initialization error.', 'data' => 'Bot token is not set.' ] );
 $new_id = (int) $wpdb->insert_id;
@@ -496,21 +496,25 @@ remove_filter( 'cf7tg/logRetentionDays', $retention_days );
 remove_filter( 'cf7tg/logMaxRows', $retention_rows );
 $record( 'r2-retention-overrides', ( $retained['retention'] ?? null ) === [ 'days' => 0, 'max_rows' => 7 ] );
 $settings_cap = Settings::getCaps();
+$settings_primitives = map_meta_cap( $settings_cap, $admin ? (int) $admin->ID : 0 );
 $permission_results = [];
-foreach ( [ 'settings_only' => 'manage_options', 'manage_only' => $settings_cap ] as $case => $deny ) {
-	$filter = static function ( array $caps ) use ( $deny ): array { $caps[ $deny ] = false; return $caps; };
+foreach ( [ 'settings_only' => [ 'manage_options' ], 'manage_only' => $settings_primitives ] as $case => $denied_caps ) {
+	$filter = static function ( array $caps ) use ( $denied_caps ): array {
+		foreach ( $denied_caps as $cap ) $caps[ $cap ] = false;
+		return $caps;
+	};
 	add_filter( 'user_has_cap', $filter, PHP_INT_MAX );
+	$has_settings = current_user_can( $settings_cap );
+	$has_manage = current_user_can( 'manage_options' );
 	$php_denied = $call( $names[2], $recent_input );
 	$rest_denied = $request( 'GET', $names[2], $recent_input );
 	remove_filter( 'user_has_cap', $filter, PHP_INT_MAX );
-	$permission_results[ $case ] = [ $error_code( $php_denied ), $rest_denied->get_status(), $rest_denied->get_data()['code'] ?? '' ];
+	$permission_results[ $case ] = [ $has_settings, $has_manage, $error_code( $php_denied ), $rest_denied->get_status(), $rest_denied->get_data()['code'] ?? '' ];
 }
-$record( 'r2-core-capability-split', $settings_cap !== 'manage_options' &&
-	$permission_results['settings_only'][0] === 'ability_invalid_permissions' &&
-	$permission_results['manage_only'][0] === 'ability_invalid_permissions' &&
-	$permission_results['settings_only'][1] === 403 && $permission_results['manage_only'][1] === 403 &&
-	$permission_results['settings_only'][2] === 'rest_ability_cannot_execute' &&
-	$permission_results['manage_only'][2] === 'rest_ability_cannot_execute', $permission_results );
+$record( 'r2-core-capability-split', $settings_cap !== 'manage_options' && ! in_array( 'manage_options', $settings_primitives, true ) &&
+	$permission_results['settings_only'] === [ true, false, 'ability_invalid_permissions', 403, 'rest_ability_cannot_execute' ] &&
+	$permission_results['manage_only'] === [ false, true, 'ability_invalid_permissions', 403, 'rest_ability_cannot_execute' ],
+	[ 'requested' => $settings_cap, 'mapped' => $settings_primitives, 'results' => $permission_results ] );
 $backup_table = $wpdb->prefix . 'cf7tg_r2_smoke_backup';
 $backup_identifier = '`' . str_replace( '`', '``', $backup_table ) . '`';
 $renamed = false !== $wpdb->query( "RENAME TABLE $log_identifier TO $backup_identifier" );
