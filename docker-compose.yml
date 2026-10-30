@@ -43,6 +43,7 @@ services:
       PHP_EXTENSIONS_DISABLE: $EXTENSIONS_DISABLE
     volumes:
       - ./:/srv/web
+      - ../cf7-telegram-mediafiles:/srv/cf7-telegram-mediafiles
       - ./install/php-fpm/php.ini:/usr/local/etc/php/conf.d/php-wpcf7-overrides.ini
     extra_hosts:
       - "cf7t.local:host-gateway"
@@ -59,6 +60,7 @@ services:
       - php
     volumes:
       - ./:/srv/web/
+      - ../cf7-telegram-mediafiles:/srv/cf7-telegram-mediafiles
       - ./install/nginx/dev.conf:/etc/nginx/conf.d/dev.conf
       - ./install/nginx/betas.conf:/etc/nginx/conf.d/betas.conf
       - ./install/nginx/ssl/:/etc/nginx/ssl/
