@@ -19,7 +19,7 @@ if ( ! defined( 'WPCF7TG_PLUGIN_NAME' ) ) {
 }
 
 if ( ! defined( 'WPCF7TG_VERSION' ) ) {
-	define( 'WPCF7TG_VERSION', '1.2.1' );
+	define( 'WPCF7TG_VERSION', '1.2.2' );
 }
 
 if ( ! defined( 'WPCF7TG_FILE' ) ) {
@@ -884,6 +884,25 @@ if ( ! function_exists( 'current_user_can' ) ) {
 	}
 }
 
+if ( ! function_exists( 'get_plugins' ) ) {
+	function get_plugins(): array {
+		return $GLOBALS['wp_installed_plugins'] ?? [];
+	}
+}
+
+if ( ! function_exists( 'is_plugin_active' ) ) {
+	function is_plugin_active( string $plugin ): bool {
+		return in_array( $plugin, get_option( 'active_plugins', [] ), true );
+	}
+}
+
+if ( ! function_exists( 'wp_create_nonce' ) ) {
+	function wp_create_nonce( string $action ): string {
+		$GLOBALS['wp_nonce_actions'][] = $action;
+		return 'test-nonce';
+	}
+}
+
 if ( ! function_exists( 'get_post_type_object' ) ) {
 	function get_post_type_object( string $post_type ): object {
 		return (object) [
@@ -1503,6 +1522,8 @@ function cf7tg_test_reset_environment(): void {
 	$GLOBALS['wp_next_log_id'] = 1;
 	$GLOBALS['wpcf7_form_tags'] = [];
 	$GLOBALS['current_user_can'] = true;
+	$GLOBALS['wp_installed_plugins'] = [];
+	$GLOBALS['wp_nonce_actions'] = [];
 	$GLOBALS['checked_admin_referer'] = null;
 	$GLOBALS['wp_safe_redirect_location'] = null;
 	$GLOBALS['wp_referer'] = false;

@@ -180,6 +180,9 @@ const SettingsApp = () => {
     const migrationError = 'migration_failed' === migrationStatus.last_error?.category
         ? migrationStatus.last_error.message
         : null;
+    const mediafiles = cf7TelegramData?.addons?.mediafiles || {};
+    const mediafilesActive = mediafiles.state === 'active';
+    const mediafilesInactive = mediafiles.state === 'inactive';
 
     return (
         <>
@@ -275,6 +278,42 @@ const SettingsApp = () => {
                     </div>
                 </div>
             </div>
+            <aside className="cf7-tg-addon-banner" aria-labelledby="cf7-tg-addon-title">
+                <span className="dashicons dashicons-paperclip" aria-hidden="true" />
+                <div className="cf7-tg-addon-copy">
+                    <h2 id="cf7-tg-addon-title">{wp.i18n.__( 'MediaFiles add-on', 'cf7-telegram' )}</h2>
+                    <p>{wp.i18n.__( 'Send photos, documents, audio and video uploaded through your forms to Telegram.', 'cf7-telegram' )}</p>
+                </div>
+                <div className="cf7-tg-addon-actions">
+                    {(mediafilesActive || mediafilesInactive) && (
+                        <span className={`cf7-tg-addon-status${mediafilesInactive ? ' inactive' : ''}`}>
+                            {mediafilesActive
+                                ? wp.i18n.__( 'Add-on active', 'cf7-telegram' )
+                                : wp.i18n.__( 'Installed, inactive', 'cf7-telegram' )}
+                        </span>
+                    )}
+                    {mediafilesInactive ? (
+                        mediafiles.activation_url ? (
+                            <a className="cf7-tg-addon-link" href={mediafiles.activation_url}>
+                                {wp.i18n.__( 'Activate add-on', 'cf7-telegram' )}
+                            </a>
+                        ) : (
+                            <p>{wp.i18n.__( 'Ask an administrator to activate the add-on.', 'cf7-telegram' )}</p>
+                        )
+                    ) : (
+                        <a
+                            className="cf7-tg-addon-link"
+                            href="https://store.itron.pro/product/contact-form-7-telegram-attachments/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            {mediafilesActive
+                                ? wp.i18n.__( 'About the add-on', 'cf7-telegram' )
+                                : wp.i18n.__( 'Get the add-on', 'cf7-telegram' )}
+                        </a>
+                    )}
+                </div>
+            </aside>
         </div>
 
         {canShowMigrationAction && (

@@ -39,23 +39,116 @@ body[class*="page_wpcf7_tg"] ul#adminmenu > li.current > a.current:after {
     color: #fff;
     font-family: "Open Sans";
   }
+
+  .cf7-tg-addon-banner {
+    display: grid;
+    grid-template-columns: 24px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 16px;
+    margin: 0;
+    box-sizing: border-box;
+    padding: 16px 20px;
+    background: #142435;
+    border: 1px solid #294154;
+    border-left: 3px solid #398aaf;
+    border-radius: 6px;
+
+    > .dashicons {
+      width: 24px;
+      height: 24px;
+      font-size: 24px;
+      color: #8bbbd6;
+    }
+
+    h2 {
+      margin: 0 0 5px;
+      color: #d0e0ed;
+      font-size: 15px;
+      line-height: 1.4;
+    }
+
+    p {
+      margin: 0;
+      color: #a9bdcc;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .cf7-tg-addon-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .cf7-tg-addon-status {
+      color: #a2d8c2;
+      font-size: 12px;
+
+      &.inactive {
+        color: #d6c28e;
+      }
+    }
+
+    .cf7-tg-addon-link {
+      padding: 7px 12px;
+      border: 1px solid #456175;
+      border-radius: 4px;
+      color: #b8dbf2;
+      font-size: 13px;
+      line-height: 1.5;
+      text-decoration: none;
+
+      &:hover,
+      &:focus-visible {
+        background: #1c344a;
+        border-color: #8cbedb;
+        color: #fff;
+      }
+
+      &:focus-visible {
+        outline: 2px solid #8cbedb;
+        outline-offset: 3px;
+      }
+    }
+
+    @media (max-width: 782px) {
+      grid-template-columns: 24px minmax(0, 1fr);
+      align-items: start;
+
+      .cf7-tg-addon-actions {
+        grid-column: 2;
+      }
+    }
+
+    @media (min-width: 1440px) {
+      grid-template-columns: minmax(0, 1fr);
+      padding: 16px;
+
+      .cf7-tg-addon-actions {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  }
 }
 
 .cf7-tg-container {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
   width: 100%;
   gap: 32px;
 
   @media (min-width: 1440px) {
-      flex-direction: row;
+    grid-template-columns: minmax(0, 1fr) 200px;
   }
 
   .main-container {
     display: flex;
     flex-direction: column;
     gap: 32px;
-    flex: 3 1;
+    min-width: 0;
 
     @media (min-width: 1120px) {
       flex-direction: row;
@@ -117,6 +210,8 @@ body[class*="page_wpcf7_tg"] ul#adminmenu > li.current > a.current:after {
   .entity-container {
     flex-basis: 500px;
     flex-shrink: 0;
+    max-width: 100%;
+    box-sizing: border-box;
 
     border-width: 4px;
     border-style: dashed;
@@ -172,6 +267,7 @@ body[class*="page_wpcf7_tg"] ul#adminmenu > li.current > a.current:after {
 
   .bots-container {
     width: 375px;
+    max-width: 100%;
 
     .bot-list {
       display: flex;
@@ -462,6 +558,7 @@ body[class*="page_wpcf7_tg"] ul#adminmenu > li.current > a.current:after {
 
   .channels-container {
     flex: 1;
+    min-width: 0;
     max-width: 508px;
 
     @media (min-width: 1880px) {
