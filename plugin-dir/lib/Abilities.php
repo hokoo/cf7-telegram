@@ -279,15 +279,15 @@ class Abilities {
 			$rows = [];
 			if ( $exists === $table ) {
 				$identifier = '`' . str_replace( '`', '``', $table ) . '`';
-				$query = "SELECT ID, date, level, msg, data FROM $identifier WHERE date BETWEEN %d AND %d AND level BETWEEN %d AND %d";
-				$args = [ $since, $until, $minLevel, Logger::LEVEL_CRITICAL ];
 				if ( null !== $beforeID ) {
-					$query .= ' AND ID < %d';
-					$args[] = $beforeID;
+					$rows = self::storageRead( static fn() => $wpdb->get_results( $wpdb->prepare(
+						"SELECT ID, date, level, msg, data FROM $identifier WHERE date BETWEEN %d AND %d AND level BETWEEN %d AND %d AND ID < %d ORDER BY ID DESC LIMIT %d",
+						$since, $until, $minLevel, Logger::LEVEL_CRITICAL, $beforeID, $limit + 1 ) ) );
+				} else {
+					$rows = self::storageRead( static fn() => $wpdb->get_results( $wpdb->prepare(
+						"SELECT ID, date, level, msg, data FROM $identifier WHERE date BETWEEN %d AND %d AND level BETWEEN %d AND %d ORDER BY ID DESC LIMIT %d",
+						$since, $until, $minLevel, Logger::LEVEL_CRITICAL, $limit + 1 ) ) );
 				}
-				$query .= ' ORDER BY ID DESC LIMIT %d';
-				$args[] = $limit + 1;
-				$rows = self::storageRead( static fn() => $wpdb->get_results( $wpdb->prepare( $query, $args ) ) );
 				if ( ! is_array( $rows ) ) throw new \RuntimeException();
 			}
 			$hasMore = count( $rows ) > $limit;
