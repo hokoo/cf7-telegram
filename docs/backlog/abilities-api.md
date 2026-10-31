@@ -7,9 +7,10 @@ Overall scope: six abilities. The accepted first independent stage contains
 retain open design questions.
 Date: 2026-10-29. Baseline: Message Bridge for Contact Form 7 and Telegram 1.2.1,
 commit `e25d811`. Coordination: root. The user selected 1.2.3 for the R1/R2
-release. The accepted read-only implementation is merged on `master`; 1.2.3
-version metadata and the published 1.2.2 upgrade baseline are prepared
-there before hosted release checks and publication.
+release. The accepted read-only implementation is merged on `master` and
+published as 1.2.3 on GitHub and WordPress.org. The
+[release checkpoint](../stability/release-1.2.3.md) records independent acceptance,
+full support-matrix evidence and matching public packages.
 
 ## Goal and scope
 

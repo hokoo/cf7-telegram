@@ -14,7 +14,7 @@ state. Preserve historical evidence and baselines. Root owns external writes.
 
 ### R1. Verify the existing PR and merge
 
-Status: accepted (merged after R1a). Goal/scope: obtain current hosted CI evidence for PR #72
+Status: completed (merged after R1a). Goal/scope: obtain current hosted CI evidence for PR #72
 at `a71de44`, then merge it. Exclusions: product changes, version bump, release.
 DoR: clean published branch and completed abilities QA; satisfied.
 AC/DoD: required PR workflow checks pass at the frozen head; inspect test,
@@ -26,7 +26,7 @@ and integration acceptance. Delegate observation to pinned `test_monitor`.
 
 ### R2. Prepare and verify version 1.2.3 on master
 
-Status: in_progress (prepared; root commit/push pending). Goal/scope: metadata, current candidate
+Status: completed (accepted with notes). Goal/scope: metadata, current candidate
 defaults, official 1.2.2 upgrade baseline and release documentation. Exclude
 new features and unrelated cleanup. DoR: accepted R1 merged on master.
 AC: header/runtime/readme/defaults agree on 1.2.3; official 1.2.2 baseline is
@@ -38,7 +38,7 @@ Dependency: R1 and official baseline download. Root selects a fresh owner.
 
 ### Q1. Independent release acceptance
 
-Status: waiting_dependency (R2). Fresh root-launched `epic_qa` reviews the frozen
+Status: completed (`pass_with_notes`). Fresh root-launched `epic_qa` reviews the frozen
 source and actual R1/R2 evidence, scoped to release readiness and integration
 of accepted abilities. Required criteria cannot be waived. Verdict and exact
 boundary are recorded here before tagging. Full release support matrix and
@@ -46,7 +46,7 @@ public artifact identity remain R3 obligations under the established workflow.
 
 ### R3. Publish and verify
 
-Status: waiting_dependency (Q1). Scope: root creates annotated `v-1.2.3` and
+Status: completed (accepted with notes). Scope: root creates annotated `v-1.2.3` and
 GitHub release; a fresh owner delegates observation/public reads. Exclude
 implementation and real message sending. DoR: Q1 pass/pass_with_notes.
 AC/DoD: exact-tag verify and publish succeed; full required support matrix and
@@ -58,6 +58,115 @@ Dependencies: GitHub Actions and WordPress.org publication. Report failed
 publication or unavailable public artifacts as incomplete, never a pass.
 
 ## Checkpoints
+
+- Final root acceptance: 1.2.3 is published and verified on GitHub and
+  WordPress.org; SVN trunk/tag and stable mirror match the verified package.
+  Root inspected actual release summaries, public metadata/comparison results
+  and every support row's 35 passing `upgrade-1.2.2` events. Q1's retained
+  per-case evidence requirement is satisfied; no required gate was waived.
+  All R3 commands/descendants stopped; monitor and owner archived through the
+  serving daemon, both exit 0. The documentation-only final commit uses
+  `[skip ci]`; the release tag remains on `b163d610` and published bytes stay
+  unchanged. The three other abilities remain outside this release.
+
+- R3 technical verdict **pass_with_notes** on frozen source
+  `b163d6109f0d55a35a2e61f503da959fea85857b`, annotated `v-1.2.3` object
+  `4201be40033bbee677e324b186e89d31081492cc`. Exact release-event run
+  [41247701883](https://github.com/hokoo/cf7-telegram/actions/runs/41247701883)
+  succeeded: verify `124674479325` 28m14s, publish `124680736477` 41s.
+  Owner inspected actual terminal metadata/logs, raw summaries/audits, public
+  metadata and all downloaded contents. All required release gates pass;
+  only non-release smoke and prerelease-canary skips follow workflow conditions.
+- Real PHPUnit 9.6.36 passed 135 tests/921 assertions; React 8 suites/64 tests.
+  PHP lint, build/version 1.2.3 validation and ZIP reproducibility passed.
+  Audit `blocking_failed=0`; runtime 2 moderate/0 high/0 critical; full-dev
+  113 findings remain nonblocking under existing policy. Plugin Check 1.9.0
+  passed 13/13, infrastructure false, raw zero ERRORs/15 WARNINGs.
+- Full uploaded lifecycle evidence: legacy WP5.6.19/PHP8.0/CF7 5.4.2
+  421/421; current WP7.1/PHP8.3/CF7 6.2 385/385; available optional PHP8.5
+  385/385. Every event passes, zero failed/expected-failed/skipped rows.
+  Historical cases remain; each row's `upgrade-1.2.2` has 35 passing events,
+  actual candidate upgrade/active 1.2.3 and rollback proof using official
+  baseline SHA-256 `ac57316219a6ff714aa384b4f767c34cd337fba57d9cabf7a05748143f49b2cc`.
+  This supplies Q1's required retained per-case proof. Additional legacy
+  no-API/fake-delivery passes 36/36; minimum Core 33/33; current Core/REST
+  and official MCP 49/49; browser 28 steps/8 checks, E6 57 steps/37 checks.
+  Playwright browser 1 test and E6 4 tests pass, zero skipped/unexpected/flaky.
+- Final GitHub release has tag `v-1.2.3`, draft/prerelease false, downloadable
+  `cf7-telegram-wp-plugin.zip` (224471 bytes). WordPress.org API reports 1.2.3
+  and official `https://downloads.wordpress.org/plugin/cf7-telegram.1.2.3.zip`.
+  Existing `EXPECTED_VERSION=1.2.3 scripts/validate-release-zip.sh` passes on
+  CI/GitHub/WordPress.org ZIPs. CI and GitHub SHA-256:
+  `30dba7a11566dc34858b33c001c90e0d87816e6006c61ec2f90626cd8c487046`;
+  WordPress.org SHA-256:
+  `e54d30129f65cbaea02e4330b208643cd1cf6be8e07891121a841a5ce7df3db3`.
+- All 156 normalized relative paths and every uncompressed byte match across
+  CI/GitHub/WordPress.org ZIPs, SVN trunk/tag exports at revision/last-change
+  `3777405`, and repository stable commit
+  `3f0be5d71f8cad6bdab9c64a8d15896483741043`. Owner independently compared
+  actual downloaded bytes (read-only Python assertions, exit 0). Stable archive
+  SHA-256 `736286c637bad6267032bca6f153bcae8691d1a7d083a312546a8690c438d963`.
+  Validator package-path exclusions pass. Supplementary scan covers all 199
+  entry paths and 156 file members in each ZIP: zero sibling-addon paths or
+  configured local-bypass phrase/hash markers. No credentials were printed.
+- Exact commands/exits and evidence: `/tmp/cf7tg-123-release-ci/summary.txt`,
+  `raw/run.log` SHA-256
+  `1f0c548a8794f783607b84f2790f8f141950ddb9fa05fab44133dd3aac87ac48`,
+  `raw/artifacts/`, `public-comparison-results.json`, `release-view.json`,
+  `svn-info.txt`, `package-content-marker-scan.json` and runnable
+  `check_package_markers.py`. All required watch/retrieval/validator/comparison
+  commands exit 0. Unsupported initial gh JSON-field probe exit 1, listing
+  pipe-closure warning, and incomplete initial directory-path scan are retained;
+  the corrected scan passes. Early matrix artifact was accidentally downloaded
+  again by terminal bulk retrieval; both read-only copies retained. No workflow
+  rerun, public mutation, real delivery or environment provisioning by agents.
+- Monitor `/root/release123_publish/release_ci_public`, native
+  `01a1940d-442f-7a71-aec0-c8a0f2d76907`, confirms original watcher session
+  `31475` exit 0, every command terminal and no descendants. Owner has no live
+  commands or implementation changes; only this checkpoint differs from tag.
+  No R3 blocker remains; existing audit/Plugin Check findings and GitHub
+  action-runtime migration notices are nonblocking. Root owns full acceptance,
+  supported lifecycle cleanup and final checkpoint commit without moving tag.
+  Owner stops at R3 and takes no successor batch.
+
+- R3 owner `/root/release123_publish`, native
+  `01a1940c-f1da-7ec3-92f3-76329e1296d3`, selected `gpt-6.1-sol/high`;
+  fresh pinned `test_monitor` (`gpt-6-luna/low`)
+  `/root/release123_publish/release_ci_public`, native
+  `01a1940d-442f-7a71-aec0-c8a0f2d76907`, owns the single remote watcher
+  and public read-only verification. Root created annotated `v-1.2.3`
+  (object `4201be40033bbee677e324b186e89d31081492cc`, source `b163d610`)
+  and the final GitHub release; both root commands exited 0.
+  Exact release-event run
+  [41247701883](https://github.com/hokoo/cf7-telegram/actions/runs/41247701883)
+  is in progress on the frozen source. No implementation writer, source change,
+  rerun or publication mutation belongs to this batch. Evidence destination:
+  `/tmp/cf7tg-123-release-ci/`. Only this checkpoint differs from the tag.
+
+- Q1 independent verdict: **pass_with_notes**, retained unchanged. Reviewer
+  `/root/release123_qa`, native `01a1940a-8626-7e23-b3ad-ea9700e34840`, reviewed
+  `54c9c02..b163d610`, focusing SQL/CI repair and metadata after merge. Required
+  prepublication criteria pass, with no human exception or decision needed.
+  Low note: per-case E1 counts are unavailable; frozen default dispatch and
+  successful exact-head execution prove the ladder passed. R3 must inspect
+  uploaded full-matrix `upgrade-1.2.2` evidence in every required row, zero
+  failures, plus exact-tag gates and public artifact identity. Retained policy
+  notes: Plugin Check 15 warnings; full-dev audit 113 nonblocking findings.
+  Reviewer reports all commands stopped, no edits or descendants. Root accepts
+  Q1 and proceeds to authorized publication of the frozen `b163d610` source.
+- R3 owner selection: fresh `batch_owner`, `gpt-6.1-sol/high`, for release
+  workflow evidence and public artifact integrity. Delegate observation to
+  pinned `test_monitor`; root alone creates the tag/release. No source changes
+  or broad local test reruns are part of this publication batch.
+
+- Root accepted R2 `pass_with_notes` after actual metadata/baseline diff,
+  raw Plugin Check/audit/REST summaries, E1 dispatch/failure propagation and
+  exact hosted command/log review. Frozen release source is
+  `b163d6109f0d55a35a2e61f503da959fea85857b`; only this checkpoint is dirty.
+  Per-case E1 report absence remains documented; direct full-matrix proof is
+  still required by R3. Worker/monitor/owner commands stopped, all three native
+  sessions archived successfully. Q1 is a fresh root-launched read-only
+  `epic_qa`, pinned `gpt-6-sol/high`, independent of implementation/ownership.
 
 - Root accepted completed R1/R1a after inspecting the actual repair diffs,
   final raw summary thresholds and exact head/base. PR #72 merged as
@@ -72,7 +181,7 @@ publication or unavailable public artifacts as incomplete, never a pass.
 
 ### R1a. Retain Plugin Check diagnostics and restore required CI
 
-Status: technical_pass (root acceptance/merge pending). Goal: recover the missing blocking evidence and correct only a
+Status: completed (accepted and merged). Goal: recover the missing blocking evidence and correct only a
 demonstrated release blocker. Scope: use the existing Plugin Check results-dir
 option and an always-uploaded CI artifact; keep gate thresholds unchanged.
 DoR: failed R1 handoff accepted by root; observer/owner stopped and archived
@@ -294,3 +403,61 @@ GitHub Actions; R1 failure evidence above/below. Owner selection: fresh
   earlier hash: 12 tracked files, 45 insertions/31 deletions, binary diff SHA-256
   `13139405d82bfec863886703641bd95cc2a7d9b7fe1a747b6ca3e49032e85dbe`
   over `1c5986d4`. Worker stopped again, no commands/descendants; same native ID.
+- Root accepted final preparation, committed all 12 scoped files plus checkpoint
+  as `b163d6109f0d55a35a2e61f503da959fea85857b`, and pushed master (exit 0).
+  Owner confirmed exact HEAD and clean tree before adding this bookkeeping.
+  Root archived stopped worker through native daemon (exit 0). Fresh pinned
+  `gpt-6-luna/low` monitor `/root/release123_prepare/master_ci` observes this
+  exact master-push head only; older healthy merge-push runs remain untouched.
+- Exact push run #162
+  [41245874236](https://github.com/hokoo/cf7-telegram/actions/runs/41245874236),
+  attempt 1, head `b163d610`, queued behind healthy merge-push #161.
+  Monitor reported shell `CODEX_THREAD_ID` equal to prior worker's recorded ID;
+  native identity is therefore uncertain and must be resolved before archival.
+  Canonical fresh monitor path is confirmed; observation continues safely.
+- Monitor corrected its initial identity report: the earlier value was copied
+  from the writer assignment, not its own environment. Own current native
+  `CODEX_THREAD_ID`: `01a193f7-263c-7970-b6c5-411ec621718d`.
+  Single `gh run watch 41245874236 --repo hokoo/cf7-telegram --exit-status`
+  runs as session `47291`, retaining `/tmp/cf7tg-123-master-ci/watch.log`.
+- Exact master-push run #162 `41245874236` completed **success** on
+  `b163d6109f0d55a35a2e61f503da959fea85857b`, attempt 1, verify job
+  `124670077279` (11m56s). Owner inspected actual scoped diff, full hosted log,
+  audit/Plugin Check and legacy/minimum/current raw JSON. Real PHPUnit 135/921;
+  React 8 suites/64 tests; audit `blocking_failed=0` (runtime npm 2 moderate,
+  zero high/critical; full-dev 113 policy-nonblocking findings); package validates
+  1.2.3 and reproducibility passes. Plugin Check 13/13, infrastructure false,
+  zero ERRORs/15 WARNINGs. Legacy WP 5.6.19/CF7 5.4.2 passes 36/36, including
+  no-API/fake delivery. Minimum WP 6.9 passes 33/33; current WP 7.1 + official
+  MCP passes 49/49; each has 39 abilities assertions and 24 smoke checks with
+  zero failures. All applicable uploads pass; only agreed event-specific skips.
+- Current lifecycle passed in 6m30s. Its detailed per-case JSON/logs remain
+  runner-temporary and were not uploaded. Monitor correctly reported this
+  narrower requested evidence unavailable; preserve that report unchanged.
+  Root clarified the established 1.2.2 prepublication evidence route (previous
+  checkpoint lines 124–129). Owner independently traced frozen E1 defaults,
+  invocation and failure propagation: `CASES` line 106 explicitly includes
+  `upgrade-1.2.2`; workflow calls the exact script without `--case` or
+  `--artifact-only`; line 794 dispatches every case; setup/install/snapshot/
+  fixture/upgrade/rollback failures increment `FAILURES`, and final gate exits
+  nonzero when it is positive. Hosted log lines 1056–1069 prove this invocation
+  and `E1 smoke matrix passed` with successful step exit. This source-plus-runtime
+  evidence proves the default upgrade ladder executed; no retained per-case
+  counts/report are claimed. No concrete execution gap found. Direct uploaded
+  per-case proof remains mandatory in R3 full support matrix before publication;
+  Q1 independently reviews this evidence method and event division.
+- R2 technical verdict **pass_with_notes** under that established evidence route;
+  no required workflow gate waived and no CI/source changes or reruns. Full
+  evidence `/tmp/cf7tg-123-master-ci/summary.txt`, `run.log` SHA-256
+  `61f5aa4cefbc900f108406c04945c2bfed6dcf180523e5d6e022a17d08aef461`,
+  downloaded ZIP SHA-256
+  `30dba7a11566dc34858b33c001c90e0d87816e6006c61ec2f90626cd8c487046`.
+  Monitor's one watcher, retrieval and downloaded ZIP validation all exit 0;
+  initial unsupported `gh` JSON field probe exit 1 corrected to `number`, no
+  verification rerun. Owner independently confirmed raw thresholds and hashes.
+  Only expected checkpoint changed after the frozen source; diff check exit 0.
+- Monitor `/root/release123_prepare/master_ci`, corrected native
+  `01a193f7-263c-7970-b6c5-411ec621718d`, completed/stopped all commands and
+  descendants. No writer active; stopped worker already archived by root.
+  Owner stops at R2. Root owns full-batch acceptance, monitor/owner archival,
+  then fresh independent Q1; no tag/release/publication action by this owner.
