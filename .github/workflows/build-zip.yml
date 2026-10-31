@@ -120,7 +120,16 @@ jobs:
         env:
           CF7TG_CANDIDATE_ZIP: ${{ github.workspace }}/${{ env.ZIP_PATH }}
           CF7TG_EXPECTED_CANDIDATE_VERSION: ${{ steps.release_version.outputs.value }}
+          CF7TG_E5_PLUGIN_CHECK_RESULTS_DIR: ${{ github.workspace }}/test-evidence/plugin-check
         run: tests/stability/e5-plugin-check-gate.sh
+
+      - name: Upload Plugin Check evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: cf7-telegram-plugin-check-evidence
+          path: test-evidence/plugin-check
+          if-no-files-found: error
 
       - name: Run isolated current lifecycle smoke
         if: ${{ github.event_name != 'release' }}
