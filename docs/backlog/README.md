@@ -28,6 +28,9 @@ Core/REST/MCP, E6 delivery and full E5 support matrix passed on the same
 version 1.2.1 candidate. Independent QA accepted `4de389f..47e28b1` with
 `pass`. The specification checkpoint records exact commands, revisions,
 versions, ZIP hash and evidence. No push, merge or publication was performed.
+The planned R1/R2 release is 1.2.3; its [changelog draft](../../plugin-dir/readme.txt)
+is prepared. Version metadata will be updated on `master` after
+merge, as requested by the user.
 The remaining three abilities retain open design or execution gates; the
 overall six-ability epic remains `needs_design`.
 

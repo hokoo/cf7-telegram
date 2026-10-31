@@ -6,7 +6,8 @@ Overall scope: six abilities. The accepted first independent stage contains
 `get-recent-errors`; its execution was authorized on 2026-10-31 and completed with independent QA `pass`. The other three abilities
 retain open design questions.
 Date: 2026-10-29. Baseline: Message Bridge for Contact Form 7 and Telegram 1.2.1,
-commit `e25d811`. Coordination: root; no release number has been assigned yet.
+commit `e25d811`. Coordination: root. The user selected 1.2.3 for the R1/R2
+release; version metadata will be updated on `master` after merge.
 
 ## Goal and scope
 

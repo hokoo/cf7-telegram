@@ -85,6 +85,22 @@ This plugin uses [API Telegram](https://core.telegram.org/api "Telegram docs") a
 
 == Changelog ==
 
+= 1.2.3 =
+- Add read-only WordPress Abilities API integration on WordPress 6.9 and newer.
+- Add <code>cf7-telegram/get-configuration</code> to discover forms, bridges, bots, recipients, and their relationships with permission-aware pagination.
+- Add <code>cf7-telegram/diagnose-form</code> to identify missing or broken routes, inactive recipients, and invalid destinations without sending a Telegram message.
+- Add <code>cf7-telegram/get-recent-errors</code> to read sanitized recent log events with time and severity filters and cursor pagination. Reading the shared log additionally requires <code>manage_options</code>.
+- Expose the abilities through PHP, authenticated REST requests, and the optional official WordPress MCP Adapter. Responses exclude bot tokens, raw Telegram chat IDs, and raw log payloads.
+- Preserve ordinary form delivery on older WordPress versions without the Abilities API.
+
+These abilities do not change configuration or contact Telegram. Diagnosis describes saved configuration, and the log is incomplete; neither proves successful delivery.
+
+Planned for future releases, outside 1.2.3; scope and release dates remain to be finalized:
+
+- <code>cf7-telegram/send-test-message</code>: test Telegram sending through a selected bridge and report the outcome.
+- <code>cf7-telegram/preview-message</code>: preview a form's Telegram message using synthetic field values, with explicit preview limitations.
+- <code>cf7-telegram/configure-bridge</code>: create or update a bridge using existing forms, bots, and recipients.
+
 = 1.2.2 =
 - Add a responsive MediaFiles add-on card to the settings page, showing whether the add-on is active, installed but inactive, or not installed.
 - Let administrators activate an installed add-on through WordPress's permission-checked activation link.
