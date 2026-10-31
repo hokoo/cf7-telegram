@@ -96,19 +96,11 @@ class Bot extends Entity implements wpPostAble{
 	 * @return bool
 	 */
 	public function isTokenEmpty(): bool {
-		return
-			empty ( $this->getToken() ) ||
-
-			/** @see self::EMPTY_TOKEN_MASK */
-			$this->getToken() !== rtrim( ltrim( $this->getToken(), '[' ), ']' );
+		return BotToken::isEmpty( $this->getToken() );
 	}
 
 	public function getTokenConstName(): string {
-		if ( $this->usesLegacyTokenConstant() ) {
-			return self::LEGACY_TOKEN_CONST;
-		}
-
-		return sprintf( self::TOKEN_CONST_MASK, $this->getPost()->ID );
+		return BotToken::constantName( $this->getPost()->ID, $this->getParam( self::TOKEN_SOURCE_PARAM ) );
 	}
 
 	/**
@@ -121,15 +113,7 @@ class Bot extends Entity implements wpPostAble{
 	}
 
 	public function getToken() {
-		if ( defined( $this->getTokenConstName() ) ) {
-			return constant( $this->getTokenConstName() );
-		}
-
-		if ( $this->isLegacyTokenConstantDefined() ) {
-			return constant( self::LEGACY_TOKEN_CONST );
-		}
-
-		return $this->getParam( 'token' );
+		return BotToken::value( $this->getPost()->ID, $this->getParam( self::TOKEN_SOURCE_PARAM ), $this->getParam( 'token' ) );
 	}
 
 	public function usesLegacyTokenConstant(): bool {

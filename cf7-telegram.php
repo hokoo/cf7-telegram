@@ -3,7 +3,7 @@
 * Plugin Name: Message Bridge for Contact Form 7 and Telegram
 * Description: Sends CF7 messages to Telegram-chat
 * Author: Hokku
-* Version: 1.2.2
+* Version: 1.2.3
 * License: GPL v2 or later
 * License URI: https://www.gnu.org/licenses/gpl-2.0.html
 * Text Domain: cf7-telegram
@@ -19,10 +19,11 @@ use iTRON\cf7Telegram\Controllers\CPT;
 use iTRON\cf7Telegram\Controllers\Migration;
 use iTRON\cf7Telegram\Maintenance;
 use iTRON\cf7Telegram\Settings;
+use iTRON\cf7Telegram\Abilities;
 
 define( 'WPCF7TG_PLUGIN_NAME', plugin_basename( __FILE__ ) );
 
-const WPCF7TG_VERSION = '1.2.2';
+const WPCF7TG_VERSION = '1.2.3';
 const WPCF7TG_FILE = __FILE__;
 
 require __DIR__ . '/vendor/autoload.php';
@@ -34,6 +35,9 @@ Settings::init();
 Migration::init();
 Maintenance::init();
 Compatibility::init();
+if ( function_exists( 'wp_register_ability' ) && function_exists( 'wp_register_ability_category' ) ) {
+	Abilities::init();
+}
 
 register_activation_hook( WPCF7TG_FILE, [ Maintenance::class, 'activate' ] );
 register_deactivation_hook( WPCF7TG_FILE, [ Maintenance::class, 'deactivate' ] );
