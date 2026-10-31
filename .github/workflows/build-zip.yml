@@ -120,7 +120,16 @@ jobs:
         env:
           CF7TG_CANDIDATE_ZIP: ${{ github.workspace }}/${{ env.ZIP_PATH }}
           CF7TG_EXPECTED_CANDIDATE_VERSION: ${{ steps.release_version.outputs.value }}
+          CF7TG_E5_PLUGIN_CHECK_RESULTS_DIR: ${{ github.workspace }}/test-evidence/plugin-check
         run: tests/stability/e5-plugin-check-gate.sh
+
+      - name: Upload Plugin Check evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: cf7-telegram-plugin-check-evidence
+          path: test-evidence/plugin-check
+          if-no-files-found: error
 
       - name: Run isolated current lifecycle smoke
         if: ${{ github.event_name != 'release' }}
@@ -145,11 +154,32 @@ jobs:
           path: test-evidence/support-matrix
           if-no-files-found: error
 
-      - name: Run real WordPress REST integration smoke
-        if: ${{ github.event_name == 'pull_request' || github.event_name == 'release' }}
+      - name: Run legacy WordPress no API and fake delivery smoke
         env:
           CF7TG_CANDIDATE_ZIP: ${{ github.workspace }}/${{ env.ZIP_PATH }}
           CF7TG_EXPECTED_CANDIDATE_VERSION: ${{ steps.release_version.outputs.value }}
+          CF7TG_E1_WP_VERSION: '5.6.19'
+          CF7TG_E1_WP_CLI_IMAGE: wordpress:cli-php8.0
+          CF7TG_E1_CF7_VERSION: '5.4.2'
+          CF7TG_E1_RESULTS_DIR: ${{ github.workspace }}/test-evidence/legacy-abilities
+        run: tests/stability/e1-smoke-matrix.sh --case fresh
+
+      - name: Run minimum Core Abilities API integration smoke
+        env:
+          CF7TG_CANDIDATE_ZIP: ${{ github.workspace }}/${{ env.ZIP_PATH }}
+          CF7TG_EXPECTED_CANDIDATE_VERSION: ${{ steps.release_version.outputs.value }}
+          CF7TG_E4_SMOKE_WP_VERSION: '6.9'
+          CF7TG_E4_SMOKE_WP_CLI_IMAGE: wordpress:cli-php8.3
+          CF7TG_E4_SMOKE_CF7_VERSION: '6.1.4'
+          CF7TG_E4_MCP_REQUIRED: '0'
+          CF7TG_E4_SMOKE_RESULTS_DIR: ${{ github.workspace }}/test-evidence/abilities-minimum
+        run: tests/stability/e4-rest-ui-smoke.sh
+
+      - name: Run current Core Abilities API and official MCP integration smoke
+        env:
+          CF7TG_CANDIDATE_ZIP: ${{ github.workspace }}/${{ env.ZIP_PATH }}
+          CF7TG_EXPECTED_CANDIDATE_VERSION: ${{ steps.release_version.outputs.value }}
+          CF7TG_E4_MCP_REQUIRED: '1'
           CF7TG_E4_SMOKE_RESULTS_DIR: ${{ github.workspace }}/test-evidence/rest-integration
         run: tests/stability/e4-rest-ui-smoke.sh
 
@@ -186,11 +216,21 @@ jobs:
           if-no-files-found: error
 
       - name: Upload REST integration evidence
-        if: ${{ always() && (github.event_name == 'pull_request' || github.event_name == 'release') }}
+        if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
           name: cf7-telegram-rest-integration-evidence
           path: test-evidence/rest-integration
+          if-no-files-found: error
+
+      - name: Upload minimum API and legacy evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: cf7-telegram-abilities-matrix-evidence
+          path: |
+            test-evidence/legacy-abilities
+            test-evidence/abilities-minimum
           if-no-files-found: error
 
       - name: Upload verified zip artifact

@@ -526,7 +526,7 @@ class Maintenance {
 		return max( MINUTE_IN_SECONDS, $interval );
 	}
 
-	private static function getLogRetentionDays(): int {
+	public static function getLogRetentionDays(): int {
 		$retentionDays = defined( 'WPCF7TG_LOG_RETENTION_DAYS' )
 			? (int) WPCF7TG_LOG_RETENTION_DAYS
 			: self::DEFAULT_LOG_RETENTION_DAYS;
@@ -535,7 +535,7 @@ class Maintenance {
 		return max( 0, $retentionDays );
 	}
 
-	private static function getLogMaxRows(): int {
+	public static function getLogMaxRows(): int {
 		$maxRows = defined( 'WPCF7TG_LOG_MAX_ROWS' )
 			? (int) WPCF7TG_LOG_MAX_ROWS
 			: self::DEFAULT_LOG_MAX_ROWS;

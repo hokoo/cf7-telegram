@@ -25,6 +25,31 @@ This plugin lets you send Contact Form 7 messages to Telegram chats via a bot. S
 
 **The integration is configured correctly when the bot panel is highlighted in blue and the bridge panel is highlighted in green.**
 
+= Read-only Abilities API =
+
+On WordPress 6.9 or newer, three read-only abilities expose saved configuration and sanitized recent log events without sending to Telegram: <code>cf7-telegram/get-configuration</code>, <code>cf7-telegram/diagnose-form</code>, and <code>cf7-telegram/get-recent-errors</code>. Older WordPress versions continue to deliver forms without the Abilities API. A logged-in user needs the existing CF7 Telegram settings capability to read configuration or diagnose a form, plus permission to read each involved form, bridge, bot, and recipient. Lists omit objects the user cannot read and count only visible items; diagnosis rejects a form when any existing object in its bounded route graph is hidden. Reading the shared log additionally requires <code>manage_options</code>; both capabilities are required. Anonymous users cannot run these abilities.
+
+In PHP, after WordPress has initialized:
+
+<code>wp_get_ability( 'cf7-telegram/get-configuration' )->execute( [ 'resource' => 'forms', 'page' => 1, 'per_page' => 50 ] );</code>
+<code>wp_get_ability( 'cf7-telegram/diagnose-form' )->execute( [ 'form_id' => 123 ] );</code>
+<code>wp_get_ability( 'cf7-telegram/get-recent-errors' )->execute( [ 'since' => 1761782400, 'until' => 1761868800, 'limit' => 20 ] );</code>
+
+For authenticated REST clients, use GET with a JSON-encoded <code>input</code> query parameter. WordPress Application Passwords or normal cookie and REST nonce authentication work; the plugin adds no separate credential:
+
+<code>GET /wp-json/wp-abilities/v1/abilities/cf7-telegram/get-configuration/run?input=%7B%22resource%22%3A%22bridges%22%2C%22page%22%3A1%7D</code>
+<code>GET /wp-json/wp-abilities/v1/abilities/cf7-telegram/diagnose-form/run?input=%7B%22form_id%22%3A123%7D</code>
+<code>GET /wp-json/wp-abilities/v1/abilities/cf7-telegram/get-recent-errors/run?input=%7B%22since%22%3A1761782400%2C%22until%22%3A1761868800%2C%22limit%22%3A20%7D</code>
+<code>GET /wp-json/wp-abilities/v1/abilities/cf7-telegram/get-recent-errors/run?input=%7B%22since%22%3A1761782400%2C%22until%22%3A1761868800%2C%22limit%22%3A20%2C%22before_id%22%3A456%7D</code>
+
+The <code>resource</code> is <code>forms</code>, <code>bridges</code>, <code>bots</code>, or <code>recipients</code>. Results use schema version 1 and pages of up to 100 visible items, ordered by WordPress ID. Recipient IDs are local WordPress IDs; a forum topic keeps its distinct <code>message_thread_id</code>. Bot token presence and cached online/offline status are saved-state observations only.
+
+Recent errors accepts inclusive Unix UTC <code>since</code> and <code>until</code> bounds (default: the past 24 hours), <code>min_level</code> 0–3 (default: 1), and <code>limit</code> 1–100 (default: 20). Pages are ordered by descending log ID. Pass the returned <code>next_before_id</code> as <code>before_id</code> with the same time bounds to get the next page; <code>null</code> means there are no more matching rows. The example cursor 456 is illustrative. The response reports the current retention <code>days</code> and <code>max_rows</code>, including overrides from <code>WPCF7TG_LOG_RETENTION_DAYS</code>, <code>WPCF7TG_LOG_MAX_ROWS</code>, <code>cf7tg/logRetentionDays</code>, and <code>cf7tg/logMaxRows</code>. Reads do not prune the log. <code>history_complete</code> is always false: the shared log omits successes and may have lost older entries to retention. Events are <code>telegram_delivery_failed</code>, <code>bot_unreachable</code>, <code>bot_token_missing</code>, <code>bridge_bot_missing</code>, or <code>other</code>. Some bot-unavailable entries have level 0 and require <code>min_level: 0</code>; the default level 1 is not a complete error list. Unknown or malformed old entries have generic messages, and no raw log data is exposed.
+
+The optional official WordPress MCP Adapter exposes these abilities through its default server. With that separate plugin installed, a local MCP client can run <code>wp mcp-adapter serve --server=mcp-adapter-default-server --user=admin</code> using STDIO. Discover the abilities with <code>mcp-adapter-discover-abilities</code>, inspect their schemas with <code>mcp-adapter-get-ability-info</code>, then call <code>mcp-adapter-execute-ability</code> with <code>{"ability_name":"cf7-telegram/diagnose-form","parameters":{"form_id":123}}</code>. The server applies the WordPress user's permissions. The adapter is not required for PHP or REST use; this plugin does not include an MCP server.
+
+Diagnosis is static: <code>ready</code> means the saved route has eligible active recipients, <code>partial</code> means eligible and broken paths coexist, and <code>blocked</code> means no eligible path remains. <code>cached_bot_offline</code> is only a warning. <code>delivery_verified</code> is always false: diagnosis does not contact Telegram, submit a CF7 form, prove that a message arrived, change configuration, or repair a route. Existing form delivery remains the way to test end-to-end behavior.
+
 = Hooks and constants =
 
 Filter <code>wpcf7tg_skip_tg</code>
@@ -59,6 +84,22 @@ This plugin uses [API Telegram](https://core.telegram.org/api "Telegram docs") a
 2. Multiple Telegram recipients and multiple bridges connected to different Contact Form 7 forms.
 
 == Changelog ==
+
+= 1.2.3 =
+- Add read-only WordPress Abilities API integration on WordPress 6.9 and newer.
+- Add <code>cf7-telegram/get-configuration</code> to discover forms, bridges, bots, recipients, and their relationships with permission-aware pagination.
+- Add <code>cf7-telegram/diagnose-form</code> to identify missing or broken routes, inactive recipients, and invalid destinations without sending a Telegram message.
+- Add <code>cf7-telegram/get-recent-errors</code> to read sanitized recent log events with time and severity filters and cursor pagination. Reading the shared log additionally requires <code>manage_options</code>.
+- Expose the abilities through PHP, authenticated REST requests, and the optional official WordPress MCP Adapter. Responses exclude bot tokens, raw Telegram chat IDs, and raw log payloads.
+- Preserve ordinary form delivery on older WordPress versions without the Abilities API.
+
+These abilities do not change configuration or contact Telegram. Diagnosis describes saved configuration, and the log is incomplete; neither proves successful delivery.
+
+Planned for future releases, outside 1.2.3; scope and release dates remain to be finalized:
+
+- <code>cf7-telegram/send-test-message</code>: test Telegram sending through a selected bridge and report the outcome.
+- <code>cf7-telegram/preview-message</code>: preview a form's Telegram message using synthetic field values, with explicit preview limitations.
+- <code>cf7-telegram/configure-bridge</code>: create or update a bridge using existing forms, bots, and recipients.
 
 = 1.2.2 =
 - Add a responsive MediaFiles add-on card to the settings page, showing whether the add-on is active, installed but inactive, or not installed.

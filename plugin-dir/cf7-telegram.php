@@ -19,6 +19,7 @@ use iTRON\cf7Telegram\Controllers\CPT;
 use iTRON\cf7Telegram\Controllers\Migration;
 use iTRON\cf7Telegram\Maintenance;
 use iTRON\cf7Telegram\Settings;
+use iTRON\cf7Telegram\Abilities;
 
 define( 'WPCF7TG_PLUGIN_NAME', plugin_basename( __FILE__ ) );
 
@@ -34,6 +35,9 @@ Settings::init();
 Migration::init();
 Maintenance::init();
 Compatibility::init();
+if ( function_exists( 'wp_register_ability' ) && function_exists( 'wp_register_ability_category' ) ) {
+	Abilities::init();
+}
 
 register_activation_hook( WPCF7TG_FILE, [ Maintenance::class, 'activate' ] );
 register_deactivation_hook( WPCF7TG_FILE, [ Maintenance::class, 'deactivate' ] );

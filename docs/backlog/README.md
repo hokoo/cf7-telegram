@@ -4,6 +4,36 @@ This directory records accepted follow-up work that is not part of an active
 implementation batch. Tasks use the repository status model and are not
 commitments to a release.
 
+## B2. WordPress Abilities API adaptation
+
+Status: needs_design
+
+Specification: [Abilities API](abilities-api.md), drafted 2026-10-29.
+User-selected target scope: configuration discovery, static form diagnostics, bridge
+test delivery, message preview, bridge configuration, and recent errors.
+First independent stage: `get-configuration` and `diagnose-form`; implementation
+plan R1.1–R1.3 is in the specification. It does not depend on unresolved questions
+for the other abilities. R1 implementation was authorized on 2026-10-29 and
+completed by root in `release/abilities-readonly`; R1.1 is accepted at `c393034`,
+R1.2 at `c534c66`, and R1.3 with its destination repair at `137f308` (product `542f7ab`).
+Local Core/REST/MCP and compatibility gates passed. Fresh independent QA accepted
+`e25d811..119b66a` with `pass_with_notes`; R1-AC1–R1-AC8 and DoD are met.
+Candidate ZIP and evidence are recorded in the specification checkpoint.
+Draft PR: [#72](https://github.com/hokoo/cf7-telegram/pull/72); its description and
+epic documentation are in English. Hosted CI is tracked in the PR; version bump,
+merge and publication remain a separate release task.
+Second-stage R2.1–R2.2, covering only `get-recent-errors`, was authorized and
+completed on 2026-10-31. Product `1f11237`, final harness `1983ce0`; real
+Core/REST/MCP, E6 delivery and full E5 support matrix passed on the same
+version 1.2.1 candidate. Independent QA accepted `4de389f..47e28b1` with
+`pass`. The specification checkpoint records exact commands, revisions,
+versions, ZIP hash and evidence. No push, merge or publication was performed.
+The planned R1/R2 release is 1.2.3; its [changelog draft](../../plugin-dir/readme.txt)
+is prepared. Version metadata will be updated on `master` after
+merge, as requested by the user.
+The remaining three abilities retain open design or execution gates; the
+overall six-ability epic remains `needs_design`.
+
 ## B1. Preserve legacy Telegram chat display names during migration
 
 Status: needs_design
