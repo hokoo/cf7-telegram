@@ -40,7 +40,7 @@ Options:
                       fresh, upgrade-0.8.1, upgrade-0.10, upgrade-0.11,
                       upgrade-1.0.9, upgrade-1.0.10,
                       upgrade-1.0.11, upgrade-1.0.12, upgrade-1.1.0,
-                      upgrade-1.2.0, upgrade-1.2.1
+                      upgrade-1.2.0, upgrade-1.2.1, upgrade-1.2.2
   --artifact-only     Verify/download source artifacts and build candidate zip only.
   --workdir <path>    Use an explicit temporary work directory.
   --keep-workdir      Keep Docker containers/volumes for debugging.
@@ -49,7 +49,7 @@ Options:
 Environment:
   CF7TG_CANDIDATE_ZIP                 Candidate zip. Defaults to dist/cf7-telegram-wp-plugin.zip
                                       when present, then a complete local plugin-dir fallback.
-  CF7TG_EXPECTED_CANDIDATE_VERSION    Expected candidate header version, default 1.2.2.
+  CF7TG_EXPECTED_CANDIDATE_VERSION    Expected candidate header version, default 1.2.3.
   CF7TG_E1_WP_VERSION                 WordPress core version, default 7.1.
   CF7TG_E1_WP_CLI_IMAGE               WP-CLI Docker image, default wordpress:cli-php8.3.
   CF7TG_E1_CF7_VERSION                Contact Form 7 version, default 6.2.
@@ -103,7 +103,7 @@ while [ "$#" -gt 0 ]; do
 done
 
 if [ "${#CASES[@]}" -eq 0 ]; then
-	CASES=(fresh upgrade-0.10 upgrade-0.11 upgrade-1.0.9 upgrade-1.0.10 upgrade-1.0.11 upgrade-1.0.12 upgrade-1.1.0 upgrade-1.2.0 upgrade-1.2.1)
+	CASES=(fresh upgrade-0.10 upgrade-0.11 upgrade-1.0.9 upgrade-1.0.10 upgrade-1.0.11 upgrade-1.0.12 upgrade-1.1.0 upgrade-1.2.0 upgrade-1.2.1 upgrade-1.2.2)
 fi
 
 mkdir -p "${CACHE_DIR}" "${RESULTS_DIR}" "${LOG_DIR}" "${STATE_DIR}" "${ROLLBACK_DIR}" "${ARTIFACT_DIR}" "${CANDIDATE_STAGE}" "${RUNTIME_DIR}"

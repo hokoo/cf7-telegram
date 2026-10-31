@@ -19,18 +19,18 @@ R1.2 at `c534c66`, and R1.3 with its destination repair at `137f308` (product `5
 Local Core/REST/MCP and compatibility gates passed. Fresh independent QA accepted
 `e25d811..119b66a` with `pass_with_notes`; R1-AC1–R1-AC8 and DoD are met.
 Candidate ZIP and evidence are recorded in the specification checkpoint.
-Draft PR: [#72](https://github.com/hokoo/cf7-telegram/pull/72); its description and
-epic documentation are in English. Hosted CI is tracked in the PR; version bump,
-merge and publication remain a separate release task.
+PR [#72](https://github.com/hokoo/cf7-telegram/pull/72) is merged on `master`;
+its description and epic documentation are in English. Publication remains a
+separate release task.
 Second-stage R2.1–R2.2, covering only `get-recent-errors`, was authorized and
 completed on 2026-10-31. Product `1f11237`, final harness `1983ce0`; real
 Core/REST/MCP, E6 delivery and full E5 support matrix passed on the same
 version 1.2.1 candidate. Independent QA accepted `4de389f..47e28b1` with
 `pass`. The specification checkpoint records exact commands, revisions,
 versions, ZIP hash and evidence. No push, merge or publication was performed.
-The planned R1/R2 release is 1.2.3; its [changelog draft](../../plugin-dir/readme.txt)
-is prepared. Version metadata will be updated on `master` after
-merge, as requested by the user.
+The planned R1/R2 release is 1.2.3; its [changelog entry](../../plugin-dir/readme.txt),
+version metadata, and published 1.2.2 upgrade baseline are prepared on `master`.
+Hosted release checks and publication remain pending.
 The remaining three abilities retain open design or execution gates; the
 overall six-ability epic remains `needs_design`.
 

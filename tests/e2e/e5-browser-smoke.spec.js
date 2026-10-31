@@ -7,7 +7,7 @@ const resultPath = process.env.CF7TG_E5_BROWSER_RESULT_JSON || path.join(
 	process.env.CF7TG_E5_BROWSER_RESULTS_DIR || process.cwd(),
 	'browser-result.json'
 );
-const expectedCandidateVersion = process.env.CF7TG_EXPECTED_CANDIDATE_VERSION || '1.2.2';
+const expectedCandidateVersion = process.env.CF7TG_EXPECTED_CANDIDATE_VERSION || '1.2.3';
 const expectedCandidateSha256 = process.env.CF7TG_CANDIDATE_SHA256 || '';
 const expectedWpVersion = process.env.CF7TG_E5_BROWSER_EXPECTED_WP_VERSION || '';
 const adminUser = process.env.CF7TG_E5_BROWSER_ADMIN_USER || 'admin';

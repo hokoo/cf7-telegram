@@ -7,7 +7,9 @@ Overall scope: six abilities. The accepted first independent stage contains
 retain open design questions.
 Date: 2026-10-29. Baseline: Message Bridge for Contact Form 7 and Telegram 1.2.1,
 commit `e25d811`. Coordination: root. The user selected 1.2.3 for the R1/R2
-release; version metadata will be updated on `master` after merge.
+release. The accepted read-only implementation is merged on `master`; 1.2.3
+version metadata and the published 1.2.2 upgrade baseline are prepared
+there before hosted release checks and publication.
 
 ## Goal and scope
 
@@ -16,8 +18,9 @@ operations to inspect CF7 → Telegram routes, diagnose configuration, and test
 sending through the existing bridge. Preserve current form delivery, UI, CF7
 permissions, and support for older WordPress versions.
 
-The target set contains six abilities. Only the first two belong to the first
-independent release; their plan does not depend on decisions about the other four.
+The target set contains six abilities. The first two formed the first
+implementation stage; `get-recent-errors` completed the read-only 1.2.3 scope.
+The remaining three retain open design questions and are outside 1.2.3.
 
 | Name | Purpose | External effects |
 | --- | --- | --- |
